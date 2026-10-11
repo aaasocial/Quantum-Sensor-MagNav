@@ -108,7 +108,13 @@ try {
     if (!reduced) problems.push(`${name}: reduced-motion emulation not active`);
     if (name === 'wide') {
       mkdirSync(`${ROOT}docs`, { recursive: true });
-      await page.screenshot({ path: HERO });
+      // First screen at 1280 px wide, extended down to just past the Run row so the hero shows
+      // the map with its full trajectory and the Run controls under it (D-13).
+      const runBottom = await page.locator('.run-row').evaluate(
+        (el) => Math.ceil(el.getBoundingClientRect().bottom + window.scrollY),
+      );
+      const height = Math.max(viewport.height, runBottom + 24);
+      await page.screenshot({ path: HERO, fullPage: true, clip: { x: 0, y: 0, width: viewport.width, height } });
     }
     const closed = await axe(page);
     axeOut.axe_version = closed.version;

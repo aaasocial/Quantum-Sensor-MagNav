@@ -1,0 +1,15 @@
+{
+ "axe_version": "4.13.0",
+ "states": {
+  "wide": {
+   "closed": [],
+   "open": [],
+   "after_run": []
+  },
+  "narrow": {
+   "closed": [],
+   "open": [],
+   "after_run": []
+  }
+ }
+}
