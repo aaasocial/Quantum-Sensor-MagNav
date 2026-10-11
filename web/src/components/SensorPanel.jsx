@@ -142,12 +142,18 @@ const SensedCharts = memo(function SensedCharts({ view, quantumKey }) {
   );
 });
 
-function SensorPanel({ view, quantumKey, ghz, ghzStatus, measuredSource }) {
+function SensorPanel({ view, quantumKey, ghz, ghzStatus, measuredSource, headingInSummary = false }) {
   const headingId = useId();
+  // With headingInSummary the "Sensor" h2 lives in the enclosing details summary (App.jsx),
+  // so the panel renders as a plain body block and no duplicate heading appears.
+  const Wrap = headingInSummary ? 'div' : 'section';
+  const wrapProps = headingInSummary
+    ? { className: 'sensor-panel' }
+    : { className: 'panel sensor-panel', 'aria-labelledby': headingId };
   return (
-    <section className="panel sensor-panel" aria-labelledby={headingId}>
+    <Wrap {...wrapProps}>
       <div className="panel-head">
-        <h2 id={headingId}>Sensor</h2>
+        {!headingInSummary && <h2 id={headingId}>Sensor</h2>}
         <Badge>emulated sensor</Badge>
       </div>
       <p className="help">The quantum sensor is emulated: the field is injected as gate angles, not felt.</p>
@@ -160,7 +166,7 @@ function SensorPanel({ view, quantumKey, ghz, ghzStatus, measuredSource }) {
         <p className="chart-empty">Loading recorded flights…</p>
       )}
       <GhzScalingChart payload={ghz} status={ghzStatus} measuredSource={measuredSource} />
-    </section>
+    </Wrap>
   );
 }
 
