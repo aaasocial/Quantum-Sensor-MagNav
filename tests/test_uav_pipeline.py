@@ -109,3 +109,51 @@ def test_run_uav_default_is_eastern(run, model):
     assert run["scenario"] == "eastern_400m"
     assert run["line"]["map_file"] == "data/map_eastern_395.npz"
     assert load_model()["flight"] == before == model["flight"]
+
+
+# ---------- Phase 3 (plan 03-01): RPM-withheld switch and the QPU replay bits ----------
+
+
+@pytest.fixture(scope="module")
+def withheld(synth_tile, model):
+    return run_uav(model=model, tile=synth_tile, scenario="synthetic_100m", rpm_known=False)
+
+
+def test_run_uav_rpm_withheld(withheld):
+    """Withheld (D-07): tau = tau0, no notch; tones still present, so the quantum sensor slips and
+    the baseline LS notch reduces to the block mean."""
+    R = withheld["line"]["results"]
+    for name in ESTIMATORS:
+        for k in POS_KEYS:
+            assert np.isfinite(R[name]["metrics"][k]), (name, k)
+    assert withheld["prov"]["slips"] > 0
+    assert np.all(np.asarray(withheld["prov"]["m"]) == 0)
+    assert np.allclose(withheld["prov"]["tau_s"], 0.01)
+    ls, mean = R["baseline_ls"]["metrics"], R["baseline_mean"]["metrics"]
+    for k in ("signal_rmse_nT", "cep50_m", "cep95_m", "pct_under_556"):
+        assert ls[k] == mean[k], k
+
+
+def test_run_uav_rpm_known_default_unchanged(run, tile, model):
+    explicit = run_uav(model=model, tile=tile, rpm_known=True)
+    for name in ESTIMATORS:
+        assert explicit["line"]["results"][name]["metrics"] == run["line"]["results"][name]["metrics"], name
+
+
+def test_replay_bits_is_qpu_seed(tmp_path):
+    import json
+
+    from magnav import quantum
+    from magnav.uav_pipeline import replay_bits
+
+    with open("data/forte_hardware_run.json", encoding="utf-8") as f:
+        h = json.load(f)
+    assert h["label"] == "QPU-measured"
+    bits = replay_bits()
+    assert isinstance(bits, str) and len(bits) == 1024
+    assert quantum.seed_hex_from_bits(bits) == "c1dfff10e69fae05"
+    proxy = dict(h, label="simulator-sampled proxy")
+    p = tmp_path / "proxy.json"
+    p.write_text(json.dumps(proxy), encoding="utf-8")
+    assert replay_bits(str(p)) is None
+    assert replay_bits(str(tmp_path / "missing.json")) is None
