@@ -27590,10 +27590,23 @@ function yR(e, t) {
 }
 //#endregion
 //#region src/components/ErrorReadout.jsx
-var bR = "baseline_ls";
+var bR = (e, t) => e === null ? "–" : e.toFixed(t);
 function xR({ view: e, quantumKey: t }) {
+	let n = e ? bR(NL(e, AL), 1) : "–", r = e ? bR(NL(e, t), 2) : "–";
+	return /* @__PURE__ */ (0, M.jsx)("p", {
+		className: "readout-sub readout-signal",
+		children: `Signal error this Run: baseline ${n} nT, quantum ${r} nT`
+	});
+}
+function SR({ view: e, quantumKey: t }) {
 	let n = T();
-	if (!e) return /* @__PURE__ */ (0, M.jsx)("div", { className: "error-readout" });
+	if (!e) return /* @__PURE__ */ (0, M.jsx)("div", {
+		className: "error-readout",
+		children: /* @__PURE__ */ (0, M.jsx)(xR, {
+			view: null,
+			quantumKey: t
+		})
+	});
 	let r = $t[t].label, i = Math.min(n, e.n - 1), a;
 	if (i < e.jamIdx) a = /* @__PURE__ */ (0, M.jsx)("p", {
 		className: "readout-state",
@@ -27610,49 +27623,56 @@ function xR({ view: e, quantumKey: t }) {
 			children: n === null ? "n/a" : `${k(n)} m`
 		}), /* @__PURE__ */ (0, M.jsx)("p", {
 			className: "readout-sub",
-			children: `Baseline ${k(vR(e, bR, i))} m · Dead reckoning ${k(yR(e, i))} m`
+			children: `Baseline ${k(vR(e, AL, i))} m · Dead reckoning ${k(yR(e, i))} m`
 		})] });
 	}
 	return /* @__PURE__ */ (0, M.jsxs)("div", {
 		className: "error-readout",
-		children: [/* @__PURE__ */ (0, M.jsx)("p", {
-			className: "readout-label",
-			children: `Position error, ${r}`
-		}), a]
+		children: [
+			/* @__PURE__ */ (0, M.jsx)("p", {
+				className: "readout-label",
+				children: `Position error, ${r}`
+			}),
+			a,
+			/* @__PURE__ */ (0, M.jsx)(xR, {
+				view: e,
+				quantumKey: t
+			})
+		]
 	});
 }
-var SR = (0, y.memo)(xR), CR = "Benchmark summary unavailable", wR = (e) => typeof e == "object" && !!e && !Array.isArray(e), TR = (e) => typeof e == "string" ? e : "";
-function ER(e) {
+var CR = (0, y.memo)(SR), wR = "Benchmark summary unavailable", TR = (e) => typeof e == "object" && !!e && !Array.isArray(e), ER = (e) => typeof e == "string" ? e : "";
+function DR(e) {
 	return typeof e == "number" && Number.isFinite(e) ? e.toFixed(1) : "n/a";
 }
-var DR = (e, t, n) => `${ER(e)} ± ${ER(t)} ${n}`;
-function OR(e) {
-	if (!wR(e) || e.kind !== "benchmark_summary" || !Array.isArray(e.rows)) return { error: CR };
-	let t = e.rows.filter(wR).map((e) => ({
-		key: TR(e.estimator),
-		label: TR(e.label),
-		cep50: DR(e.cep50_mean_m, e.cep50_std_m, "m"),
-		cep95: DR(e.cep95_mean_m, e.cep95_std_m, "m"),
-		pct556: DR(e.pct556_mean, e.pct556_std, "%")
-	})), n = (Array.isArray(e.recorded) ? e.recorded : []).filter(wR).map((e) => ({
-		key: `${TR(e.job_id)}/${TR(e.scenario)}`,
-		label: TR(e.label),
-		jobShort: TR(e.job_id).slice(0, 8),
-		seedHex: TR(e.seed_hex),
-		scenarioLabel: TR(e.scenario_label),
-		cep50Baseline: `${ER(e.cep50_baseline_m)} m`,
-		cep50Quantum: `${ER(e.cep50_quantum_m)} m`
+var OR = (e, t, n) => `${DR(e)} ± ${DR(t)} ${n}`;
+function kR(e) {
+	if (!TR(e) || e.kind !== "benchmark_summary" || !Array.isArray(e.rows)) return { error: wR };
+	let t = e.rows.filter(TR).map((e) => ({
+		key: ER(e.estimator),
+		label: ER(e.label),
+		cep50: OR(e.cep50_mean_m, e.cep50_std_m, "m"),
+		cep95: OR(e.cep95_mean_m, e.cep95_std_m, "m"),
+		pct556: OR(e.pct556_mean, e.pct556_std, "%")
+	})), n = (Array.isArray(e.recorded) ? e.recorded : []).filter(TR).map((e) => ({
+		key: `${ER(e.job_id)}/${ER(e.scenario)}`,
+		label: ER(e.label),
+		jobShort: ER(e.job_id).slice(0, 8),
+		seedHex: ER(e.seed_hex),
+		scenarioLabel: ER(e.scenario_label),
+		cep50Baseline: `${DR(e.cep50_baseline_m)} m`,
+		cep50Quantum: `${DR(e.cep50_quantum_m)} m`
 	}));
 	return {
-		heading: TR(e.heading),
-		caption: TR(e.caption),
+		heading: ER(e.heading),
+		caption: ER(e.caption),
 		rows: t,
 		recorded: n
 	};
 }
 //#endregion
 //#region src/components/TableScroll.jsx
-function kR({ label: e, children: t }) {
+function AR({ label: e, children: t }) {
 	return /* @__PURE__ */ (0, M.jsx)("div", {
 		className: "table-scroll",
 		role: "region",
@@ -27663,8 +27683,8 @@ function kR({ label: e, children: t }) {
 }
 //#endregion
 //#region src/components/BenchmarkTable.jsx
-function AR({ benchmark: e }) {
-	let t = (0, y.useId)(), n = e?.status === "loading", r = (0, y.useMemo)(() => e?.status === "ok" ? OR(e.record) : OR(null), [e]);
+function jR({ benchmark: e }) {
+	let t = (0, y.useId)(), n = e?.status === "loading", r = (0, y.useMemo)(() => e?.status === "ok" ? kR(e.record) : kR(null), [e]);
 	return n ? null : r.error ? /* @__PURE__ */ (0, M.jsx)("section", {
 		className: "benchmark",
 		children: /* @__PURE__ */ (0, M.jsx)("p", {
@@ -27679,7 +27699,7 @@ function AR({ benchmark: e }) {
 				id: t,
 				children: r.heading
 			}),
-			/* @__PURE__ */ (0, M.jsx)(kR, {
+			/* @__PURE__ */ (0, M.jsx)(AR, {
 				label: "Benchmark summary table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table benchmark-table",
@@ -27715,7 +27735,7 @@ function AR({ benchmark: e }) {
 					]
 				})
 			}),
-			r.recorded.length > 0 && /* @__PURE__ */ (0, M.jsx)(kR, {
+			r.recorded.length > 0 && /* @__PURE__ */ (0, M.jsx)(AR, {
 				label: "Recorded IonQ seeds table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table benchmark-recorded",
@@ -27764,25 +27784,25 @@ function AR({ benchmark: e }) {
 		]
 	});
 }
-var jR = (0, y.memo)(AR), MR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(1) : "n/a", NR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", PR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", FR = (e) => Number.isFinite(Number(e)) ? Number(e).toFixed(2) : "n/a";
-function IR({ view: e, i: t }) {
+var MR = (0, y.memo)(jR), NR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(1) : "n/a", PR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", FR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", IR = (e) => Number.isFinite(Number(e)) ? Number(e).toFixed(2) : "n/a";
+function LR({ view: e, i: t }) {
 	let n = Number(e.t[t]).toFixed(1);
 	return /* @__PURE__ */ (0, M.jsx)("th", {
 		scope: "row",
 		children: t === e.jamIdx ? `${n} (GPS jammed)` : n
 	});
 }
-var LR = [
+var RR = [
 	["baseline_ls", "Baseline"],
 	["quantum_q1", "Single-qubit"],
 	["quantum_ghz4", "GHZ-4"]
 ];
-function RR({ view: e, ghz: t }) {
+function zR({ view: e, ghz: t }) {
 	let n = (0, y.useMemo)(() => e ? IL(e, 60) : [], [e]), r = (0, y.useMemo)(() => hL(t), [t]);
 	return /* @__PURE__ */ (0, M.jsxs)("div", {
 		className: "text-alternatives",
 		children: [
-			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Map track data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)(kR, {
+			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Map track data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)(AR, {
 				label: "Map track data table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table",
@@ -27801,7 +27821,7 @@ function RR({ view: e, ghz: t }) {
 								scope: "col",
 								children: "True y (m)"
 							}),
-							LR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
+							RR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
 								scope: "col",
 								children: `${t} error (m)`
 							}, e)),
@@ -27811,19 +27831,19 @@ function RR({ view: e, ghz: t }) {
 							})
 						] }) }),
 						/* @__PURE__ */ (0, M.jsx)("tbody", { children: n.map((t) => /* @__PURE__ */ (0, M.jsxs)("tr", { children: [
-							/* @__PURE__ */ (0, M.jsx)(IR, {
+							/* @__PURE__ */ (0, M.jsx)(LR, {
 								view: e,
 								i: t
 							}),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(e.truth.x[t]) }),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(e.truth.y[t]) }),
-							LR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: k(vR(e, n, t)) }, n)),
+							RR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: k(vR(e, n, t)) }, n)),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(yR(e, t)) })
 						] }, t)) })
 					]
 				})
 			})] }),
-			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Sensor data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)(kR, {
+			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Sensor data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)(AR, {
 				label: "Sensor data table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table",
@@ -27838,7 +27858,7 @@ function RR({ view: e, ghz: t }) {
 								scope: "col",
 								children: "Truth (nT)"
 							}),
-							LR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
+							RR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
 								scope: "col",
 								children: `${t} (nT)`
 							}, e)),
@@ -27852,14 +27872,14 @@ function RR({ view: e, ghz: t }) {
 							})
 						] }) }),
 						/* @__PURE__ */ (0, M.jsx)("tbody", { children: n.map((t) => /* @__PURE__ */ (0, M.jsxs)("tr", { children: [
-							/* @__PURE__ */ (0, M.jsx)(IR, {
+							/* @__PURE__ */ (0, M.jsx)(LR, {
 								view: e,
 								i: t
 							}),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: MR(e.truth.anomaly[t]) }),
-							LR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: MR(e.est[n]?.signal[t]) }, n)),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.truth.anomaly[t]) }),
+							RR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.est[n]?.signal[t]) }, n)),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(e.sensor?.rpm?.[t]) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: FR(e.sensor?.tau_ms?.[t]) })
+							/* @__PURE__ */ (0, M.jsx)("td", { children: IR(e.sensor?.tau_ms?.[t]) })
 						] }, t)) }),
 						/* @__PURE__ */ (0, M.jsx)("tfoot", { children: /* @__PURE__ */ (0, M.jsxs)("tr", { children: [
 							/* @__PURE__ */ (0, M.jsx)("th", {
@@ -27867,7 +27887,7 @@ function RR({ view: e, ghz: t }) {
 								children: "RMSE after GPS loss"
 							}),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: "reference" }),
-							LR.map(([t]) => /* @__PURE__ */ (0, M.jsx)("td", { children: MR(NL(e, t)) }, t)),
+							RR.map(([t]) => /* @__PURE__ */ (0, M.jsx)("td", { children: NR(NL(e, t)) }, t)),
 							/* @__PURE__ */ (0, M.jsx)("td", {}),
 							/* @__PURE__ */ (0, M.jsx)("td", {})
 						] }) })
@@ -27877,7 +27897,7 @@ function RR({ view: e, ghz: t }) {
 			/* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: "GHZ scaling data" }), r.length === 0 ? /* @__PURE__ */ (0, M.jsx)("p", {
 				className: "help",
 				children: "GHZ scaling data is not in this artifact yet."
-			}) : /* @__PURE__ */ (0, M.jsx)(kR, {
+			}) : /* @__PURE__ */ (0, M.jsx)(AR, {
 				label: "GHZ scaling data table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table",
@@ -27918,12 +27938,12 @@ function RR({ view: e, ghz: t }) {
 								scope: "row",
 								children: e.n
 							}),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.sql) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.hl) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.unentangled) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.ghzIdeal) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: e.ghzMeasured === null ? "not measured" : NR(e.ghzMeasured) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: PR(pL(t, e.n)) })
+							/* @__PURE__ */ (0, M.jsx)("td", { children: PR(e.sql) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: PR(e.hl) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: PR(e.unentangled) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: PR(e.ghzIdeal) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: e.ghzMeasured === null ? "not measured" : PR(e.ghzMeasured) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: FR(pL(t, e.n)) })
 						] }, e.n)) })
 					]
 				})
@@ -27931,27 +27951,27 @@ function RR({ view: e, ghz: t }) {
 		]
 	});
 }
-var zR = (0, y.memo)(RR), BR = null, VR = null, HR = null;
-function UR(e) {
+var BR = (0, y.memo)(zR), VR = null, HR = null, UR = null;
+function WR(e) {
 	if (!e) return;
-	if (!BR) {
-		VR = e;
+	if (!VR) {
+		HR = e;
 		return;
 	}
-	let t = BR;
-	t(""), HR !== null && cancelAnimationFrame(HR), HR = requestAnimationFrame(() => {
-		HR = null, t(e);
+	let t = VR;
+	t(""), UR !== null && cancelAnimationFrame(UR), UR = requestAnimationFrame(() => {
+		UR = null, t(e);
 	});
 }
-function WR() {
+function GR() {
 	let [e, t] = (0, y.useState)("");
 	return (0, y.useEffect)(() => {
-		if (BR = t, VR) {
-			let e = VR;
-			VR = null, UR(e);
+		if (VR = t, HR) {
+			let e = HR;
+			HR = null, WR(e);
 		}
 		return () => {
-			BR === t && (BR = null), HR !== null && cancelAnimationFrame(HR), HR = null;
+			VR === t && (VR = null), UR !== null && cancelAnimationFrame(UR), UR = null;
 		};
 	}, []), /* @__PURE__ */ (0, M.jsx)("p", {
 		role: "status",
@@ -27962,24 +27982,24 @@ function WR() {
 }
 //#endregion
 //#region src/bridge.js
-var GR = typeof backend < "u" ? backend : globalThis.backend ?? null, KR = Promise.resolve();
-function qR(e) {
-	let t = KR.then(e, e);
-	return KR = t.catch(() => {}), t;
+var KR = typeof backend < "u" ? backend : globalThis.backend ?? null, qR = Promise.resolve();
+function JR(e) {
+	let t = qR.then(e, e);
+	return qR = t.catch(() => {}), t;
 }
-function JR(t, ...n) {
-	return qR(async () => {
+function YR(t, ...n) {
+	return JR(async () => {
 		let r = e[t];
 		if (!r) throw Error(`magnav.api.${t} not found`);
-		return String(await r.callPromising(GR, ...n));
+		return String(await r.callPromising(KR, ...n));
 	});
 }
-async function YR(e, ...t) {
-	return JSON.parse(await JR(e, ...t));
+async function XR(e, ...t) {
+	return JSON.parse(await YR(e, ...t));
 }
 //#endregion
 //#region src/probe.js
-function XR() {
+function ZR() {
 	let e = null;
 	try {
 		e = typeof setTimeout(() => {}, 0)?.then == "function";
@@ -27994,7 +28014,7 @@ function XR() {
 		setIntervalNative: String(globalThis.setInterval).includes("[native code]")
 	}));
 }
-function ZR() {
+function QR() {
 	requestAnimationFrame(() => requestAnimationFrame(() => {
 		console.log("[probe] frame", JSON.stringify({
 			innerHeight: window.innerHeight,
@@ -28003,7 +28023,7 @@ function ZR() {
 		}));
 	}));
 }
-async function QR(e) {
+async function $R(e) {
 	let t = 0, n = 0, r = performance.now(), i = !0, a = 0, o = (e) => {
 		i && (t += 1, n = Math.max(n, e - r), r = e, a = requestAnimationFrame(o));
 	};
@@ -28020,9 +28040,9 @@ async function QR(e) {
 		i = !1, cancelAnimationFrame(a);
 	}
 }
-function $R(e) {
+function ez(e) {
 	return async (t, ...n) => {
-		let { result: r, ms: i, frames: a, maxGapMs: o } = await QR(() => e(t, ...n));
+		let { result: r, ms: i, frames: a, maxGapMs: o } = await $R(() => e(t, ...n));
 		return t === "live_step" ? console.log("[probe] live_step", JSON.stringify({
 			ms: i,
 			budgetMs: n[0],
@@ -28040,7 +28060,7 @@ function $R(e) {
 }
 //#endregion
 //#region src/hooks/useArtifact.js
-function ez() {
+function tz() {
 	let [e, t] = (0, y.useState)({
 		status: "loading",
 		artifact: null,
@@ -28050,7 +28070,7 @@ function ez() {
 		let e = !1, n = performance.now();
 		return (async () => {
 			try {
-				let r = await QR(() => JR("artifact_json"));
+				let r = await $R(() => YR("artifact_json"));
 				console.log("[probe] main_thread", JSON.stringify({
 					call: "artifact_json",
 					ms: r.ms,
@@ -28082,7 +28102,7 @@ function ez() {
 }
 //#endregion
 //#region src/hooks/useLiveRun.js
-function tz() {
+function nz() {
 	return new Promise((e) => {
 		let t = new MessageChannel();
 		t.port1.onmessage = () => {
@@ -28090,26 +28110,26 @@ function tz() {
 		}, t.port2.postMessage(0);
 	});
 }
-function nz() {
+function rz() {
 	return new Promise((e) => {
 		requestAnimationFrame(() => e());
 	});
 }
-var rz = L({
-	callPy: $R(YR),
+var iz = L({
+	callPy: ez(XR),
 	now: () => performance.now(),
-	yieldFn: tz,
-	nextFrame: nz,
+	yieldFn: nz,
+	nextFrame: rz,
 	validate: dR
-}), iz = {
+}), az = {
 	samplesDone: 0,
 	samplesTotal: 0,
 	windowsDone: 0,
 	windowsTotal: 0,
 	stage: null
 };
-function az({ hasBackend: e }) {
-	let [t, n] = (0, y.useState)(!1), [r, i] = (0, y.useState)(0), [a, o] = (0, y.useState)(iz), [s, c] = (0, y.useState)(0), l = (0, y.useRef)(0);
+function oz({ hasBackend: e }) {
+	let [t, n] = (0, y.useState)(!1), [r, i] = (0, y.useState)(0), [a, o] = (0, y.useState)(az), [s, c] = (0, y.useState)(0), l = (0, y.useRef)(0);
 	return (0, y.useEffect)(() => {
 		if (!t) return;
 		let e = null, n = -1, r = () => {
@@ -28125,10 +28145,10 @@ function az({ hasBackend: e }) {
 		progress: a,
 		elapsedS: s,
 		start: (0, y.useCallback)(async ({ scenario: t, simulateFailure: r = !1, onStage: a, onQuantum: s, onStep: u }) => {
-			if (rz.isInFlight()) throw Object.assign(/* @__PURE__ */ Error("A live run is already in progress"), { name: "Busy" });
-			l.current = performance.now(), n(!0), i(0), o(iz), c(0);
+			if (iz.isInFlight()) throw Object.assign(/* @__PURE__ */ Error("A live run is already in progress"), { name: "Busy" });
+			l.current = performance.now(), n(!0), i(0), o(az), c(0);
 			try {
-				let n = await rz.start({
+				let n = await iz.start({
 					scenario: t,
 					hasBackend: e,
 					simulateFailure: r,
@@ -28162,24 +28182,24 @@ function az({ hasBackend: e }) {
 				n(!1);
 			}
 		}, [e]),
-		cancel: (0, y.useCallback)(() => rz.cancel(), [])
+		cancel: (0, y.useCallback)(() => iz.cancel(), [])
 	};
 }
 //#endregion
 //#region src/hooks/useReducedMotion.js
-var oz = "(prefers-reduced-motion: reduce)";
-function sz() {
-	let [e, t] = (0, y.useState)(() => typeof window < "u" && typeof window.matchMedia == "function" && window.matchMedia(oz).matches);
+var sz = "(prefers-reduced-motion: reduce)";
+function cz() {
+	let [e, t] = (0, y.useState)(() => typeof window < "u" && typeof window.matchMedia == "function" && window.matchMedia(sz).matches);
 	return (0, y.useEffect)(() => {
 		if (typeof window.matchMedia != "function") return;
-		let e = window.matchMedia(oz), n = () => t(e.matches);
+		let e = window.matchMedia(sz), n = () => t(e.matches);
 		return n(), e.addEventListener("change", n), () => e.removeEventListener("change", n);
 	}, []), e;
 }
 //#endregion
 //#region src/lib/announce.js
-var cz = (e) => String(Math.round(Number(e))), lz = (e) => String(e).replace(/…$/, "");
-function uz(e, t = () => globalThis.performance.now()) {
+var lz = (e) => String(Math.round(Number(e))), uz = (e) => String(e).replace(/…$/, "");
+function dz(e, t = () => globalThis.performance.now()) {
 	let n = null, r = () => {
 		let r = t();
 		return n !== null && r - n < e ? !1 : (n = r, !0);
@@ -28190,14 +28210,14 @@ function uz(e, t = () => globalThis.performance.now()) {
 		n = null;
 	}, r;
 }
-var dz = (e) => `${cz(e)} times speed`, fz = (e, t) => `Recorded flights loaded. Scenario: ${e}, ${t}. Press Run one IonQ job, or Play.`, pz = (e, t, n = !1) => `Scenario: ${e}, ${t}. ${n ? "Showing this Run's live result" : "Showing recorded replay"}.`, mz = (e) => `Run mode: ${e === "live" ? "live" : "recorded replay"}.`, hz = (e) => `Playing at ${dz(e)}.`, gz = (e) => `Paused at ${cz(e)} seconds.`, _z = (e) => `GPS jammed at ${cz(e)} seconds. Navigating by magnetic map matching.`, vz = (e, t, n, r) => `${cz(e)} seconds. ${t}: ${cz(n)} metres. Baseline: ${cz(r)} metres.`, yz = (e) => `Quantum track: ${e}.`, bz = (e, t) => `Step ${cz(e)} of 4: ${lz(t)}.`, xz = (e) => String(e ?? "").slice(0, 8), Sz = (e, t) => `IonQ job ${xz(e)} submitted, ${t}.`, Cz = (e, t, n, r) => `Motor drawn: ${cz(e)} to ${cz(t)} RPM. GHZ-4 contrast ${Number(n).toFixed(3)}. Bits ${r}.`, wz = (e, t) => `${cz(e)} of ${cz(t)} samples.`, Tz = (e) => `Live run finished on ${e}. Mode: computed in-page.`, Ez = (e) => `Live run failed. Mode: fallback, precomputed replay of ${e}.`, Dz = (e, t, n) => {
+var fz = (e) => `${lz(e)} times speed`, pz = (e, t) => `Recorded flights loaded. Scenario: ${e}, ${t}. Press Run one IonQ job, or Play.`, mz = (e, t, n = !1) => `Scenario: ${e}, ${t}. ${n ? "Showing this Run's live result" : "Showing recorded replay"}.`, hz = (e) => `Run mode: ${e === "live" ? "live" : "recorded replay"}.`, gz = (e) => `Playing at ${fz(e)}.`, _z = (e) => `Paused at ${lz(e)} seconds.`, vz = (e) => `GPS jammed at ${lz(e)} seconds. Navigating by magnetic map matching.`, yz = (e, t, n, r) => `${lz(e)} seconds. ${t}: ${lz(n)} metres. Baseline: ${lz(r)} metres.`, bz = (e) => `Quantum track: ${e}.`, xz = (e, t) => `Step ${lz(e)} of 4: ${uz(t)}.`, Sz = (e) => String(e ?? "").slice(0, 8), Cz = (e, t) => `IonQ job ${Sz(e)} submitted, ${t}.`, wz = (e, t, n, r) => `Motor drawn: ${lz(e)} to ${lz(t)} RPM. GHZ-4 contrast ${Number(n).toFixed(3)}. Bits ${r}.`, Tz = (e, t) => `${lz(e)} of ${lz(t)} samples.`, Ez = (e) => `Live run finished on ${e}. Mode: computed in-page.`, Dz = (e) => `Live run failed. Mode: fallback, precomputed replay of ${e}.`, Oz = (e, t, n) => {
 	let r = (e) => e != null && Number.isFinite(Number(e));
-	return !r(t) || !r(n) ? "Replay finished." : `Replay finished. ${e}: ${cz(t)} metres. Baseline: ${cz(n)} metres.`;
-}, Oz = Object.freeze({
+	return !r(t) || !r(n) ? "Replay finished." : `Replay finished. ${e}: ${lz(t)} metres. Baseline: ${lz(n)} metres.`;
+}, kz = Object.freeze({
 	job: !1,
 	charts: !1
 });
-function kz(e, t, n) {
+function Az(e, t, n) {
 	return n === t ? e : n === "result" ? e.job && e.charts ? e : {
 		job: !0,
 		charts: !0
@@ -28208,10 +28228,10 @@ function kz(e, t, n) {
 }
 //#endregion
 //#region src/App.jsx
-var Az = "baseline_ls", jz = 18e5, Mz = 3e4, Nz = 1e4, Pz = "Draws this Run's motor from quantum random bits, measures the GHZ contrast, then flies the UAV over the selected map in your browser (up to 90 s). If anything fails, that map's recorded replay is shown.", Fz = "Needs a backend: press Run on Qollab and pick one. The recorded replays work without it.", Iz = "Recorded replay: stored motor draw, no IonQ job.", Lz = (e) => `One IonQ job per Run, flown on ${e}. Press Stop, then Run on Qollab, to draw a new motor.`, Rz = (e) => `This Run's IonQ job was flown on ${e}. Showing the recorded replay here.`, zz = (e) => `Map scenario is locked while the live run flies ${e}.`, Bz = (e, t, n) => `Live run finished in ${e} s on ${t}. Motor drawn by IonQ job ${xz(n)}.`, Vz = (e, t) => e.timeout ? `Live run took longer than 90 s. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try again.` : `Live run failed: ${e.name}: ${e.message}. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`, Hz = 1e4, Uz = "The quantum sensor's filter function is a physical fact about how such sensors work; the field it filters here is injected as gate angles rather than felt; the downstream benefit equals that of a classical notch filter, achieved earlier and without consuming dynamic range.";
-async function Wz(e) {
+var jz = "baseline_ls", Mz = 18e5, Nz = 3e4, Pz = 1e4, Fz = "Draws this Run's motor from quantum random bits, measures the GHZ contrast, then flies the UAV over the selected map in your browser (up to 90 s). If anything fails, that map's recorded replay is shown.", Iz = "Needs a backend: press Run on Qollab and pick one. The recorded replays work without it.", Lz = "Recorded replay: stored motor draw, no IonQ job.", Rz = (e) => `One IonQ job per Run, flown on ${e}. Press Stop, then Run on Qollab, to draw a new motor.`, zz = (e) => `This Run's IonQ job was flown on ${e}. Showing the recorded replay here.`, Bz = (e) => `Map scenario is locked while the live run flies ${e}.`, Vz = (e, t, n) => `Live run finished in ${e} s on ${t}. Motor drawn by IonQ job ${Sz(n)}.`, Hz = (e, t) => e.timeout ? `Live run took longer than 90 s. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try again.` : `Live run failed: ${e.name}: ${e.message}. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`, Uz = 1e4, Wz = "The quantum sensor's filter function is a physical fact about how such sensors work; the field it filters here is injected as gate angles rather than felt; the downstream benefit equals that of a classical notch filter, achieved earlier and without consuming dynamic range.";
+async function Gz(e) {
 	try {
-		let t = e ? await YR("ghz_scaling_json", e.c1 ?? null, e.c2 ?? null, e.c4 ?? null) : await YR("ghz_scaling_json");
+		let t = e ? await XR("ghz_scaling_json", e.c1 ?? null, e.c2 ?? null, e.c4 ?? null) : await XR("ghz_scaling_json");
 		return t?.ok === !0 ? {
 			status: "ok",
 			payload: t
@@ -28228,9 +28248,9 @@ async function Wz(e) {
 		};
 	}
 }
-async function Gz(e, t) {
+async function Kz(e, t) {
 	try {
-		let n = await YR(e);
+		let n = await XR(e);
 		return n?.ok === !0 ? {
 			status: "ok",
 			record: t ? n[t] : n
@@ -28250,14 +28270,14 @@ async function Gz(e, t) {
 		};
 	}
 }
-var Kz, qz = new Promise((e) => {
-	Kz = e;
-}), Jz = { inFlight: !1 }, Yz = "input, select, textarea, button, summary, [contenteditable], .table-scroll";
-function Xz() {
-	let { status: e, artifact: t, error: n } = ez(), r = sz(), [i, a] = (0, y.useState)(null), [o, s] = (0, y.useState)("live"), [c, l] = (0, y.useState)(null), [u, d] = (0, y.useState)(30), [f, p] = (0, y.useState)(fn), m = (0, y.useRef)(null), h = (0, y.useRef)(null), g = (0, y.useRef)(null), _ = (0, y.useRef)(!1), v = !!GR || !1, b = az({ hasBackend: v }), [x, S] = (0, y.useState)("idle"), [C, T] = (0, y.useState)(Oz), E = (0, y.useRef)("idle");
+var qz, Jz = new Promise((e) => {
+	qz = e;
+}), Yz = { inFlight: !1 }, Xz = "input, select, textarea, button, summary, [contenteditable], .table-scroll";
+function Zz() {
+	let { status: e, artifact: t, error: n } = tz(), r = cz(), [i, a] = (0, y.useState)(null), [o, s] = (0, y.useState)("live"), [c, l] = (0, y.useState)(null), [u, d] = (0, y.useState)(30), [f, p] = (0, y.useState)(fn), m = (0, y.useRef)(null), h = (0, y.useRef)(null), g = (0, y.useRef)(null), _ = (0, y.useRef)(!1), v = !!KR || !1, b = oz({ hasBackend: v }), [x, S] = (0, y.useState)("idle"), [C, T] = (0, y.useState)(kz), E = (0, y.useRef)("idle");
 	(0, y.useEffect)(() => {
 		let e = E.current;
-		E.current = x, T((t) => kz(t, e, x));
+		E.current = x, T((t) => Az(t, e, x));
 	}, [x]);
 	let D = (0, y.useCallback)((e, t) => {
 		T((n) => n[e] === t ? n : {
@@ -28299,26 +28319,26 @@ function Xz() {
 	Ee.current = L;
 	let De = (0, y.useRef)(!1), ke = (e) => $t[e]?.label ?? e;
 	(0, y.useEffect)(() => {
-		R && !De.current && (De.current = !0, w.load(R.t), w.seekIndex(R.n - 1), UR(fz(R.label, R.mapLabel)));
+		R && !De.current && (De.current = !0, w.load(R.t), w.seekIndex(R.n - 1), WR(pz(R.label, R.mapLabel)));
 	}, [R]), (0, y.useEffect)(() => {
 		w.setSpeed(u);
 	}, [u]), (0, y.useEffect)(() => {
 		w.setReduced(r);
 	}, [r]), (0, y.useEffect)(() => {
-		let e = uz(Nz), t = w.getIndex(), n = w.on("play", () => {
-			e.mark(), UR(hz(w.getSpeed()));
-		}), r = w.on("pause", () => UR(gz(w.getTime()))), i = w.on("end", () => {
+		let e = dz(Pz), t = w.getIndex(), n = w.on("play", () => {
+			e.mark(), WR(gz(w.getSpeed()));
+		}), r = w.on("pause", () => WR(_z(w.getTime()))), i = w.on("end", () => {
 			let e = Te.current;
 			if (!e) return;
 			let t = Ee.current, n = e.n - 1;
-			UR(Dz(ke(t), vR(e, t, n), vR(e, Az, n)));
+			WR(Oz(ke(t), vR(e, t, n), vR(e, jz, n)));
 		}), a = w.subscribe(() => {
 			let n = Te.current, r = w.getIndex(), i = t;
 			if (t = r, n && w.isPlaying()) {
-				if (i < n.jamIdx && n.jamIdx <= r) e.mark(), UR(_z(n.jamT));
+				if (i < n.jamIdx && n.jamIdx <= r) e.mark(), WR(vz(n.jamT));
 				else if (r >= n.metricStartIdx && r < n.n && e()) {
 					let e = Ee.current, t = vR(n, e, r);
-					t !== null && UR(vz(n.t[r], ke(e), t, vR(n, Az, r)));
+					t !== null && WR(yz(n.t[r], ke(e), t, vR(n, jz, r)));
 				}
 			}
 		});
@@ -28326,19 +28346,19 @@ function Xz() {
 			n(), r(), i(), a();
 		};
 	}, []), (0, y.useEffect)(() => {
-		XR(), ZR();
+		ZR(), QR();
 	}, []), (0, y.useEffect)(() => {
 		let e = !1;
 		return (async () => {
-			let t = await Gz("backend_info", null);
+			let t = await Kz("backend_info", null);
 			!e && t.status === "ok" && se(t.record);
-			let n = await Gz("circuit_json", "circuit");
+			let n = await Kz("circuit_json", "circuit");
 			!e && n.status === "ok" && fe(n.record);
-			let r = await Gz("hardware_json", "hardware");
+			let r = await Kz("hardware_json", "hardware");
 			e || I(r);
-			let i = await Gz("benchmark_json", "benchmark");
+			let i = await Kz("benchmark_json", "benchmark");
 			i.status === "error" && console.error("[benchmark] load failed", i.error), e || _e(i);
-			let a = await Wz(null);
+			let a = await Gz(null);
 			a.status !== "ok" && console.error("[ghz] scaling failed", a.error), e || ye((e) => e.status === "ok" ? e : a);
 		})(), () => {
 			e = !0;
@@ -28347,7 +28367,7 @@ function Xz() {
 		function e(e) {
 			if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
 			let t = e.target;
-			if (t instanceof Element && t.closest(Yz)) return;
+			if (t instanceof Element && t.closest(Xz)) return;
 			let n = Te.current;
 			if (n) switch (e.key) {
 				case " ":
@@ -28371,10 +28391,10 @@ function Xz() {
 		}
 		return document.addEventListener("keydown", e), () => document.removeEventListener("keydown", e);
 	}, []), (0, y.useEffect)(() => {
-		let e = performance.now(), t = e, n = null, r = () => w.isPlaying() || Jz.inFlight, i = (t) => {
-			_.current || (r() ? e = t : t - e >= jz && (_.current = !0, Kz()));
+		let e = performance.now(), t = e, n = null, r = () => w.isPlaying() || Yz.inFlight, i = (t) => {
+			_.current || (r() ? e = t : t - e >= Mz && (_.current = !0, qz()));
 		}, a = (e) => {
-			n = null, !_.current && (e - t >= Mz && (t = e, i(performance.now())), n = requestAnimationFrame(a));
+			n = null, !_.current && (e - t >= Nz && (t = e, i(performance.now())), n = requestAnimationFrame(a));
 		}, o = () => {
 			e = performance.now();
 		}, s = () => {
@@ -28390,44 +28410,44 @@ function Xz() {
 	}, []);
 	let Ae = (0, y.useCallback)((e) => {
 		let n = t ? fR(t, e) : null;
-		a(e), n && UR(pz(n.label, n.map_label, o === "live" && !!A[e]));
+		a(e), n && WR(mz(n.label, n.map_label, o === "live" && !!A[e]));
 	}, [
 		t,
 		o,
 		A
 	]), je = (0, y.useCallback)((e) => {
-		s(e), UR(mz(e));
+		s(e), WR(hz(e));
 	}, []), Me = (0, y.useCallback)((e) => {
-		l(e), UR(yz(ke(e)));
+		l(e), WR(bz(ke(e)));
 	}, []), Ne = (0, y.useCallback)(async () => {
 		if (oe.current || !v || !t || !R) return;
 		oe.current = !0;
 		let e = be, n = fR(t, e)?.label ?? e, i = document.activeElement, a = !!(i && h.current?.closest("fieldset")?.contains(i));
-		(i === g.current || a) && m.current?.focus(), w.pause(), k(e), ee(null), ne(null), S("running"), Jz.inFlight = !0;
-		let o = uz(Hz);
+		(i === g.current || a) && m.current?.focus(), w.pause(), k(e), ee(null), ne(null), S("running"), Yz.inFlight = !0;
+		let o = dz(Uz);
 		o.mark();
 		try {
 			let t = await b.start({
 				scenario: e,
 				simulateFailure: !1,
 				onStage: (e) => {
-					e !== 2 && UR(bz(e, le[e]));
+					e !== 2 && WR(xz(e, le[e]));
 				},
 				onQuantum: (e) => {
-					ee(e), UR(`${Sz(e.job_id, e.backend)} ${Cz(e.motor?.rpm_min, e.motor?.rpm_max, e.c_hat?.c4, Oe(e))}`);
+					ee(e), WR(`${Cz(e.job_id, e.backend)} ${wz(e.motor?.rpm_min, e.motor?.rpm_max, e.c_hat?.c4, Oe(e))}`);
 				},
 				onStep: (e) => {
-					!e.done && o() && UR(wz(e.samples_done, e.samples_total));
+					!e.done && o() && WR(Tz(e.samples_done, e.samples_total));
 				}
 			}), i = _R(t.result.scenario);
-			ee(t.quantum), j({ [e]: t.result }), ie(Math.round(t.elapsedMs / 1e3)), S("result"), w.load(i.t), r ? w.seekIndex(i.n - 1) : (w.seekIndex(0), w.play()), UR(Tz(n));
+			ee(t.quantum), j({ [e]: t.result }), ie(Math.round(t.elapsedMs / 1e3)), S("result"), w.load(i.t), r ? w.seekIndex(i.n - 1) : (w.seekIndex(0), w.play()), WR(Ez(n));
 			let a = t.quantum?.c_hat;
 			if (a && [
 				a.c1,
 				a.c2,
 				a.c4
 			].some((e) => Number.isFinite(e))) {
-				let e = await Wz(a);
+				let e = await Gz(a);
 				e.status === "ok" ? ye(e) : console.error("[ghz] measured scaling failed", e.error);
 			}
 		} catch (e) {
@@ -28435,9 +28455,9 @@ function Xz() {
 				name: String(e?.name ?? "Error"),
 				message: String(e?.message ?? e),
 				timeout: e?.name === "TimeoutError"
-			}), S("fallback"), UR(Ez(n));
+			}), S("fallback"), WR(Dz(n));
 		} finally {
-			Jz.inFlight = !1, a && document.activeElement === m.current && h.current?.focus();
+			Yz.inFlight = !1, a && document.activeElement === m.current && h.current?.focus();
 		}
 	}, [
 		v,
@@ -28446,11 +28466,11 @@ function Xz() {
 		be,
 		b,
 		r
-	]), Pe = e === "error" ? n : we, Fe = Pe ? `Could not load the recorded flights (${Pe}). Press Stop, then Run on Qollab, to reload.` : null, Le = e === "ready" && !!R, Re = x === "running", ze = x !== "idle", Be = O && t ? fR(t, O)?.label ?? O : null, Ve = be === O, He = !!Se, Ue = Iz;
-	xe && (Ue = v ? !ze || Re ? Pz : Ve ? Lz(Be) : Rz(Be) : Fz);
+	]), Pe = e === "error" ? n : we, Fe = Pe ? `Could not load the recorded flights (${Pe}). Press Stop, then Run on Qollab, to reload.` : null, Le = e === "ready" && !!R, Re = x === "running", ze = x !== "idle", Be = O && t ? fR(t, O)?.label ?? O : null, Ve = be === O, He = !!Se, Ue = Lz;
+	xe && (Ue = v ? !ze || Re ? Fz : Ve ? Rz(Be) : zz(Be) : Iz);
 	let We = null;
-	Re ? We = de(b.stage || 1) : R && He && x === "result" ? We = Bz(re, R.label, N?.job_id) : R && (We = pe(R.label, R.jamT, xe && !ze));
-	let Ge = x === "fallback" && te && Be ? Vz(te, Be) : null, Ke = N?.analytic_blocks === !0 && (Re || He) ? ue : null, qe = "replay";
+	Re ? We = de(b.stage || 1) : R && He && x === "result" ? We = Vz(re, R.label, N?.job_id) : R && (We = pe(R.label, R.jamT, xe && !ze));
+	let Ge = x === "fallback" && te && Be ? Hz(te, Be) : null, Ke = N?.analytic_blocks === !0 && (Re || He) ? ue : null, qe = "replay";
 	Re ? qe = "computing" : He && (qe = "computed");
 	let Je = "stored";
 	return Re ? Je = null : He && (Je = "drawn"), /* @__PURE__ */ (0, M.jsxs)("main", {
@@ -28487,7 +28507,7 @@ function Xz() {
 									id: "results-heading",
 									children: "Navigation accuracy"
 								}),
-								/* @__PURE__ */ (0, M.jsx)(SR, {
+								/* @__PURE__ */ (0, M.jsx)(CR, {
 									view: R,
 									quantumKey: L
 								}),
@@ -28501,7 +28521,7 @@ function Xz() {
 											value: be,
 											onChange: Ae,
 											disabled: !Le || Re,
-											lockHelp: Re && Be ? zz(Be) : null,
+											lockHelp: Re && Be ? Bz(Be) : null,
 											focusRef: h
 										}),
 										/* @__PURE__ */ (0, M.jsx)(Qn, {
@@ -28565,7 +28585,7 @@ function Xz() {
 						/* @__PURE__ */ (0, M.jsxs)("section", {
 							className: "panel benchmark-card",
 							"aria-label": "Benchmark",
-							children: [/* @__PURE__ */ (0, M.jsx)(jR, { benchmark: ge }), /* @__PURE__ */ (0, M.jsx)(zR, {
+							children: [/* @__PURE__ */ (0, M.jsx)(MR, { benchmark: ge }), /* @__PURE__ */ (0, M.jsx)(BR, {
 								view: R,
 								ghz: ve.payload
 							})]
@@ -28642,14 +28662,14 @@ function Xz() {
 					] }),
 					/* @__PURE__ */ (0, M.jsx)("p", {
 						className: "dg-sentence",
-						children: Uz
+						children: Wz
 					})
 				]
 			}),
-			/* @__PURE__ */ (0, M.jsx)(WR, {}),
+			/* @__PURE__ */ (0, M.jsx)(GR, {}),
 			/* @__PURE__ */ (0, M.jsx)("footer", { children: /* @__PURE__ */ (0, M.jsx)("p", { children: "This effort is supported by Qollab & IonQ. · Survey map: MagNav.jl Eastern_395 · Data supported by USAF FA8750-19-2-1000 · Synthetic map generated by this project from a fixed seed · MIT License" }) })
 		]
 	});
 }
-(0, v.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, M.jsx)(Xz, {})), await qz;
+(0, v.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, M.jsx)(Zz, {})), await Jz;
 //#endregion
