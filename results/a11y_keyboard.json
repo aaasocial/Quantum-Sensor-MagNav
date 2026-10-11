@@ -107,9 +107,9 @@
   "jam_banner_after_run": true
  },
  "error_box_height": {
-  "idle": 72,
-  "running": 72,
-  "after_run": 72
+  "idle": 96,
+  "running": 96,
+  "after_run": 96
  },
  "layout": {
   "idle": {
@@ -123,7 +123,7 @@
    "readout_row_children": [
     "jam-slot"
    ],
-   "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 m",
+   "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 mSignal error this Run: baseline 39.1 nT, quantum 0.20 nT",
    "per_track_table_present": false,
    "comparison_present": false,
    "left_column": [
@@ -158,7 +158,7 @@
    "readout_row_children": [
     "jam-slot"
    ],
-   "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 m",
+   "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 mSignal error this Run: baseline 39.1 nT, quantum 0.20 nT",
    "per_track_table_present": false,
    "comparison_present": false,
    "left_column": [
