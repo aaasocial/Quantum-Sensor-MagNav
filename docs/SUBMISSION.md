@@ -1,4 +1,4 @@
-# Submission draft (not submitted)
+# Submission text
 
 Status: DRAFT. Nothing in this file has been published or submitted. Publishing the Qollab
 project and submitting the hackathon form are separate steps that need Eason's explicit
@@ -10,7 +10,7 @@ filled once the GitHub repo, the Qollab URL and the video exist.
 
 | Field | Value |
 |---|---|
-| Project title | Quantum MagNav: a Ramsey quantum magnetometer that cancels motor noise before the data exists |
+| Project title | Quantum MagNav: UAV Navigation using an Emulated Quantum Magnetometer in a GPS-jammed region |
 | Theme | Quantum Impact |
 | Licence | MIT |
 | Repository | https://github.com/aaasocial/Quantum-Sensor-MagNav |
@@ -21,7 +21,7 @@ filled once the GitHub repo, the Qollab URL and the video exist.
 
 ## One-paragraph description
 
-When GPS is jammed, a fixed-wing UAV can still fix its position by matching the crustal
+When GPS is jammed, a UAV (fixed-wing or multirotor) can still fix its position by matching the crustal
 magnetic field it reads against a survey anomaly map (MagNav). Its own motor gets in the way,
 adding tones at the RPM harmonics. This project models the magnetometer as a quantum Ramsey
 sensor emulated on IonQ through Qollab. The sensor sets its interrogation time from the known
@@ -109,5 +109,5 @@ computer could.
 
 - [ ] Replace https://github.com/aaasocial/Quantum-Sensor-MagNav, https://qollab.xyz/u/eehhaa/quantum-magnav-uav-navigation and <VIDEO_URL>.
 - [x] Bring the four per-criterion paragraphs in line with the final README wording and numbers.
-- [ ] Eason approves the Qollab Publish action in-session (checkpoint:human-action).
+- [x] Eason approved the Qollab Publish in-session ("yep seems good", 2026-10-11 ~15:39 PDT); published at https://qollab.xyz/u/eehhaa/quantum-magnav-uav-navigation
 - [ ] Eason approves the hackathon form submission in-session (checkpoint:human-action).
