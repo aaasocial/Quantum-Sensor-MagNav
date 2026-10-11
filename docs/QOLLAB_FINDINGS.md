@@ -6,7 +6,7 @@ Scope: upload only, into an unpublished Qollab project. Publish is not pressed a
 
 Date/time: 2026-10-11, about 13:25-13:40 UTC (06:25-06:40 PDT); job timestamps 13:28:04, 13:31:18 and 13:35:09 UTC  Browser/version: Chrome, version not reported  Qollab project URL: not reported (unpublished project editor)  Checked by: Eason
 
-Uploaded bundle: `dist/qollab-upload.zip` as rebuilt by the orchestrator on main after plan 02-05, so it includes the QPU record (`data/forte_hardware_run.json`, label "QPU-measured", job `01a12aee-d8a8-7e14-b9aa-b11329aca850`). The "Hardware record" row in the build facts below describes the proxy that was current when Task 1 ran; full suite on main after the rebuild: 284 passed, 1 skipped, 6 xfailed.
+Uploaded bundle: `dist/qollab-upload.zip` as rebuilt by the orchestrator on main after plan 02-05, so it includes the QPU record (`data/forte_hardware_run.json`, label "QPU-measured", job `01a12aee-d8a8-7e14-b9aa-b11329aca850`). The "Hardware record" rows in the build facts below give the current QPU record and, as history, the proxy that was current when Task 1 ran (corrected in plan 03-09); full suite on main after the rebuild: 284 passed, 1 skipped, 6 xfailed.
 
 How the page was reached: the project card read "Runs as JS". The preview frame showed "qollab.xyz refused to connect" until Eason entered the runner (Code tab -> Run Project -> Run); after that the page rendered ("oh yep its running now"). See observation O-2.
 
@@ -23,7 +23,8 @@ How the page was reached: the project card read "Runs as JS". The preview frame 
 | `dist/qollab-upload.zip` | 32 entries, 1,906,174 bytes compressed / 3,035,979 uncompressed, no `main.py`, sha256 `15d9dff6889157230cfbe72eeebe91227069c604712b37145075d0f3d92e9b59` |
 | `dist/qollab-capture-py.zip` | 10 entries (8 files), 9,443 bytes, sha256 `905dde194d38acc7a8414fd224b6109d57e28f2f57e46bacd783986068c5bb90` |
 | circuit_sha256 (`data/circuit_freeze.json`) | `45215a38b2b17c206f657e897ede7e1311332c8996fbbbe232c950ea82212560` (16 qubits, 4 segments, transpile optimization_level 0, live shots 1024) |
-| Hardware record (`data/forte_hardware_run.json`) | label "simulator-sampled proxy", job `01a12ad6-11fb-70ec-a4eb-240fb59fe500`, seed_hex `8713efc07ed06d1e`, 500 shots, forte-1 noise model |
+| Hardware record (`data/forte_hardware_run.json`), current | label "QPU-measured", job `01a12aee-d8a8-7e14-b9aa-b11329aca850`, backend `ionq_qpu.forte-1`, seed_hex `c1dfff10e69fae05`, 500 shots requested, counts_sum 504, IonQ default debiasing, measured contrasts c1 = 0.996, c2 = 0.996, c4 = 1.000 (plan 02-05; this is the record in the uploaded bundle and the seed of the regenerated replay) |
+| Hardware record, history (superseded) | label "simulator-sampled proxy", job `01a12ad6-11fb-70ec-a4eb-240fb59fe500`, seed_hex `8713efc07ed06d1e`, 500 shots, forte-1 noise model (plan 02-04; current when Task 1 of plan 02-08 ran, replaced by the QPU record above) |
 | `data/qsensor_model.json` sha256 | `a10a6f62456eb49458dd42071384b5a51cf00ca388c71702dfce16e5b27ac891` (unchanged, D-C) |
 | `magnav/nav.py` sha256 | `efc700cf796e49f4e4dfaa3fe9abd1108b5619c845c2e3f0394a918cd30c709a` (unchanged, D-C) |
 | `data/precomputed_uav.json` sha256 | `07220343fa63763fd95034ab57cfe6ec1a2fb0662c8aea01d29d677e264b427a` (unchanged, D-C) |
