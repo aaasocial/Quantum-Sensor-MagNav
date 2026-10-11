@@ -173,10 +173,16 @@ def test_seed_derived_not_in_spawn_keys():
 
 
 def test_generation_fast(fields):
+    """Algorithmic-regression guard (an N or cell_m change), not a timing benchmark.
+
+    Measured: one 1024 x 1024 rfft2 plus two irfft2 take about 32 ms in CPython (2026-10-11, M-series
+    laptop) against the 700 ms CPython budget recorded for the Pyodide in-page target, which this test
+    cannot establish. The asserted bound is deliberately generous (5 s) so scheduler noise on a loaded
+    machine never fails it (review WR-03); the measured figure is printed for the record."""
     import time
 
     t0 = time.perf_counter()
     synthmap.generate_fields(synthmap.map_seed(), 1024, 50.0, fields["beta"], (395.0, 100.0))
     dt = time.perf_counter() - t0
-    print(f"\n[synthmap] generation {dt * 1000:.0f} ms (budget 700 ms CPython)")
-    assert dt < 0.7
+    print(f"\n[synthmap] generation {dt * 1000:.0f} ms (measured 32 ms; budget 700 ms CPython; bound 5 s)")
+    assert dt < 5.0
