@@ -4,7 +4,10 @@
 // Run from anywhere: `npm --prefix web run audit` or `cd web && node scripts/audit.mjs`.
 // Writes results/a11y_axe.json, results/a11y_keyboard.json and docs/hero.png (no timestamps).
 // Exit 1 on any critical/serious axe violation, an unreached keyboard target, sections not
-// auto-opened after the simulated Run, or a change in the readout row height (D-03).
+// auto-opened after the simulated Run, a change in the height of the jam-banner row under the map
+// (D-03) or of the position-error box, or a layout check failure: the error box must be the first
+// item of "Navigation accuracy" (above the benchmark) and not under the map, and the per-track CEP
+// table and the two-scenario comparison (README-only since the 03-07 ad-hoc change) must be absent.
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
@@ -53,6 +56,44 @@ async function openPage(browser, viewport) {
 const readoutHeight = (page) => page.evaluate(
   () => Math.round(document.querySelector('.readout-row').getBoundingClientRect().height * 100) / 100,
 );
+const errorBoxHeight = (page) => page.evaluate(
+  () => Math.round(document.querySelector('.results .error-readout').getBoundingClientRect().height * 100) / 100,
+);
+
+// Where the position-error box sits, and that the README-only tables are gone from the page.
+const layoutCheck = (page) => page.evaluate(() => {
+  const results = document.querySelector('section.results');
+  const heading = results?.querySelector(':scope > h2');
+  const first = heading?.nextElementSibling ?? null;
+  const box = results?.querySelector(':scope > .error-readout') ?? null;
+  const bench = results?.querySelector(':scope > .benchmark') ?? null;
+  const captions = [...document.querySelectorAll('caption')].map((c) => c.textContent);
+  const headings = [...document.querySelectorAll('h2, h3')].map((h) => h.textContent.trim());
+  return {
+    error_box_first_in_results: Boolean(box) && first === box,
+    error_box_above_benchmark: Boolean(box && bench)
+      && Boolean(box.compareDocumentPosition(bench) & Node.DOCUMENT_POSITION_FOLLOWING),
+    error_boxes_on_page: document.querySelectorAll('.error-readout').length,
+    error_box_under_map: Boolean(document.querySelector('.readout-row .error-readout')),
+    readout_row_children: [...document.querySelector('.readout-row').children].map((c) => c.className),
+    error_box_text: box ? box.textContent.replace(/\s+/g, ' ').trim() : null,
+    per_track_table_present: captions.some((t) => t.startsWith('Position error after GPS loss')),
+    comparison_present: headings.includes('Both scenarios, as found')
+      || captions.some((t) => t.startsWith('Navigation and signal results for both maps'))
+      || Boolean(document.querySelector('.comparison, .verdict-statement')),
+  };
+});
+const layoutProblems = (name, L) => {
+  const out = [];
+  if (!L.error_box_first_in_results) out.push(`${name}: error box is not the first item of Navigation accuracy`);
+  if (!L.error_box_above_benchmark) out.push(`${name}: error box is not above the benchmark`);
+  if (L.error_boxes_on_page !== 1) out.push(`${name}: ${L.error_boxes_on_page} error boxes on the page`);
+  if (L.error_box_under_map) out.push(`${name}: error box still under the map`);
+  if (JSON.stringify(L.readout_row_children) !== '["jam-slot"]') out.push(`${name}: row under the map holds ${L.readout_row_children}`);
+  if (L.per_track_table_present) out.push(`${name}: per-track CEP table still on the page`);
+  if (L.comparison_present) out.push(`${name}: comparison block still on the page`);
+  return out;
+};
 
 const detailsOpen = (page) => page.evaluate(() => ({
   job: document.querySelector('details.job-section').open,
@@ -84,9 +125,10 @@ async function keyboardRun(page) {
   await page.keyboard.press('Enter');
   await page.locator('.live-progress:not([hidden])').waitFor({ timeout: 10_000 });
   const running = await readoutHeight(page);
+  const boxRunning = await errorBoxHeight(page);
   await page.locator('.status-message', { hasText: RESULT_TEXT }).waitFor({ timeout: RUN_TIMEOUT_MS });
   await page.waitForTimeout(1000); // auto-open, sensor charts mount, map redraw
-  return running;
+  return { running, boxRunning };
 }
 
 const server = await createServer({
@@ -116,6 +158,8 @@ try {
       const height = Math.max(viewport.height, runBottom + 24);
       await page.screenshot({ path: HERO, fullPage: true, clip: { x: 0, y: 0, width: viewport.width, height } });
     }
+    const layoutIdle = await layoutCheck(page);
+    problems.push(...layoutProblems(`${name}/idle`, layoutIdle));
     const closed = await axe(page);
     axeOut.axe_version = closed.version;
     for (const s of await page.locator('details > summary').all()) {
@@ -164,8 +208,12 @@ try {
       const toggles = { sensor_enter_opens: afterEnter === true, sensor_space_closes: afterSpace === false };
 
       const idle = await readoutHeight(page2);
-      const running = await keyboardRun(page2);
+      const boxIdle = await errorBoxHeight(page2);
+      const { running, boxRunning } = await keyboardRun(page2);
       const afterRun = await readoutHeight(page2);
+      const boxAfter = await errorBoxHeight(page2);
+      const layoutAfter = await layoutCheck(page2);
+      problems.push(...layoutProblems(`${name}/after_run`, layoutAfter));
       const openAfter = await detailsOpen(page2);
       const jamShown = await page2.locator('.jam-slot')
         .evaluate((el) => el.textContent.trim().length > 0);
@@ -174,6 +222,8 @@ try {
       keyOut.summary_keyboard_toggle = toggles;
       keyOut.details_open_after_run = openAfter;
       keyOut.readout_row_height = { idle, running, after_run: afterRun, jam_banner_after_run: jamShown };
+      keyOut.error_box_height = { idle: boxIdle, running: boxRunning, after_run: boxAfter };
+      keyOut.layout = { idle: layoutIdle, after_run: layoutAfter };
       for (const [k, v] of Object.entries(reached)) if (!v) problems.push(`keyboard target unreached: ${k}`);
       if (realFlight === false) problems.push('keyboard target unreached: real_flight_link');
       for (const [k, v] of Object.entries(toggles)) if (!v) problems.push(`summary keyboard toggle failed: ${k}`);
@@ -183,8 +233,27 @@ try {
       if (!(idle === running && running === afterRun)) {
         problems.push(`readout row height changed: ${idle}/${running}/${afterRun}`);
       }
+      if (!(boxIdle === boxRunning && boxRunning === boxAfter)) {
+        problems.push(`error box height changed: ${boxIdle}/${boxRunning}/${boxAfter}`);
+      }
+      if (!/\d m/.test(layoutAfter.error_box_text ?? '')) {
+        problems.push(`error box shows no error after the Run: ${layoutAfter.error_box_text}`);
+      }
+      // The box follows the playhead from its new place: Home (start, GPS available), End (error).
+      const boxText = () => page2.locator('.results .error-readout').evaluate((el) => el.textContent);
+      await page2.evaluate(() => document.activeElement?.blur());
+      await page2.keyboard.press('Home');
+      await page2.waitForTimeout(300);
+      const atStart = await boxText();
+      await page2.keyboard.press('End');
+      await page2.waitForTimeout(300);
+      const atEnd = await boxText();
+      const follows = atStart.includes('GPS available') && /\d m/.test(atEnd);
+      keyOut.error_box_follows_playhead = { home: atStart.includes('GPS available'), end: /\d m/.test(atEnd) };
+      if (!follows) problems.push(`error box does not follow the playhead: "${atStart}" / "${atEnd}"`);
     } else {
       await keyboardRun(page2);
+      problems.push(...layoutProblems(`${name}/after_run`, await layoutCheck(page2)));
       const openAfter = await detailsOpen(page2);
       if (!openAfter.job || !openAfter.charts) problems.push(`${name}: details not auto-opened after Run`);
     }
@@ -209,5 +278,5 @@ const bad = Object.entries(axeOut.states).flatMap(([vp, states]) => Object.entri
 const all = [...bad, ...problems];
 console.log(all.length
   ? all.join('\n')
-  : 'audit passed: no critical/serious violations, keyboard targets reached, readout row stable');
+  : 'audit passed: no critical/serious violations, keyboard targets reached, readout row and error box stable, layout as specified');
 process.exit(all.length ? 1 : 0);

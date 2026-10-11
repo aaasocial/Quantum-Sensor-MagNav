@@ -46,18 +46,6 @@
   },
   {
    "role": "region",
-   "name": "Position error table"
-  },
-  {
-   "role": "region",
-   "name": "Comparison table"
-  },
-  {
-   "role": "summary",
-   "name": "Comparison rule"
-  },
-  {
-   "role": "region",
    "name": "Benchmark summary table"
   },
   {
@@ -103,9 +91,44 @@
   "charts": true
  },
  "readout_row_height": {
+  "idle": 56,
+  "running": 56,
+  "after_run": 56,
+  "jam_banner_after_run": true
+ },
+ "error_box_height": {
   "idle": 72,
   "running": 72,
-  "after_run": 72,
-  "jam_banner_after_run": true
+  "after_run": 72
+ },
+ "layout": {
+  "idle": {
+   "error_box_first_in_results": true,
+   "error_box_above_benchmark": true,
+   "error_boxes_on_page": 1,
+   "error_box_under_map": false,
+   "readout_row_children": [
+    "jam-slot"
+   ],
+   "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 m",
+   "per_track_table_present": false,
+   "comparison_present": false
+  },
+  "after_run": {
+   "error_box_first_in_results": true,
+   "error_box_above_benchmark": true,
+   "error_boxes_on_page": 1,
+   "error_box_under_map": false,
+   "readout_row_children": [
+    "jam-slot"
+   ],
+   "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 m",
+   "per_track_table_present": false,
+   "comparison_present": false
+  }
+ },
+ "error_box_follows_playhead": {
+  "home": true,
+  "end": true
  }
 }
