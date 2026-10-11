@@ -90,7 +90,7 @@ def test_live_steps_bounded(flights, sid):
     assert seq == ["ready", "tercom", "done"] or seq == ["ready", "sense", "tercom", "done"]
     # the sense stage is exactly one call: the first step leaves "ready" for good
     assert f["stages"][1] in ("sense", "tercom")
-    tercom_calls = [d for stage, prev, d in f["durations"] if prev == "tercom"]
+    tercom_calls = [d for stage, prev, d in f["durations"] if prev != "ready"]
     assert tercom_calls, "no tercom chunks"
     assert max(tercom_calls) < 0.6, f"slowest tercom chunk {max(tercom_calls):.3f} s"
     last = f["progress"][-1]
