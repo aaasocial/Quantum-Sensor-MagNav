@@ -39,7 +39,7 @@ def _flight_inputs(world, tones=True):
 
 
 def _coarse(world, S, tones=True, c1=ramsey.C1_DEFAULT):
-    p, tau, m, tone_int, tone_mean_at = _flight_inputs(world, tones)
+    _p, tau, m, tone_int, tone_mean_at = _flight_inputs(world, tones)
     return ramsey.coarse_track(
         world.t,
         world.b_true,
