@@ -2,7 +2,7 @@
 
 Quantum MagNav keeps a fixed-wing drone located after its GPS is jammed by matching the magnetic field it measures against a survey map of eastern Ontario. The drone's motor drowns that field in tones, so the magnetometer is modelled as a quantum sensor (Ramsey interferometry, run as one circuit on IonQ through Qollab) that sets its own measurement window from the motor RPM and cancels the tones before any data exists. It is compared, with the same number of measurements per sample (an equal shot budget), with an ordinary magnetometer plus a classical notch filter, and the write-up says plainly where the quantum sensor wins, ties and loses. Built for the Qollab x IonQ Hackathon (theme: Quantum Impact).
 
-![The Quantum MagNav page: an anomaly map with the true path, dead reckoning, the classical baseline and the quantum-sensor track after the GPS jam, the Run controls below the map, and the Navigation accuracy panel opening with the position-error box](docs/hero.png)
+![The Quantum MagNav page: a large anomaly map with the true path, dead reckoning and the quantum-sensor track after the GPS jam, and beside it the Navigation accuracy panel opening with the position-error box, with the Run controls below that panel](docs/hero.png)
 
 ## Run it on Qollab
 
