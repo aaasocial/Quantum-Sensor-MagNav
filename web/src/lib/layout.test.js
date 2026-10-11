@@ -123,3 +123,13 @@ test('Demo options is always visible and the forced-failure control is gone (adh
   assert.ok(!app.includes('Simulate a failure'));
   assert.ok(!app.includes('setSimulateFailure'));
 });
+
+test('the error box shows the per-Run signal error from line metrics, with 1/2 decimals and placeholders', () => {
+  const box = src('components/ErrorReadout.jsx');
+  assert.ok(box.includes('Signal error this Run: baseline'));
+  assert.ok(box.includes('rmseValue(view, BASELINE_KEY), 1)'));
+  assert.ok(box.includes('rmseValue(view, quantumKey), 2)'));
+  assert.ok(box.includes('<SignalLine view={null}'), 'idle state renders placeholder dashes');
+  const css = readFileSync(new URL('../app.css', import.meta.url), 'utf8');
+  assert.match(css, /\.error-readout \{[^}]*height: 96px;/);
+});
