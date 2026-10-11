@@ -133,11 +133,14 @@ def test_recharts_animation_and_debounce_stay_off():
         assert not re.search(r"\bdebounce\s*[=:(]", path.read_text(encoding="utf-8")), path.name
 
 
-# Timer references in the built bundle. A change here means a dependency or first-party code
-# started scheduling on Qollab's injected timers: check that the new call site works with a
+# Timer references in the built bundle: React's scheduler plus probe.js, which only inspects
+# Qollab's injected timers (both setInterval hits are probe.js typeof/String checks). First-party
+# page code schedules no timers. A change here means a dependency or first-party code started
+# scheduling on Qollab's injected timers: check that the new call site works with a
 # promise-returning setTimeout, then update.
-# RE-PIN in 02-03 Task 4: this is the sister pin, measured before the replay-slice page.
-BUNDLE_TIMER_REFS = {"setTimeout": 32, "clearTimeout": 13, "setInterval": 3}
+# Re-pinned in 02-03 Task 4 (sister pin was {setTimeout: 32, clearTimeout: 13, setInterval: 3};
+# recharts is not bundled yet, plan 02-07 adds it and re-pins).
+BUNDLE_TIMER_REFS = {"setTimeout": 17, "clearTimeout": 6, "setInterval": 2}
 
 
 def test_bundle_timer_call_sites_are_known():
