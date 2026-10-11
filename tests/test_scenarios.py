@@ -193,14 +193,22 @@ def test_synthetic_label_everywhere(art):
     assert LABEL in spec.read_text(encoding="utf-8")
 
 
-def test_eastern_identical_to_phase1(art):
+def test_eastern_identical_to_phase1(art, shipped_runs):
+    """The eastern flight with the Phase 1 (shipped) motor is byte-identical to Phase 1. The committed
+    replay carries the QPU-measured motor since plan 03-01 (D-08), so the line is rebuilt here."""
     if not (ROOT / ".git").exists():
         pytest.skip("no git metadata (e.g. Qollab upload)")
+    from magnav.artifact import scenario_entry
+    from magnav.data import load_provenance
+    from magnav.uav_pipeline import SCENARIOS
+
     old = json.loads(_git("show", f"{PHASE1_ARTIFACT_COMMIT}:data/precomputed_uav.json"))
-    east = {s["id"]: s for s in art["scenarios"]}["eastern_400m"]
+    sc = SCENARIOS["eastern_400m"]
+    east = scenario_entry(shipped_runs["eastern_400m"], sc, load_provenance()["files"][sc["map_file"]])
     assert dumps_artifact(east["line"]) == dumps_artifact(old["line"])
-    assert east["provenance"] == old["provenance"]
-    assert art["motor"] == old["motor"]
+    assert json.loads(dumps_artifact(east["provenance"])) == old["provenance"]  # stored values are _clean-rounded
+    assert old["motor"]["seed"] == load_model()["seeds"]["shipped_motor_seed"]
+    assert art["motor"]["seed"] == int("c1dfff10e69fae05", 16)  # replay: QPU-measured motor (D-08)
     assert art["S"] == old["S"]
     assert art["model_sha256"] == old["model_sha256"]
 

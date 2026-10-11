@@ -1,0 +1,95 @@
+{
+ "N": 8,
+ "S": 256,
+ "caption": "Mean +/- standard deviation of position error over 8 seeded motor draws at S = 256 shots per sample; the recorded IonQ seeds are listed separately and are not part of the mean.",
+ "ddof": 0,
+ "heading": "Benchmark over 8 motor draws",
+ "kind": "benchmark_summary",
+ "recorded": [
+  {
+   "backend": "ionq_qpu.forte-1",
+   "cep50_baseline_m": 149.296,
+   "cep50_quantum_m": 150.196,
+   "job_id": "01a12aee-d8a8-7e14-b9aa-b11329aca850",
+   "label": "QPU-measured",
+   "scenario": "synthetic_100m",
+   "scenario_label": "UAV at 100 m over a synthetic crustal map",
+   "seed_hex": "c1dfff10e69fae05"
+  },
+  {
+   "backend": "ionq_qpu.forte-1",
+   "cep50_baseline_m": 182.189,
+   "cep50_quantum_m": 154.699,
+   "job_id": "01a12aee-d8a8-7e14-b9aa-b11329aca850",
+   "label": "QPU-measured",
+   "scenario": "eastern_400m",
+   "scenario_label": "UAV at 400 m over the Eastern_395 survey map",
+   "seed_hex": "c1dfff10e69fae05"
+  },
+  {
+   "backend": "ionq_simulator",
+   "cep50_baseline_m": 146.76,
+   "cep50_quantum_m": 150.196,
+   "job_id": "01a12b28-f6cc-754a-b9aa-1441fa9b79f8",
+   "label": "simulator-sampled",
+   "scenario": "synthetic_100m",
+   "scenario_label": "UAV at 100 m over a synthetic crustal map",
+   "seed_hex": "c77828df74e35765"
+  },
+  {
+   "backend": "ionq_simulator",
+   "cep50_baseline_m": 152.72,
+   "cep50_quantum_m": 154.699,
+   "job_id": "01a12b2c-7a7d-75af-a1ce-a34acbb6bf1c",
+   "label": "simulator-sampled",
+   "scenario": "eastern_400m",
+   "scenario_label": "UAV at 400 m over the Eastern_395 survey map",
+   "seed_hex": "88b8bc7b2962d297"
+  },
+  {
+   "backend": "basic_simulator",
+   "cep50_baseline_m": 153.278,
+   "cep50_quantum_m": 150.196,
+   "job_id": "600398de-d8b6-4088-856c-389ca867d6c3",
+   "label": "simulator-sampled",
+   "scenario": "synthetic_100m",
+   "scenario_label": "UAV at 100 m over a synthetic crustal map",
+   "seed_hex": "afbbb480ac4d3db7"
+  }
+ ],
+ "rows": [
+  {
+   "cep50_mean_m": 154.772,
+   "cep50_std_m": 5.07401,
+   "cep95_mean_m": 266.547,
+   "cep95_std_m": 21.0216,
+   "estimator": "baseline_ls",
+   "label": "Baseline magnetometer + LS notch",
+   "pct556_mean": 100.0,
+   "pct556_std": 0.0
+  },
+  {
+   "cep50_mean_m": 150.196,
+   "cep50_std_m": 0.0,
+   "cep95_mean_m": 251.385,
+   "cep95_std_m": 0.0,
+   "estimator": "quantum_ghz4",
+   "label": "Ramsey sensor, GHZ-4",
+   "pct556_mean": 100.0,
+   "pct556_std": 0.0
+  },
+  {
+   "cep50_mean_m": 150.196,
+   "cep50_std_m": 0.0,
+   "cep95_mean_m": 251.385,
+   "cep95_std_m": 0.0,
+   "estimator": "quantum_q1",
+   "label": "Ramsey sensor, single qubit",
+   "pct556_mean": 100.0,
+   "pct556_std": 0.0
+  }
+ ],
+ "scenario": "synthetic_100m",
+ "scenario_label": "UAV at 100 m over a synthetic crustal map",
+ "schema_version": 1
+}

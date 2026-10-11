@@ -26,7 +26,14 @@ mkdir -p dist
 rm -f dist/qollab-upload.zip
 
 shopt -s nullglob
-PY_FILES=(magnav/*.py)
+# Dev-only modules (evidence regeneration, figures) never ship to Pyodide.
+PY_FILES=()
+for f in magnav/*.py; do
+  case "$f" in
+    magnav/regen.py|magnav/figures.py) ;;
+    *) PY_FILES+=("$f") ;;
+  esac
+done
 shopt -u nullglob
 [ "${#PY_FILES[@]}" -gt 0 ] || fail "no magnav/*.py files found"
 # Explicit allowlist: Qollab preloads a data file only if its path is a literal in the

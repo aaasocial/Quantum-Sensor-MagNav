@@ -71,8 +71,13 @@ def test_tracks_present(art):
 
 def test_motor_and_model_binding(art, model):
     mot = art["motor"]
-    assert mot["seed"] == model["seeds"]["shipped_motor_seed"]
-    assert mot["seed_str"] == str(model["seeds"]["shipped_motor_seed"])
+    with open("data/forte_hardware_run.json", encoding="utf-8") as f:
+        hw = json.load(f)
+    assert hw["label"] == "QPU-measured", "replay must be seeded from a QPU-measured record (D-08)"
+    assert hw["seed_hex"] == "c1dfff10e69fae05"
+    assert mot["seed"] == int("c1dfff10e69fae05", 16) == 13970165017180352005
+    assert mot["seed_str"] == "13970165017180352005"
+    assert isinstance(mot["bits"], str) and len(mot["bits"]) == 1024
     for k in ("t_knots", "rpm_knots", "amps_nT", "phases", "A1_nT"):
         assert k in mot
     assert mot["A1_nT"] == model["tone_amplitude_rule"]["A1_nT"]

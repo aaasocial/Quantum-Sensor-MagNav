@@ -41,10 +41,21 @@ def worlds_100m(synth_tile):
 
 
 @pytest.fixture(scope="session")
-def scenario_runs(tile, synth_tile):
-    """One motor-on run_uav per scenario per session, shared by every artifact/scenario test
-    (defined only after the plan 01.1-02 checkpoint; nothing earlier runs the 100 m comparison)."""
+def shipped_runs(tile, synth_tile):
+    """One run_uav per scenario with the model's shipped motor (no bits): the reference for the
+    live-without-job and Phase 1 invariance tests now that the replay carries the QPU motor."""
     from magnav.uav_pipeline import SCENARIO_ORDER, run_uav
 
     tiles = {"synthetic_100m": synth_tile, "eastern_400m": tile}
     return {s: run_uav(tile=tiles[s], scenario=s) for s in SCENARIO_ORDER}
+
+
+@pytest.fixture(scope="session")
+def scenario_runs(tile, synth_tile):
+    """One motor-on run_uav per scenario per session, shared by every artifact/scenario test
+    (defined only after the plan 01.1-02 checkpoint; nothing earlier runs the 100 m comparison)."""
+    from magnav.uav_pipeline import SCENARIO_ORDER, replay_bits, run_uav
+
+    tiles = {"synthetic_100m": synth_tile, "eastern_400m": tile}
+    bits = replay_bits()  # the replay artifact is seeded from the QPU record (plan 03-01, D-08)
+    return {s: run_uav(tile=tiles[s], scenario=s, bits=bits) for s in SCENARIO_ORDER}

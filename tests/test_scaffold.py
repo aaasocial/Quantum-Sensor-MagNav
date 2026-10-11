@@ -70,8 +70,17 @@ def test_license_attribution():
     assert "This effort is supported by Qollab & IonQ." in text
 
 
+DEV_ONLY = {"regen.py", "figures.py"}  # never uploaded: scripts/package_qollab.sh skips them
+
+
+def test_dev_only_modules_not_packaged():
+    text = (ROOT / "scripts" / "package_qollab.sh").read_text(encoding="utf-8")
+    for name in DEV_ONLY:
+        assert f"magnav/{name}" in text, name
+
+
 def test_browser_modules_pure():
-    files = sorted(MAGNAV.glob("*.py"))
+    files = sorted(p for p in MAGNAV.glob("*.py") if p.name not in DEV_ONLY)
     assert files
     for path in files:
         roots = _imported_roots(path)
