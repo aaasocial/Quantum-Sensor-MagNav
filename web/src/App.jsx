@@ -270,7 +270,9 @@ export default function App() {
   }, []);
 
   // Keep-alive idle bound. No first-party timers (Qollab injects its own timer functions): the
-  // check runs on input and on an animation-frame tick gated to once per IDLE_CHECK_MS.
+  // check runs on an animation-frame tick gated to once per IDLE_CHECK_MS, and when the tab
+  // becomes visible again (rAF pauses in a hidden tab, so a long absence is caught up here before
+  // the user can interact). Input is activity, never a trigger: it only refreshes lastActivity.
   useEffect(() => {
     let lastActivity = performance.now();
     let lastCheck = lastActivity;
@@ -296,18 +298,19 @@ export default function App() {
       }
       frame = requestAnimationFrame(tick);
     };
-    const onActivity = () => {
-      const now = performance.now();
-      check(now);
-      lastActivity = now;
+    const onActivity = () => { lastActivity = performance.now(); };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check(performance.now());
     };
     document.addEventListener('pointerdown', onActivity, true);
     document.addEventListener('keydown', onActivity, true);
+    document.addEventListener('visibilitychange', onVisible);
     const offEnd = playback.on('end', () => { lastActivity = performance.now(); });
     frame = requestAnimationFrame(tick);
     return () => {
       document.removeEventListener('pointerdown', onActivity, true);
       document.removeEventListener('keydown', onActivity, true);
+      document.removeEventListener('visibilitychange', onVisible);
       offEnd();
       if (frame !== null) cancelAnimationFrame(frame);
     };

@@ -28284,15 +28284,16 @@ function Lz() {
 		}, a = (e) => {
 			n = null, !h.current && (e - t >= yz && (t = e, i(performance.now())), n = requestAnimationFrame(a));
 		}, o = () => {
-			let t = performance.now();
-			i(t), e = t;
+			e = performance.now();
+		}, s = () => {
+			document.visibilityState === "visible" && i(performance.now());
 		};
-		document.addEventListener("pointerdown", o, !0), document.addEventListener("keydown", o, !0);
-		let s = w.on("end", () => {
+		document.addEventListener("pointerdown", o, !0), document.addEventListener("keydown", o, !0), document.addEventListener("visibilitychange", s);
+		let c = w.on("end", () => {
 			e = performance.now();
 		});
 		return n = requestAnimationFrame(a), () => {
-			document.removeEventListener("pointerdown", o, !0), document.removeEventListener("keydown", o, !0), s(), n !== null && cancelAnimationFrame(n);
+			document.removeEventListener("pointerdown", o, !0), document.removeEventListener("keydown", o, !0), document.removeEventListener("visibilitychange", s), c(), n !== null && cancelAnimationFrame(n);
 		};
 	}, []);
 	let we = (0, y.useCallback)((e) => {
