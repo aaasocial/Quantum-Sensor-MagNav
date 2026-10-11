@@ -100,6 +100,19 @@ def test_live_steps_bounded(flights, sid):
     assert done == sorted(done)
 
 
+def test_result_refuses_invalid_payload(monkeypatch):
+    """WR-03: the authoritative validator runs in result(); a rejected payload is never returned."""
+    monkeypatch.setattr(artifact, "validate_live_payload", lambda p: ["forced problem", "second"])
+    live_uav.start("synthetic_100m")
+    while not live_uav.step(2000)["done"]:
+        pass
+    with pytest.raises(live_uav.InvalidLivePayload, match="forced problem; second"):
+        live_uav.result()
+    assert live_uav.current_stage() is None  # the run is consumed; nothing stale survives
+    with pytest.raises(RuntimeError, match="No live run"):
+        live_uav.result()
+
+
 def test_measured_contrast_replaces_cn(monkeypatch):
     seen = []
     real = ramsey.two_stage

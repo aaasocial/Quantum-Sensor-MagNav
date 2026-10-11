@@ -161,8 +161,11 @@ export function validateLivePayload(p) {
   const mot = isObj(p.motor) ? p.motor : {};
   for (const k of MOTOR_KEYS) if (!(k in mot)) errs.push(`motor missing ${k}`);
   if (!isDigits(mot.seed_str)) errs.push('motor.seed_str is not a digit string');
-  if (typeof mot.seed_hex !== 'string' || !/^[0-9a-f]{16}$/.test(mot.seed_hex)) {
+  const hexOk = typeof mot.seed_hex === 'string' && /^[0-9a-f]{16}$/.test(mot.seed_hex);
+  if (!hexOk) {
     errs.push('motor.seed_hex is not 16 lowercase hex characters');
+  } else if (isDigits(mot.seed_str) && BigInt(`0x${mot.seed_hex}`).toString() !== mot.seed_str) {
+    errs.push('motor.seed_hex and motor.seed_str differ');
   }
   if (!Number.isInteger(p.S) || p.S <= 0) errs.push('S is not a positive integer');
   if (!isHex64(p.model_sha256)) errs.push('model_sha256 is not 64 hex characters');
@@ -174,6 +177,9 @@ export function validateLivePayload(p) {
       if (!q.job_id) errs.push('quantum_job.job_id missing');
       if (!BITS_LABELS.includes(q.bits_label)) errs.push(`quantum_job.bits_label ${q.bits_label} invalid`);
       if (!CN_SOURCES.includes(q.c_n_source)) errs.push(`quantum_job.c_n_source ${q.c_n_source} invalid`);
+      // The "motor drawn by this Run's job" badge is only true if the flight's motor came from
+      // this job's RNG bits (same rule as the Python validator).
+      if (q.seed_hex !== mot.seed_hex) errs.push('quantum_job.seed_hex differs from motor.seed_hex');
     }
   } else if (q === undefined) {
     errs.push('quantum_job missing (null allowed)');

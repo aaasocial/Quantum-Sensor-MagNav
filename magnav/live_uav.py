@@ -31,6 +31,15 @@ NOTE_REJECTED = "measured value rejected (below 0.5)"
 _STATE: dict = {}
 
 
+class InvalidLivePayload(ValueError):
+    """result() built a payload that magnav.artifact.validate_live_payload rejects (WR-03).
+
+    Raised (never returned) so magnav.api.live_result reports it as {ok: false, error_type:
+    "InvalidLivePayload"} and the page falls back to the recorded replay instead of rendering a
+    payload whose motor/job seeds (or series) disagree.
+    """
+
+
 def clamp_budget(budget_ms) -> int:
     return max(BUDGET_MIN_MS, min(BUDGET_MAX_MS, int(budget_ms)))
 
@@ -208,7 +217,10 @@ def result() -> dict:
         "quantum_job": None if st["quantum"] is None else dict(st["quantum"]),
     }
     out = artifact._clean(payload)
-    _STATE.clear()
+    _STATE.clear()  # the run is consumed either way; the page's next call starts a fresh one
+    problems = artifact.validate_live_payload(out)
+    if problems:
+        raise InvalidLivePayload("live payload invalid: " + "; ".join(problems[:3]))
     return out
 
 

@@ -173,6 +173,25 @@ def test_never_raises_json_contract(bad):
     assert not qjob.latched()
 
 
+def test_live_result_invalid_payload_is_json_failure(monkeypatch):
+    """WR-03: an invalid live payload never reaches the page; live_result still never raises."""
+    monkeypatch.setattr(artifact, "validate_live_payload", lambda p: ["quantum_job.seed_hex differs from motor.seed_hex"])
+    spy = SpySim()
+    assert _strict(api.uav_start(spy, "synthetic_100m"))["ok"]
+    assert _strict(api.uav_quantum(spy, 1024))["ok"]
+    for _ in range(2000):
+        p = _strict(api.live_step(spy, 250))
+        assert p["ok"]
+        if p["done"]:
+            break
+    r = _strict(api.live_result(spy))
+    assert r["ok"] is False
+    assert r["error_type"] == "InvalidLivePayload"
+    assert "seed_hex differs" in r["error"]
+    assert "kind" not in r and "scenario" not in r
+    assert _strict(api.live_result(spy))["ok"] is False  # the run was consumed, not left half-done
+
+
 def test_live_step_and_result_without_run():
     r = _strict(api.live_step(None, 250))
     assert r["ok"] is False

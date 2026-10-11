@@ -99,11 +99,12 @@ function livePayload() {
   return {
     kind: 'uav_live',
     scenario: a.scenarios[0],
-    motor: { ...a.motor, seed_hex: '0123456789abcdef' },
+    motor: { ...a.motor, seed_hex: '0123456789abcdef', seed_str: '81985529216486895' },
     S: a.S,
     model_sha256: a.model_sha256,
     quantum_job: {
       job_id: 'job-1', bits_label: 'simulator-sampled', c_n_source: 'measured this Run',
+      seed_hex: '0123456789abcdef',
     },
   };
 }
@@ -128,4 +129,22 @@ test('validateLivePayload rejects a wrong kind, a missing synthetic label and ba
   const s = livePayload();
   s.motor.seed_hex = 'XYZ';
   assert.ok(validateLivePayload(s).some((e) => e.includes('seed_hex')));
+});
+
+test('validateLivePayload rejects a motor not drawn from this job and disagreeing seed forms', () => {
+  // the job's RNG seed must be the seed the flight's motor was drawn from
+  const p = livePayload();
+  p.quantum_job.seed_hex = 'fedcba9876543210';
+  assert.ok(validateLivePayload(p).some((e) => e === 'quantum_job.seed_hex differs from motor.seed_hex'));
+  const q = livePayload();
+  delete q.quantum_job.seed_hex;
+  assert.ok(validateLivePayload(q).some((e) => e.includes('quantum_job.seed_hex differs')));
+  // seed_hex and seed_str are two spellings of one integer
+  const r = livePayload();
+  r.motor.seed_str = '81985529216486896';
+  assert.ok(validateLivePayload(r).some((e) => e === 'motor.seed_hex and motor.seed_str differ'));
+  // with no job the motor is the shipped one and no cross-check applies
+  const s = livePayload();
+  s.quantum_job = null;
+  assert.deepEqual(validateLivePayload(s), []);
 });

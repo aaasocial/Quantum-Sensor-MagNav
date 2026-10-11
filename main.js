@@ -10326,9 +10326,9 @@ function mn(e) {
 	on(n) ? (Zt.includes(n.id) || t.push(`scenario id ${n.id} unknown`), t.push(...dn(n, n.id)), t.push(...un(n.line, `scenario ${n.id} line`))) : t.push("scenario is not an object");
 	let r = on(e.motor) ? e.motor : {};
 	for (let e of an) e in r || t.push(`motor missing ${e}`);
-	ln(r.seed_str) || t.push("motor.seed_str is not a digit string"), (typeof r.seed_hex != "string" || !/^[0-9a-f]{16}$/.test(r.seed_hex)) && t.push("motor.seed_hex is not 16 lowercase hex characters"), (!Number.isInteger(e.S) || e.S <= 0) && t.push("S is not a positive integer"), cn(e.model_sha256) || t.push("model_sha256 is not 64 hex characters");
+	ln(r.seed_str) || t.push("motor.seed_str is not a digit string"), typeof r.seed_hex == "string" && /^[0-9a-f]{16}$/.test(r.seed_hex) ? ln(r.seed_str) && BigInt(`0x${r.seed_hex}`).toString() !== r.seed_str && t.push("motor.seed_hex and motor.seed_str differ") : t.push("motor.seed_hex is not 16 lowercase hex characters"), (!Number.isInteger(e.S) || e.S <= 0) && t.push("S is not a positive integer"), cn(e.model_sha256) || t.push("model_sha256 is not 64 hex characters");
 	let i = e.quantum_job;
-	return i == null ? i === void 0 && t.push("quantum_job missing (null allowed)") : on(i) ? (i.job_id || t.push("quantum_job.job_id missing"), $t.includes(i.bits_label) || t.push(`quantum_job.bits_label ${i.bits_label} invalid`), en.includes(i.c_n_source) || t.push(`quantum_job.c_n_source ${i.c_n_source} invalid`)) : t.push("quantum_job is not an object"), t;
+	return i == null ? i === void 0 && t.push("quantum_job missing (null allowed)") : on(i) ? (i.job_id || t.push("quantum_job.job_id missing"), $t.includes(i.bits_label) || t.push(`quantum_job.bits_label ${i.bits_label} invalid`), en.includes(i.c_n_source) || t.push(`quantum_job.c_n_source ${i.c_n_source} invalid`), i.seed_hex !== r.seed_hex && t.push("quantum_job.seed_hex differs from motor.seed_hex")) : t.push("quantum_job is not an object"), t;
 }
 function hn(e, t) {
 	return (e?.scenarios ?? []).find((e) => e.id === t) ?? null;
