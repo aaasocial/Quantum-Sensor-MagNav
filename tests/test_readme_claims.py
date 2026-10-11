@@ -30,6 +30,25 @@ def test_dg_sentence_verbatim():
     assert DG_SENTENCE in _readme()
 
 
+TITLE = (
+    "# Quantum MagNav: UAV Navigation using an Emulated Quantum Magnetometer "
+    "in a GPS-jammed region"
+)
+
+
+def test_title():
+    assert _readme().splitlines()[0] == TITLE
+
+
+def test_wording_changes():
+    text = _readme()
+    assert "fixed-wing UAV" not in text and "Fixed-wing" not in text
+    assert "Dead reckoning" not in text and "dead reckoning" not in text
+    assert "Chrome" not in text
+    assert "wins, ties and loses" not in text
+    assert "quantum supremacy" not in text.lower()
+
+
 def test_attribution():
     assert "This effort is supported by Qollab & IonQ." in _readme()
 
@@ -76,9 +95,14 @@ GHZ_WORDING = (
         "Grover",
         "physically random",
         "pseudo-random",
-        "fixed-wing",
+        "both fixed-wing aircraft and multirotor drones",
+        "drone at 100 m altitude",
         "400 m",
-        "Chrome",
+        "In plain terms",
+        "CEP50 / CEP95",
+        "Notch filter",
+        "refused to connect\" or shows the loading screen",
+        "01a12aee-d8a8-7e14-b9aa-b11329aca850",
         "Run Project",
         "1.000",
         "Where it ties or loses",
@@ -285,8 +309,11 @@ def test_amplitude_calibration_numbers():
 # page used (per-track: one decimal with thousands separator; comparison: the JSON value as
 # JavaScript's String() prints it).
 
+# The page and artifact call the INS-only track "Dead reckoning (INS only)"; the README uses
+# Eason's wording "Inertial navigation sensor only (INS)" for the same row (03-07 ad-hoc 3).
+ARTIFACT_DR_LABEL = "Dead reckoning (INS only)"
 TRACK_LABELS = {
-    "dead_reckoning": "Dead reckoning (INS only)",
+    "dead_reckoning": "Inertial navigation sensor only (INS)",
     "baseline_ls": "Baseline: magnetometer + notch",
     "baseline_mean": "Baseline variant: block mean",
     "quantum_q1": "Quantum: single-qubit Ramsey",
