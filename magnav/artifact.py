@@ -24,6 +24,7 @@ from magnav.metrics import THRESHOLDS_M
 from magnav.synthmap import SYNTH_LABEL
 
 UAV_ARTIFACT_PATH = "data/precomputed_uav.json"  # literal: Qollab preloads literal paths only
+HARDWARE_RUN_PATH = "data/forte_hardware_run.json"  # literal: Qollab preloads literal paths only
 SCHEMA_VERSION = 2
 KIND = "uav_run"
 MAX_POINTS = 1500
