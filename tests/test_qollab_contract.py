@@ -302,6 +302,12 @@ def test_upload_zip():
         "data/benchmark_summary.json",
         "data/map_synth_100m.npz",
         "data/map_eastern_395.npz",
+        # README images (rendered if Qollab shows the README)
+        "docs/hero.png",
+        "results/fig_ladder.png",
+        "results/fig_ghz_scaling.png",
+        "results/fig_filter_function.png",
+        "results/fig_amp_sweep.png",
     ):
         assert need in names, need
     assert len(infos) <= 100
