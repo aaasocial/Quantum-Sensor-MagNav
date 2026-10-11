@@ -17,6 +17,8 @@ Quantum MagNav keeps a UAV located after GPS is jammed by matching the magnetic 
 
 ## Run it on Qollab
 
+Live demo: [https://qollab.xyz/u/eehhaa/quantum-magnav-uav-navigation](https://qollab.xyz/u/eehhaa/quantum-magnav-uav-navigation) (code: [aaasocial/Quantum-Sensor-MagNav](https://github.com/aaasocial/Quantum-Sensor-MagNav)).
+
 1. On the project's **Code** tab press **Run Project**, choose the **IonQ Forte 1** remote simulator as the backend, then press **Run**.
 2. Wait for Pyodide (Python in the browser) to load. Until then the preview frame reads "refused to connect" or shows the loading screen; that is expected.
 3. The recorded replay loads first. To draw a new motor, keep "UAV (live, IonQ-drawn motor)" selected and press **Run one IonQ job**.

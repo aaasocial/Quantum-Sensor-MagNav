@@ -14,7 +14,7 @@ filled once the GitHub repo, the Qollab URL and the video exist.
 | Theme | Quantum Impact |
 | Licence | MIT |
 | Repository | https://github.com/aaasocial/Quantum-Sensor-MagNav |
-| Qollab project | <QOLLAB_URL> |
+| Qollab project | https://qollab.xyz/u/eehhaa/quantum-magnav-uav-navigation |
 | Demo video (2-3 min) | <VIDEO_URL> |
 | Builder | Eason (solo) |
 | Acknowledgement | This effort is supported by Qollab & IonQ. |
@@ -107,7 +107,7 @@ computer could.
 
 ## Before submitting (checklist for plan 03-07 / 03-08)
 
-- [ ] Replace https://github.com/aaasocial/Quantum-Sensor-MagNav, <QOLLAB_URL> and <VIDEO_URL>.
+- [ ] Replace https://github.com/aaasocial/Quantum-Sensor-MagNav, https://qollab.xyz/u/eehhaa/quantum-magnav-uav-navigation and <VIDEO_URL>.
 - [x] Bring the four per-criterion paragraphs in line with the final README wording and numbers.
 - [ ] Eason approves the Qollab Publish action in-session (checkpoint:human-action).
 - [ ] Eason approves the hackathon form submission in-session (checkpoint:human-action).
