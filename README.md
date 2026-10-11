@@ -228,6 +228,6 @@ Gnadt et al., arXiv:2007.12158, as requested by the data agreement:
 }
 ```
 
-**AI and library disclosure.** Code and documentation were written with the help of Claude Code (Anthropic). Runtime libraries: Qiskit, numpy and scipy in Python (Pyodide in the browser); React, recharts and d3-scale-chromatic for the page. Development only: qiskit-ionq (serialization tests), pytest, matplotlib (figures), Vite, Playwright and axe-core (accessibility audit).
+**Libraries.** Runtime: Qiskit, numpy and scipy in Python (Pyodide in the browser); React, recharts and d3-scale-chromatic for the page. Development only: qiskit-ionq (serialization tests), pytest, matplotlib (figures), Vite, Playwright and axe-core (accessibility audit).
 
 This effort is supported by Qollab & IonQ.
