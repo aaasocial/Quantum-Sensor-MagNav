@@ -13,7 +13,6 @@ export const LIVE_KIND = 'uav_live';
 export const ESTIMATORS = ['baseline_ls', 'baseline_mean', 'quantum_q1', 'quantum_ghz4'];
 export const QUANTUM_KEYS = ['quantum_q1', 'quantum_ghz4'];
 export const SCENARIO_ORDER = ['synthetic_100m', 'eastern_400m'];
-export const COMPARISON_ROWS = ['dead_reckoning', ...ESTIMATORS];
 export const BITS_LABELS = ['QPU-measured', 'simulator-sampled'];
 export const CN_SOURCES = ['measured this Run', 'default model, not measured'];
 
@@ -268,41 +267,4 @@ export function errorAt(view, key, i) {
 
 export function drErrorAt(view, i) {
   return Math.hypot(view.dr.x[i] - view.truth.x[i], view.dr.y[i] - view.truth.y[i]);
-}
-
-// Comparison block (UI-SPEC "Comparison block"): one group per estimator in COMPARISON_ROWS
-// order, one row per measure, one cell per scenario in artifact order. Values are read from
-// comparison.rows only; the block never recomputes or rounds them.
-const MEASURES = [
-  { key: 'signal_rmse_nT', label: 'Signal RMSE (nT)' },
-  { key: 'cep50_m', label: 'CEP50 (m)' },
-  { key: 'cep95_m', label: 'CEP95 (m)' },
-  { key: 'pct_under_556', label: 'Under {t} m (%)' },
-  { key: 'matches_lost', label: 'TERCOM matches lost' },
-];
-const DR_MEASURES = new Set(['cep50_m', 'cep95_m', 'pct_under_556']);
-
-export function comparisonView(art) {
-  const comp = art?.comparison;
-  if (!isObj(comp) || !Array.isArray(comp.rows)) return null;
-  const scen = art.scenarios ?? [];
-  const columns = scen.map((s) => ({ id: s.id, label: s.label, mapLabel: s.map_label }));
-  const thr = Array.isArray(art.thresholds_m) ? art.thresholds_m[0] : '';
-  const find = (sid, est) => comp.rows.find((r) => r.scenario === sid && r.estimator === est) ?? null;
-  const groups = COMPARISON_ROWS.map((est) => {
-    const measures = MEASURES.filter((m) => est !== 'dead_reckoning' || DR_MEASURES.has(m.key));
-    return {
-      estimator: est,
-      rows: measures.map((m) => ({
-        key: m.key,
-        label: m.label.replace('{t}', String(thr)),
-        cells: columns.map((c) => {
-          const r = find(c.id, est);
-          if (!r) return { value: null, windows: null };
-          return { value: r[m.key] ?? null, windows: r.windows ?? null };
-        }),
-      })),
-    };
-  });
-  return { columns, groups, statement: comp.statement, verdict: comp.verdict, rule: comp.rule };
 }

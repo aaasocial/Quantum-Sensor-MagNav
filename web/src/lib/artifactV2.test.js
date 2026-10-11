@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  SYNTH_LABEL, validateUavArtifact, validateLivePayload, scenarioById, uavView, comparisonView,
+  SYNTH_LABEL, validateUavArtifact, validateLivePayload, scenarioById, uavView,
   errorAt, drErrorAt,
 } from './artifactV2.js';
 
@@ -70,29 +70,6 @@ test('uavView: index space, jam and metric start display indices', () => {
     assert.equal(errorAt(v, 'missing', i), null);
   }
   assert.equal(uavView(art.scenarios[0]).mapLabel, SYNTH_LABEL);
-});
-
-test('comparisonView pivots comparison.rows: 5 groups, 2 columns, values from data', () => {
-  const cv = comparisonView(art);
-  assert.deepEqual(cv.groups.map((g) => g.estimator),
-    ['dead_reckoning', 'baseline_ls', 'baseline_mean', 'quantum_q1', 'quantum_ghz4']);
-  assert.deepEqual(cv.columns.map((c) => c.id), ['synthetic_100m', 'eastern_400m']);
-  assert.equal(cv.columns[0].mapLabel, SYNTH_LABEL);
-  for (const g of cv.groups) for (const r of g.rows) assert.equal(r.cells.length, 2);
-  const dr = cv.groups[0];
-  assert.deepEqual(dr.rows.map((r) => r.key), ['cep50_m', 'cep95_m', 'pct_under_556']);
-  const cep = cv.groups[1].rows.find((r) => r.key === 'cep50_m');
-  const rowVal = (sid) => art.comparison.rows.find((r) => r.scenario === sid && r.estimator === 'baseline_ls').cep50_m;
-  assert.equal(cep.cells[0].value, rowVal('synthetic_100m'));
-  assert.equal(cep.cells[1].value, rowVal('eastern_400m'));
-  // replay seeded from the QPU-measured job since plan 03-01 (D-08)
-  assert.equal(cep.cells[0].value, 149.3);
-  assert.equal(cep.cells[1].value, 182.2);
-  assert.ok(cv.groups[1].rows.some((r) => r.label === `Under ${art.thresholds_m[0]} m (%)`));
-  assert.equal(cv.statement, art.comparison.statement);
-  assert.equal(cv.verdict, art.comparison.verdict);
-  assert.equal(cv.rule, art.comparison.rule);
-  assert.equal(comparisonView({ scenarios: [] }), null);
 });
 
 function livePayload() {

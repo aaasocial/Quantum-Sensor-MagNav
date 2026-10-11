@@ -243,22 +243,23 @@ figure:focus-visible, section:focus-visible { outline: 3px solid var(--color-acc
   min-height: 300px;
   color: var(--color-text-muted);
 }
-/* D-03: the readout and the jam banner share a fixed-height row under the map box (nothing overlays
-   the map), so idle, playback, running and jammed states never shift the layout. Long text is clipped
-   to two lines; the full text stays available through the Announcer and the text alternatives. */
+/* D-03: the jam banner sits in a fixed-height row under the map box (nothing overlays the map), so
+   idle, playback, running and jammed states never shift the layout. The banner is clamped to two
+   lines (8 px top padding + 2 x 19.6 px + 8 px bottom border = 55.2 px); the full text stays
+   available through the Announcer and the text alternatives. */
 .readout-row {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  gap: var(--space-3);
-  height: 72px;
+  height: 56px;
   overflow: hidden;
 }
-.readout-row > .error-readout, .readout-row > .jam-slot { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* The readout keeps its natural width (numbers stay whole at the 520 px frame); the jam banner takes the rest. */
-.readout-row > .error-readout { flex: 0 1 auto; max-width: 62%; }
-.readout-row > .jam-slot { flex: 1 1 0; }
+.readout-row > .jam-slot { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Position-error box: first item of "Navigation accuracy". Fixed height (label + value + sub line
+   = 67.2 px + borders) so its states never shift the benchmark below it. */
 .error-readout {
+  box-sizing: border-box;
+  height: 72px;
+  overflow: hidden;
   padding: 0 var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -345,25 +346,17 @@ figure:focus-visible, section:focus-visible { outline: 3px solid var(--color-acc
   font-variant-numeric: tabular-nums;
 }
 
-/* Results, comparison and text alternatives. */
+/* Results (position-error box, benchmark) and text alternatives. */
 .results, .quantum-here { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
 .results h3 { font-size: var(--text-md); font-weight: 600; margin: 0; }
-.comparison { display: flex; flex-direction: column; gap: var(--space-2); }
 .table-scroll { width: 100%; overflow-x: auto; }
 .data-table { border-collapse: collapse; font-size: var(--text-sm); font-variant-numeric: tabular-nums; min-width: 100%; }
 .data-table caption { caption-side: top; text-align: left; padding-bottom: var(--space-2); color: var(--color-text-muted); }
 .data-table th, .data-table td { border: 1px solid var(--color-border); padding: var(--space-1) var(--space-2); text-align: right; white-space: nowrap; }
-.data-table th[scope="row"], .data-table th[scope="rowgroup"], .data-table thead th:first-child { text-align: left; }
+.data-table th[scope="row"], .data-table thead th:first-child { text-align: left; }
 .data-table thead th { font-weight: 600; vertical-align: bottom; }
 .data-table th[scope="row"] { font-weight: 400; }
-.data-table .row-current th, .data-table .row-current td { font-weight: 600; }
-.comparison-table th, .comparison-table td { white-space: normal; }
-.comparison-table .col-main { font-weight: 600; }
-.comparison-table .col-sub { font-weight: 400; color: var(--color-text-muted); }
-.rowgroup-head th { background: var(--color-surface-2); font-weight: 600; }
-.verdict-statement { margin: 0; padding-left: var(--space-3); border-left: 4px solid var(--color-border-control); }
-.comparison-rule summary, .text-alternatives summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; min-height: 32px; display: list-item; }
-.comparison-rule p { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); max-width: 72ch; }
+.text-alternatives summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; min-height: 32px; display: list-item; }
 .text-alternatives { display: flex; flex-direction: column; gap: var(--space-2); }
 .text-alternatives .table-scroll, .text-alternatives .help { margin-top: var(--space-2); }
 .quantum-here ul { margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); max-width: 72ch; }

@@ -6,8 +6,6 @@
 import { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { buildCividisLut, colorbarTicks } from '../lib/colormap.js';
 import { mapGeometry } from '../lib/geo.js';
-import { drErrorAt, errorAt } from '../lib/artifactV2.js';
-import { fmtInt } from '../lib/format.js';
 import { usePlaybackIndex } from '../hooks/usePlayback.js';
 import JamBanner from './JamBanner.jsx';
 import {
@@ -290,34 +288,6 @@ const Overlay = memo(function Overlay({ W, H, px, jamIdx, quantum }) {
   );
 });
 
-const ErrorReadout = memo(function ErrorReadout({ view, quantumKey }) {
-  const idx = usePlaybackIndex();
-  const qLabel = SERIES[quantumKey].label;
-  const i = Math.min(idx, view.n - 1);
-  let body;
-  if (i < view.jamIdx) {
-    body = <p className="readout-state">GPS available</p>;
-  } else if (i < view.metricStartIdx) {
-    body = <p className="readout-state">Collecting first map-matching window…</p>;
-  } else {
-    const err = errorAt(view, quantumKey, i);
-    body = (
-      <>
-        <p className="readout-value">{err === null ? 'n/a' : `${fmtInt(err)} m`}</p>
-        <p className="readout-sub">
-          {`Baseline ${fmtInt(errorAt(view, BASELINE_KEY, i))} m · Dead reckoning ${fmtInt(drErrorAt(view, i))} m`}
-        </p>
-      </>
-    );
-  }
-  return (
-    <div className="error-readout">
-      <p className="readout-label">{`Position error, ${qLabel}`}</p>
-      {body}
-    </div>
-  );
-});
-
 // The end labels hug the bar ends; drop the middle (0) label if it would overlap them.
 const CHAR_PX = 8;
 function tickFits(ticks, n, [d0, d1]) {
@@ -418,9 +388,9 @@ function MapBody({ view, quantumKey }) {
           </div>
         )}
       </div>
-      {/* D-03: nothing overlays the map box; the readout sits in a fixed-height row under it. */}
+      {/* D-03: nothing overlays the map box; the jam banner sits in a fixed-height row under it.
+          The position-error box lives in "Navigation accuracy" (ErrorReadout.jsx). */}
       <div className="readout-row">
-        <ErrorReadout view={view} quantumKey={quantumKey} />
         <div className="jam-slot">
           <JamBanner view={view} />
         </div>

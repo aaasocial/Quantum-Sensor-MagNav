@@ -4,8 +4,9 @@
 // (plan 02-06) flies the scenario selected when Run is pressed and renders its result through
 // the same uavView path as the replay; any failure shows that scenario's recorded replay from
 // memory (no Python call). The sensor panel (right column from 900 px), the results section and
-// "What is quantum here" (plan 02-07) follow the selected scenario; the comparison block always
-// shows the recorded artifact. GHZ scaling comes from ghz_scaling_json: once at mount (model
+// "What is quantum here" (plan 02-07) follow the selected scenario. "Navigation accuracy" opens
+// with the live position-error box, then the benchmark; the per-track CEP table and the recorded
+// two-scenario comparison live only in the README (Eason, 2026-10-11). GHZ scaling comes from ghz_scaling_json: once at mount (model
 // contrast) and again with this Run's measured contrasts after a live result.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ControlBar, { DEFAULT_SPEED } from './components/ControlBar.jsx';
@@ -18,8 +19,7 @@ import ScenarioPicker from './components/ScenarioPicker.jsx';
 import RunModePicker from './components/RunModePicker.jsx';
 import QuantumTrackToggle from './components/QuantumTrackToggle.jsx';
 import SensorPanel from './components/SensorPanel.jsx';
-import MetricsTable from './components/MetricsTable.jsx';
-import ComparisonBlock from './components/ComparisonBlock.jsx';
+import ErrorReadout from './components/ErrorReadout.jsx';
 import BenchmarkTable from './components/BenchmarkTable.jsx';
 import TextAlternatives from './components/TextAlternatives.jsx';
 import Announcer, { announce } from './components/Announcer.jsx';
@@ -543,13 +543,7 @@ export default function App() {
         <div className="col-right">
           <section className="panel results" aria-labelledby="results-heading">
             <h2 id="results-heading">Navigation accuracy</h2>
-            <MetricsTable
-              view={view}
-              quantumKey={activeQuantum}
-              thresholds={artifact?.thresholds_m ?? null}
-              isLive={showingLive}
-            />
-            {artifact && <ComparisonBlock artifact={artifact} />}
+            <ErrorReadout view={view} quantumKey={activeQuantum} />
             <BenchmarkTable benchmark={benchmark} />
             <TextAlternatives view={view} ghz={ghz.payload} />
           </section>

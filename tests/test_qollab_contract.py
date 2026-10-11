@@ -201,8 +201,9 @@ DG_SENTENCE = (
         "Ramsey filter function",
         "GHZ scaling",
         "Navigation accuracy",
-        "Both scenarios, as found",
-        "Comparison rule",
+        # Position-error box, first item of "Navigation accuracy" (03-07 ad hoc)
+        "Position error, ",
+        "Collecting first map-matching window",
         # Benchmark summary (03-04, D-05)
         "Recorded IonQ seeds (not in the mean)",
         "Benchmark summary unavailable",
@@ -283,6 +284,23 @@ def test_no_hardcoded_comparison():
     text = MAIN_JS.read_text(encoding="utf-8")
     assert "quantum navigation advantage" not in text
     assert "150.2" not in text
+
+
+@pytest.mark.parametrize(
+    "gone",
+    [
+        # Per-track CEP table and two-scenario comparison are README-only since the 03-07 ad-hoc
+        # change (Eason, 2026-10-11); tests/test_readme_claims.py checks them there.
+        "Position error after GPS loss",
+        "Both scenarios, as found",
+        "Comparison rule",
+        "Navigation and signal results for both maps",
+        "verdict: ",
+        "Windows accepted",
+    ],
+)
+def test_readme_only_tables_not_in_bundle(gone):
+    assert gone not in MAIN_JS.read_text(encoding="utf-8")
 
 
 UPLOAD_ZIP = ROOT / "dist" / "qollab-upload.zip"
