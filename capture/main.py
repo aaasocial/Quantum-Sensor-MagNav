@@ -41,8 +41,9 @@ try:
         sha = quantum.circuit_sha256(qc)
     except Exception as e:  # noqa: BLE001 - qasm3 export unavailable: warn, do not block
         print(f"WARNING: could not recompute circuit_sha256 ({type(e).__name__}: {e})", flush=True)
-    else:
-        assert sha == freeze["circuit_sha256"], "built circuit does not match data/circuit_freeze.json"
+    else:  # a real check, not an assert: python -O must not be able to disable the provenance guard
+        if sha != freeze["circuit_sha256"]:
+            raise RuntimeError("built circuit does not match data/circuit_freeze.json; refusing to submit")
     print(f"Circuit {qc.num_qubits} qubits, circuit_sha256 {freeze['circuit_sha256']}", flush=True)
 
     job, meta = qjob.submit_once(backend, qc, freeze["hw_shots"])
