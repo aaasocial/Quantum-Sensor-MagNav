@@ -14,15 +14,15 @@ const src = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8')
 const app = src('App.jsx');
 const mapView = src('components/MapView.jsx');
 
-test('the error box opens the Navigation accuracy section, above the benchmark', () => {
+test('the error box opens the Navigation accuracy card, above the benchmark card', () => {
   const start = app.indexOf('<h2 id="results-heading">Navigation accuracy</h2>');
   const end = app.indexOf('</section>', start);
   assert.ok(start > 0 && end > start);
   const section = app.slice(start, end);
   const readout = section.indexOf('<ErrorReadout view={view} quantumKey={activeQuantum} />');
-  const bench = section.indexOf('<BenchmarkTable');
   assert.ok(readout > 0, 'ErrorReadout not in the results section');
-  assert.ok(bench > readout, 'ErrorReadout must precede BenchmarkTable');
+  assert.ok(!section.includes('<BenchmarkTable'), 'the benchmark is a separate card');
+  assert.ok(app.indexOf('<BenchmarkTable') > end, 'ErrorReadout must precede BenchmarkTable');
   // first child after the heading: nothing but whitespace between them
   assert.equal(section.slice(section.indexOf('</h2>') + 5, readout).trim(), '');
   assert.equal(app.split('<ErrorReadout').length - 1, 1, 'exactly one error box on the page');
@@ -59,13 +59,15 @@ test('the left column holds only the map; the right column runs results, control
   };
   const order = [
     '<h2 id="results-heading">Navigation accuracy</h2>',
-    '<section className="panel controls" aria-label="Run controls">',
+    '<div className="controls" role="group" aria-label="Run controls">',
     '<ScenarioPicker',
     '<RunModePicker',
     'Run one IonQ job',
     '<summary>Demo options</summary>',
     '<QuantumTrackToggle',
     '<ControlBar',
+    '<section className="panel benchmark-card" aria-label="Benchmark">',
+    '<BenchmarkTable',
     '<StatusStrip',
     'className="panel job-section"',
     'className="panel sensor-section"',
@@ -99,4 +101,18 @@ test('the map view control sits in Demo options, defaults to following the UAV, 
   assert.ok(demo.indexOf('<legend>Map view</legend>') < demo.indexOf('{live && ('), 'map view must not depend on live mode');
   assert.ok(app.includes('<MapView view={view} quantumKey={activeQuantum} mapMode={mapMode} />'));
   assert.ok(app.includes('useState(DEFAULT_MAP_MODE)'));
+});
+
+test('one card holds Navigation accuracy and the Run controls; the benchmark is its own card', () => {
+  const start = app.indexOf('<section className="panel results" aria-labelledby="results-heading">');
+  const end = app.indexOf('</section>', start);
+  const card = app.slice(start, end);
+  for (const needle of ['<ErrorReadout', 'aria-label="Run controls"', '<ScenarioPicker', '<RunModePicker',
+    'Run one IonQ job', '<summary>Demo options</summary>', '<legend>Map view</legend>', '<QuantumTrackToggle', '<ControlBar']) {
+    assert.ok(card.includes(needle), `${needle} not in the Navigation accuracy card`);
+  }
+  const demo = card.slice(card.indexOf('<details className="demo-options">'), card.indexOf('</details>'));
+  assert.ok(demo.includes('<QuantumTrackToggle'), 'quantum-track toggle sits in Demo options');
+  const bench = app.slice(app.indexOf('className="panel benchmark-card"'));
+  assert.ok(bench.slice(0, bench.indexOf('</section>')).includes('<BenchmarkTable'));
 });

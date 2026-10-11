@@ -5,26 +5,6 @@
    "name": "Mapsynthetic map (sensitivity study), not survey dataGPS jam"
   },
   {
-   "role": "region",
-   "name": "Benchmark summary table"
-  },
-  {
-   "role": "region",
-   "name": "Recorded IonQ seeds table"
-  },
-  {
-   "role": "summary",
-   "name": "Map track data, UAV at 100 m over a synthetic crustal map (e"
-  },
-  {
-   "role": "summary",
-   "name": "Sensor data, UAV at 100 m over a synthetic crustal map (ever"
-  },
-  {
-   "role": "summary",
-   "name": "GHZ scaling data"
-  },
-  {
    "role": "radio",
    "name": "UAV at 100 m over a synthetic crustal mapsynthetic map (sens",
    "group": "Map scenario"
@@ -48,11 +28,6 @@
    "name": "Demo options"
   },
   {
-   "role": "radio",
-   "name": "GHZ-4 entangled",
-   "group": "Quantum track on map and charts"
-  },
-  {
    "role": "button",
    "name": "Play"
   },
@@ -63,6 +38,26 @@
   {
    "role": "combobox",
    "name": "Speed"
+  },
+  {
+   "role": "region",
+   "name": "Benchmark summary table"
+  },
+  {
+   "role": "region",
+   "name": "Recorded IonQ seeds table"
+  },
+  {
+   "role": "summary",
+   "name": "Map track data, UAV at 100 m over a synthetic crustal map (e"
+  },
+  {
+   "role": "summary",
+   "name": "Sensor data, UAV at 100 m over a synthetic crustal map (ever"
+  },
+  {
+   "role": "summary",
+   "name": "GHZ scaling data"
   },
   {
    "role": "summary",
@@ -115,6 +110,9 @@
    "error_box_first_in_results": true,
    "error_box_above_benchmark": true,
    "error_boxes_on_page": 1,
+   "run_controls_in_accuracy_card": true,
+   "benchmark_separate_card": true,
+   "quantum_toggle_in_demo_options": true,
    "error_box_under_map": false,
    "readout_row_children": [
     "jam-slot"
@@ -126,8 +124,8 @@
     "map"
    ],
    "right_column": [
-    "navigation_accuracy",
-    "run_controls",
+    "navigation_accuracy_and_run_controls",
+    "benchmark",
     "run_status",
     "job",
     "sensor"
@@ -147,6 +145,9 @@
    "error_box_first_in_results": true,
    "error_box_above_benchmark": true,
    "error_boxes_on_page": 1,
+   "run_controls_in_accuracy_card": true,
+   "benchmark_separate_card": true,
+   "quantum_toggle_in_demo_options": true,
    "error_box_under_map": false,
    "readout_row_children": [
     "jam-slot"
@@ -158,8 +159,8 @@
     "map"
    ],
    "right_column": [
-    "navigation_accuracy",
-    "run_controls",
+    "navigation_accuracy_and_run_controls",
+    "benchmark",
     "run_status",
     "job",
     "sensor"

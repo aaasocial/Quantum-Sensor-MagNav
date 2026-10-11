@@ -13,7 +13,9 @@
 // the wide viewport the error box sits beside the map (to its right, within its height) and the
 // map column is the wider one. Since the fourth ad-hoc change: the map follows the UAV zoomed in
 // by default (Map view radio group in Demo options, keyboard operable), and the legend and overlay
-// carry the classical-baseline track again.
+// carry the classical-baseline track again. Same request: the right column's first card holds
+// Navigation accuracy (heading, error box) and directly under it the Run controls group (with the
+// quantum-track toggle inside Demo options); the benchmark is a separate card below it.
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
@@ -72,7 +74,10 @@ const layoutCheck = (page) => page.evaluate(() => {
   const heading = results?.querySelector(':scope > h2');
   const first = heading?.nextElementSibling ?? null;
   const box = results?.querySelector(':scope > .error-readout') ?? null;
-  const bench = results?.querySelector(':scope > .benchmark') ?? null;
+  const bench = document.querySelector('section.benchmark-card > .benchmark');
+  const controlsInCard = Boolean(results?.querySelector(':scope > .controls[aria-label="Run controls"]'));
+  const toggleInDemo = Boolean(document.querySelector('details.demo-options .quantum-toggle, details.demo-options fieldset input[name="quantum-track"], details.demo-options [data-quantum-toggle]'))
+    || [...document.querySelectorAll('details.demo-options legend')].some((l) => /quantum/i.test(l.textContent));
   const captions = [...document.querySelectorAll('caption')].map((c) => c.textContent);
   const headings = [...document.querySelectorAll('h2, h3')].map((h) => h.textContent.trim());
   return {
@@ -80,6 +85,9 @@ const layoutCheck = (page) => page.evaluate(() => {
     error_box_above_benchmark: Boolean(box && bench)
       && Boolean(box.compareDocumentPosition(bench) & Node.DOCUMENT_POSITION_FOLLOWING),
     error_boxes_on_page: document.querySelectorAll('.error-readout').length,
+    run_controls_in_accuracy_card: controlsInCard,
+    benchmark_separate_card: Boolean(bench) && !results?.contains(bench),
+    quantum_toggle_in_demo_options: toggleInDemo,
     error_box_under_map: Boolean(document.querySelector('.readout-row .error-readout')),
     readout_row_children: [...document.querySelector('.readout-row').children].map((c) => c.className),
     error_box_text: box ? box.textContent.replace(/\s+/g, ' ').trim() : null,
@@ -97,8 +105,8 @@ const layoutCheck = (page) => page.evaluate(() => {
     const tag = (el) => {
       const c = el.classList;
       if (c.contains('map-figure')) return 'map';
-      if (c.contains('results')) return 'navigation_accuracy';
-      if (c.contains('controls')) return 'run_controls';
+      if (c.contains('results')) return 'navigation_accuracy_and_run_controls';
+      if (c.contains('benchmark-card')) return 'benchmark';
       if (c.contains('status-strip')) return 'run_status';
       if (c.contains('job-section')) return 'job';
       if (c.contains('sensor-section')) return 'sensor';
@@ -130,11 +138,14 @@ const layoutCheck = (page) => page.evaluate(() => {
     };
   }
 });
-const RIGHT_ORDER = '["navigation_accuracy","run_controls","run_status","job","sensor"]';
+const RIGHT_ORDER = '["navigation_accuracy_and_run_controls","benchmark","run_status","job","sensor"]';
 const layoutProblems = (name, L) => {
   const out = [];
   if (!L.error_box_first_in_results) out.push(`${name}: error box is not the first item of Navigation accuracy`);
   if (!L.error_box_above_benchmark) out.push(`${name}: error box is not above the benchmark`);
+  if (!L.run_controls_in_accuracy_card) out.push(`${name}: Run controls are not in the Navigation accuracy card`);
+  if (!L.benchmark_separate_card) out.push(`${name}: benchmark is not a separate card`);
+  if (!L.quantum_toggle_in_demo_options) out.push(`${name}: quantum-track toggle is not in Demo options`);
   if (L.error_boxes_on_page !== 1) out.push(`${name}: ${L.error_boxes_on_page} error boxes on the page`);
   if (L.error_box_under_map) out.push(`${name}: error box still under the map`);
   if (JSON.stringify(L.readout_row_children) !== '["jam-slot"]') out.push(`${name}: row under the map holds ${L.readout_row_children}`);
