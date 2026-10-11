@@ -182,12 +182,13 @@ def test_ls_collision_S64_4604():
 def test_ls_nyquist_and_singular_blocks():
     rmse, floor = _check_block_set(4800, 64)  # k = 4 exactly at Nyquist (64 Hz)
     print(f"\n[WR-05] 4800 RPM S=64: RMSE {rmse:.4f} nT, floor {floor:.4f} nT")
-    # 3840 RPM at S = 64: k = 1, 3 at Nyquist, k = 2 at DC (old solve raised LinAlgError)
+    # 3840 RPM at S = 64 (fs = 128): k = 1, 3 at Nyquist, k = 2, 4 at DC (old solve raised
+    # LinAlgError); only the two DC aliases are dropped per block
     n = 40
     t_read, y, rev, f1, _B, _floor, _A1 = _const_blocks(3840, 64, n=n)
     bhat, drops = baseline.ls_notch(t_read, y, rev, f1, 128.0)
     assert np.all(np.isfinite(bhat))
-    assert drops == n
+    assert drops == 2 * n
 
 
 def test_ls_rank_safe_across_prior():

@@ -19,6 +19,17 @@ rev the integrated shaft revolutions from the RPM channel. Guard (01-RESEARCH Pi
 harmonic whose alias at the read rate falls within `guard_hz` of DC is collinear with the DC
 column, so its cos/sin pair is dropped for that block (counted in provenance). Blocks are
 solved in chunks so the design tensor stays small at S = 4096.
+
+Alias collisions (code review WR-05): two harmonics can alias to the same frequency at the
+read rate (6144 RPM at S = 256: harmonics 1 and 4 both at 102.4 Hz, 2 and 3 at 204.8 Hz), and
+a harmonic can sit exactly at Nyquist (sin column identically zero). The normal equations are
+then singular or near-singular. The per-block solve therefore uses a batched Hermitian
+pseudo-inverse: the colliding harmonics span one shared 2-D tone subspace, the minimum-norm
+solution splits that tone between them arbitrarily, and the DC column, which is nearly
+orthogonal to that subspace, stays determined. Near (not exact) collisions are full rank and
+the exact solution cancels both tones. Only DC aliases are dropped: dropping a near-collision
+partner leaves a tone 1-3 Hz away that a 0.5 s block cannot absorb (measured 5-27x the noise
+floor).
 """
 
 from __future__ import annotations
@@ -28,6 +39,7 @@ import numpy as np
 BLOCK_S = 0.5
 GUARD_HZ = 3.0  # = 1.5 * fs_nav at 2 Hz
 CHUNK = 200
+PINV_RTOL = 1e-12  # relative singular-value cutoff of the rank-safe block solve
 
 
 def sample_readouts(B_k, t_k, shots, sigma1_k, rng, tone_at=None, block_s=BLOCK_S):
@@ -58,6 +70,11 @@ def ls_notch(t_read, y, rev_read, f1_k, fs_read, K=4, fs_nav=2.0, guard_hz=None,
     fundamental (RPM / 60) per block; fs_read: read rate. guard_hz defaults to 1.5 * fs_nav.
     Returns (bhat, n_drops): the DC coefficient per block and the number of dropped
     harmonic-blocks. K = 0 or rev_read None reduces to the block mean.
+
+    Rank-safe: each block's normal equations are solved with a Hermitian pseudo-inverse
+    (rtol PINV_RTOL), so harmonic-to-harmonic alias collisions and Nyquist aliases share one
+    tone through the minimum-norm solution instead of raising LinAlgError; the DC coefficient
+    stays determined. Full-rank blocks get the same answer as a direct solve (to round-off).
     """
     y = np.asarray(y, dtype=np.float64)
     n, S = y.shape
@@ -87,5 +104,5 @@ def ls_notch(t_read, y, rev_read, f1_k, fs_read, K=4, fs_nav=2.0, guard_hz=None,
         X = np.stack(cols, -1) * keep[a:b, None, :]
         A = np.einsum("nsi,nsj->nij", X, X) + (~keep[a:b])[:, :, None] * eye
         rhs = np.einsum("nsi,ns->ni", X, yc[a:b])
-        out[a:b] = np.linalg.solve(A, rhs[..., None])[:, 0, 0]
+        out[a:b] = (np.linalg.pinv(A, rtol=PINV_RTOL, hermitian=True) @ rhs[..., None])[:, 0, 0]
     return mu + out, int((~keep[:, 1::2]).sum())
