@@ -24,7 +24,7 @@ from pathlib import Path
 
 import numpy as np
 
-from magnav import baseline, motor, ramsey, seeds, uav
+from magnav import baseline, motor, ramsey, seeds, synthmap, uav
 from magnav.data import MAP_EASTERN, load_map
 from magnav.metrics import position_metrics, signal_metrics
 from magnav.motor import motor_to_dict, rev_at, rpm_at, tone_field, tone_window_integral
@@ -256,6 +256,42 @@ def build_model(tile, root_seed=ROOT_SEED) -> dict:
 
 ESTIMATORS = ("baseline_ls", "baseline_mean", "quantum_q1", "quantum_ghz4")
 
+# Scenarios (Phase 1.1): the same racetrack, motor tones, map-error field, INS drift and GPS jam,
+# flown over a different map at a different altitude. The frozen model is shared (not re-frozen);
+# the flight is copied per scenario with its alt_m, never mutated.
+SCENARIO_ORDER = ("synthetic_100m", "eastern_400m")
+DEFAULT_SCENARIO = "synthetic_100m"
+SCENARIOS = {
+    "synthetic_100m": {
+        "id": "synthetic_100m",
+        "map_file": synthmap.SYNTH_MAP,
+        "alt_m": 100.0,
+        "synthetic": True,
+        "label": "UAV at 100 m over a synthetic crustal map",
+        "map_label": synthmap.SYNTH_LABEL,
+        "map_caption": synthmap.SYNTH_CAPTION,
+        "model_file": QSENSOR_MODEL,
+        "notes": [
+            synthmap.NOTES[3],
+            "Sensor model data/qsensor_model.json is not re-frozen; TERCOM is unchanged.",
+            "Same racetrack, motor tones, map-error field, INS drift and GPS-jam event as eastern_400m; "
+            "only the map and altitude differ.",
+        ],
+    },
+    "eastern_400m": {
+        "id": "eastern_400m",
+        "map_file": MAP_EASTERN,
+        "alt_m": 400.0,
+        "synthetic": False,
+        "label": "UAV at 400 m over the Eastern_395 survey map",
+        "map_label": "Eastern_395 survey map (SGL 2020, MagNav.jl)",
+        "map_caption": "Eastern_395 anomaly map (Sander Geophysics survey via MagNav.jl), upward continued "
+        "to 395 m; real survey data.",
+        "model_file": QSENSOR_MODEL,
+        "notes": ["Validation scenario: the Phase 1 flight, unchanged."],
+    },
+}
+
 
 def shipped_motor(model, root_seed=None):
     """The offline motor: seed from the model's root, frozen A1, full-flight duration (S-independent)."""
@@ -425,7 +461,7 @@ def line_out(ctx: dict, results: dict) -> dict:
     }
 
 
-def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None) -> dict:
+def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scenario="eastern_400m") -> dict:
     """Motor-on UAV flight with the frozen rules: four estimators through the unchanged TERCOM.
 
     The motor comes from `bits` (Phase 2: IonQ RNG block) if given, else from `motor_seed`
@@ -434,10 +470,12 @@ def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None) -> di
     """
     model = model or load_model()
     shots = int(shots or model["S_default"])
-    tile = load_map(MAP_EASTERN) if tile is None else tile
+    sc = SCENARIOS[scenario]
+    tile = load_map(sc["map_file"]) if tile is None else tile
     root = int(model["seeds"]["root"])
     map_error = {k: v for k, v in model["map_error"].items() if k != "seed"}
-    world = uav.build_world(tile, model["flight"], map_error, root)
+    flight = dict(model["flight"], alt_m=sc["alt_m"])  # copy; the frozen model is never mutated
+    world = uav.build_world(tile, flight, map_error, root)
     if world.map_err_seed != model["map_error"]["seed"]:
         raise ValueError("map-error seed differs from the frozen model")
     duration = len(world.t) / float(model["fs_hz"])
@@ -449,7 +487,8 @@ def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None) -> di
         p = motor.draw_motor(seed, duration, A1)
     sense = sense_all(world, model, shots, p, root)
     ctx = uav.prepare_uav(world, mag=sense["bhat"], cur={"rpm": rpm_at(p, world.t)}, ins=model["ins"],
-                          root_seed=root, window=model["tercom"]["window"])  # fmt: skip
+                          root_seed=root, window=model["tercom"]["window"],
+                          map_file=sc["map_file"])  # fmt: skip
     if ctx["dr"].seed != model["seeds"]["dr_seed"]:
         raise ValueError("DR seed differs from the frozen model")
     results = {}
@@ -459,6 +498,7 @@ def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None) -> di
         nav = tercom(sig, ctx["dr"], ctx["jam_idx"], ctx["fix_xy"], ctx["tile"], **model["tercom"])
         results[name] = score_result(ctx, name, cleaned, sig, nav)
     return {
+        "scenario": scenario,
         "line": line_out(ctx, results),
         "prov": sense["prov"],
         "motor": motor_to_dict(p),

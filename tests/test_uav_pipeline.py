@@ -60,3 +60,45 @@ def test_run_uav_bits_path(tile, model):
     assert r["motor"]["seed"] == expect.seed
     assert r["motor"]["rpm_knots"] == list(expect.rpm_knots)
     assert set(r["line"]["results"]) == set(ESTIMATORS)
+
+
+SCENARIO_KEYS = {"id", "map_file", "alt_m", "synthetic", "label", "map_label", "map_caption", "model_file", "notes"}
+
+
+def test_scenarios_registry():
+    from magnav import synthmap
+    from magnav.uav_pipeline import DEFAULT_SCENARIO, SCENARIO_ORDER, SCENARIOS
+
+    assert SCENARIO_ORDER == ("synthetic_100m", "eastern_400m")
+    assert DEFAULT_SCENARIO == "synthetic_100m"
+    assert set(SCENARIOS) == set(SCENARIO_ORDER)
+    for sid, sc in SCENARIOS.items():
+        assert set(sc) == SCENARIO_KEYS, sid
+        assert sc["id"] == sid
+        assert sc["model_file"] == "data/qsensor_model.json"
+    s = SCENARIOS["synthetic_100m"]
+    assert s["map_file"] == "data/map_synth_100m.npz" and s["alt_m"] == 100.0 and s["synthetic"] is True
+    assert s["map_label"] == synthmap.SYNTH_LABEL and s["map_caption"] == synthmap.SYNTH_CAPTION
+    e = SCENARIOS["eastern_400m"]
+    assert e["map_file"] == "data/map_eastern_395.npz" and e["alt_m"] == 400.0 and e["synthetic"] is False
+    for k in ("label", "map_label", "map_caption"):
+        assert synthmap.SYNTH_LABEL not in e[k]
+
+
+def test_prepare_uav_map_file(world):
+    from magnav.uav import prepare_uav
+
+    a = prepare_uav(world, mag={"clean": world.b_true})
+    b = prepare_uav(world, mag={"clean": world.b_true}, map_file="data/map_synth_100m.npz")
+    assert a["map_file"] == "data/map_eastern_395.npz"
+    assert b["map_file"] == "data/map_synth_100m.npz"
+    assert set(a) == set(b)
+
+
+def test_run_uav_default_is_eastern(run, model):
+    import copy
+
+    before = copy.deepcopy(model["flight"])
+    assert run["scenario"] == "eastern_400m"
+    assert run["line"]["map_file"] == "data/map_eastern_395.npz"
+    assert load_model()["flight"] == before == model["flight"]

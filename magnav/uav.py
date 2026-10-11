@@ -245,8 +245,11 @@ def prepare_uav(
     ins: dict = INS_DEFAULT,
     root_seed: int = ROOT_SEED,
     window: int = TERCOM_PARAMS["window"],
+    map_file: str = MAP_EASTERN,
 ) -> dict:
-    """Jam GPS, dead-reckon with UAV-grade drift and score DR; same 16 ctx keys as the sister prepare_line."""
+    """Jam GPS, dead-reckon with UAV-grade drift and score DR; same 16 ctx keys as the sister prepare_line.
+
+    `map_file` is the literal data path of `world.tile`, carried into ctx for the artifact."""
     sens = make_sensors(world, mag, cur)
     truth = make_truth(world)
     n = sens.n
@@ -272,7 +275,7 @@ def prepare_uav(
     dr_row.update(position_metrics(dr_x, dr_y, tx, ty, start))
     return {
         "line": "uav",
-        "map_file": MAP_EASTERN,
+        "map_file": map_file,
         "sens": sens,
         "truth": truth,
         "tile": world.tile,
