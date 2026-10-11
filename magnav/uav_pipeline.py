@@ -411,6 +411,7 @@ def line_out(ctx: dict, results: dict) -> dict:
         "truth_x": ctx["tx"],
         "truth_y": ctx["ty"],
         "truth_anomaly": truth.mag_1_c - sens.igrf - sens.diurnal,
+        "igrf": sens.igrf,
         "dr_x": ctx["dr_x"],
         "dr_y": ctx["dr_y"],
         "dr_metrics": ctx["dr_row"],
@@ -465,12 +466,30 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="magnav.uav_pipeline")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("freeze", help="write data/qsensor_model.json once")
+    sub.add_parser("build", help="motor-on run with the frozen model -> data/precomputed_uav.json")
     args = ap.parse_args(argv)
     if args.cmd == "freeze":
         m = freeze_model()
         amp = m["tone_amplitude_rule"]
         print(f"wrote {QSENSOR_MODEL}: A1 = {amp['A1_nT']} nT (S_ref {amp['S_ref']}), "
               f"median sigma_s {amp['sigma_s_median_nT']:.2f} nT, sha256 {model_sha256()}")  # fmt: skip
+    elif args.cmd == "build":
+        from magnav import artifact  # imported here: artifact must not import this module back
+
+        art = artifact.build_uav_artifact(run_uav())
+        errs = artifact.validate_uav_artifact(art)
+        if errs:
+            print("artifact invalid:\n  " + "\n  ".join(errs), file=sys.stderr)
+            return 1
+        data = artifact.dumps_artifact(art).encode("utf-8")
+        with open(artifact.UAV_ARTIFACT_PATH, "wb") as f:
+            f.write(data)
+        print(f"wrote {artifact.UAV_ARTIFACT_PATH}: {len(data)} bytes, S = {art['S']}, "
+              f"motor seed {art['motor']['seed']}")  # fmt: skip
+        for name in ("dead_reckoning", *ESTIMATORS):
+            row = art["line"]["metrics"][name]
+            print(f"  {name:15s} CEP50 {row['cep50_m']} m, under 556 m {row['pct_under_556']}%, "
+                  f"signal RMSE {row.get('signal_rmse_nT')} nT")  # fmt: skip
     return 0
 
 
