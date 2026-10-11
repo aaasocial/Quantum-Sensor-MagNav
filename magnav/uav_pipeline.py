@@ -269,7 +269,7 @@ def sense_all(world, model, shots, motor=None, root_seed=None) -> dict:
 
     motor None: motor off (tau = tau0, no tones, no RPM channel, LS reduces to the block mean).
     Otherwise both sensors share the exact RPM channel of `motor` (a MotorParams).
-    Quantum: servo + single-qubit coarse + GHZ-n fine (n = max of the frozen n_set).
+    Quantum: recursive servo (seeded from IGRF + map at the first GPS fix) + single-qubit coarse + GHZ-n fine (n = max of the frozen n_set).
     Baseline: S readouts per sample with sigma1_k matched to the quantum tau_k; guarded LS notch
     and block mean. Returns {"bhat", "prov", "motor", "S"}.
     """
@@ -294,22 +294,28 @@ def sense_all(world, model, shots, motor=None, root_seed=None) -> dict:
         rpm = np.zeros(n)
         tau = np.full(n, tau0)
         m = np.zeros(n, dtype=int)
-        tone_int = tone_int_fine = tone_mean_at = None
+        tone_int = tone_int_fine = servo_tone_int_at = None
+
+        def tau_at(tq):
+            return np.full(np.shape(tq), tau0)
     else:
         rpm = rpm_at(p, t)
         tau, m = ramsey.choose_tau(rpm, m_rule, tau0)
         tone_int = tone_window_integral(p, t, tau)
         tone_int_fine = tone_window_integral(p, t + tau, tau)
 
-        def tone_mean_at(tq):
-            tt = ramsey.choose_tau(rpm_at(p, tq), m_rule, tau0)[0]
-            return tone_window_integral(p, tq, tt) / tt
+        def tau_at(tq):
+            return ramsey.choose_tau(rpm_at(p, tq), m_rule, tau0)[0]
+
+        def servo_tone_int_at(tq, tt):
+            return tone_window_integral(p, tq, tt)
 
     rngs = {"servo": stream(root, "servo", S), "q1": stream(root, "q1", S),
             "ghz": stream(root, "ghz", n_fine, S)}  # fmt: skip
     q = ramsey.two_stage(t, B, lambda tq: uav.field_at(world, tq), tau, m, S, c1, rngs,
-                         n_fine=n_fine, tone_int=tone_int, tone_int_fine=tone_int_fine,
-                         tone_mean_at=tone_mean_at, h=h)  # fmt: skip
+                         uav.servo_seed(world), n_fine=n_fine, tone_int=tone_int,
+                         tone_int_fine=tone_int_fine, tau_at=tau_at,
+                         servo_tone_int_at=servo_tone_int_at, h=h)  # fmt: skip
     sigma1_k = ramsey.sigma1(tau, c1)
     tone_at = None if p is None else (lambda tq: tone_field(p, tq))
     t_read, y = baseline.sample_readouts(B, t, S, sigma1_k, stream(root, "baseline", S), tone_at=tone_at)

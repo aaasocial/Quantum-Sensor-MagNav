@@ -17,7 +17,7 @@ EQUAL_BUDGET_FIELDS = {
     "readouts_per_sample", "single_readout_noise_qs02", "single_readout_noise_refined",
     "rpm_channel", "ghz", "ghz_track_accounting", "S_meaning", "servo",
 }  # fmt: skip
-QUANTUM_ESTIMATORS = {"two_stage", "coarse_track", "readout", "servo_reference"}
+QUANTUM_ESTIMATORS = {"two_stage", "coarse_track", "readout", "servo_reference", "servo_track"}
 
 
 @pytest.fixture(scope="module")

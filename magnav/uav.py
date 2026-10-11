@@ -176,6 +176,21 @@ def field_at(world: World, t_query) -> np.ndarray:
     return ig + crust + me
 
 
+def servo_seed(world: World, idx: int = 0) -> float:
+    """Ramsey servo seed: IGRF plane + the navigator's map value at the GPS position of sample idx.
+
+    Uses only the GPS position and the navigator's map (crust only, no map-error term), never the
+    true field: this is the frozen servo.seed "IGRF plane + map value at the GPS fix". The
+    pipeline seeds once at the first GPS fix of the flight (idx 0; planner deviation PR-1).
+    """
+    x = np.atleast_1d(np.asarray(world.x[idx], dtype=np.float64))
+    y = np.atleast_1d(np.asarray(world.y[idx], dtype=np.float64))
+    val, ok = world.tile.sample(x, y)
+    if not np.all(ok):
+        raise ValueError("GPS fix lies outside the valid cells of the map tile")
+    return float(igrf_plane(x, y)[0] + val[0])
+
+
 def make_truth(world: World) -> Truth:
     """GPS truth for scoring; UTM is not defined for the synthetic flight (NaN)."""
     lat, lon = local_to_ll(world.x, world.y, world.tile.frame)

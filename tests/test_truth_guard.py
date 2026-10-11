@@ -97,7 +97,70 @@ def _called_names(fn_node) -> set[str]:
 def test_estimates_via_counts():
     tree = ast.parse((MAGNAV / "ramsey.py").read_text(encoding="utf-8"))
     fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
-    for name in ("coarse_track", "two_stage"):
+    for name in ("coarse_track", "two_stage", "servo_track"):
         calls = _called_names(fns[name])
         assert "estimate_from_counts" in calls, name
         assert "field_from_phase" not in calls, name
+
+
+def _parents(tree) -> dict:
+    par = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            par[child] = node
+    return par
+
+
+def _call_name(node):
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+        return node.func.id
+    return None
+
+
+def test_servo_reference_takes_no_field():
+    """WR-01: the servo reference is a recursion on past estimates; truth only via window_phase."""
+    from magnav import ramsey
+
+    names = set(inspect.signature(ramsey.servo_reference).parameters)
+    assert names == {"bhat_nT", "idx"}
+    assert not names & ESTIMATOR_FORBIDDEN
+
+    tree = ast.parse((MAGNAV / "ramsey.py").read_text(encoding="utf-8"))
+    fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    par = _parents(tree)
+
+    # (2) servo_track: B_servo is only read inside a window_phase(...) call and never rebound
+    st = fns["servo_track"]
+    loads = 0
+    for node in ast.walk(st):
+        if isinstance(node, ast.Name) and node.id == "B_servo":
+            assert isinstance(node.ctx, ast.Load), f"B_servo assigned at line {node.lineno}"
+            loads += 1
+            anc, ok = par.get(node), False
+            while anc is not None and anc is not st:
+                if _call_name(anc) == "window_phase":
+                    ok = True
+                    break
+                anc = par.get(anc)
+            assert ok, f"B_servo used outside window_phase at line {node.lineno}"
+    assert loads >= 1
+
+    # (3) coarse_track: B_at called exactly once, as servo_track's first positional argument
+    ct = fns["coarse_track"]
+    b_at = [n for n in ast.walk(ct) if isinstance(n, ast.Name) and n.id == "B_at"]
+    assert len(b_at) == 1, [n.lineno for n in b_at]
+    call = par[b_at[0]]
+    assert isinstance(call, ast.Call) and call.func is b_at[0]
+    outer = par[call]
+    assert _call_name(outer) == "servo_track" and outer.args and outer.args[0] is call
+    refs = [n for n in ast.walk(ct) if _call_name(n) == "servo_reference"]
+    assert len(refs) == 1
+    for arg in list(refs[0].args) + [k.value for k in refs[0].keywords]:
+        used = {n.id for n in ast.walk(arg) if isinstance(n, ast.Name)}
+        assert not used & {"B_at", "B_k", "B_servo"}, used
+
+    # (4) the old oracle hook is gone
+    for fn in fns.values():
+        a = fn.args
+        params = a.posonlyargs + a.args + a.kwonlyargs
+        assert all(p.arg != "tone_mean_at" for p in params), fn.name

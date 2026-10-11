@@ -3,21 +3,29 @@
 Probe: H, RZ(phi) (split in segments), RZ(pi/2) operating-point bias, H, so
 P(1) = (1 + c sin(n phi)) / 2 with contrast c (n = 1 single qubit; GHZ-n accumulates n*phi).
 `window_phase` is THE phase formula, phi = 2 pi gamma (dB tau + integral of tones over the
-window); `field_from_phase` is its only inverse. Every consumer (coarse, fine, servo noise,
+window); `field_from_phase` is its only inverse. Every consumer (coarse, fine, servo,
 the Phase 2 circuit angles) goes through these two functions.
 
 Interrogation time: tau = m * 60 / R with m = 1 (R = RPM channel at window start), so every
 motor harmonic k * R / 60 completes an integer number of cycles and the sensor's filter
 function |sinc(f tau)| nulls it inside the measurement. Without RPM, tau = TAU0.
 
-Reference: a 20 ms servo (`servo_reference`) predicts the field linearly from the two
-previous servo cycles, b_ref = 2 Bhat(t - h) - Bhat(t - 2h). Servo windows set the reference
-only; their projection noise cancels in the output (no-slip identity) and they are not counted
-in the shot budget S. The crust is held constant within one navigation sample's windows
-(disclosed approximation, 01-RESEARCH A6).
+Reference: a recursive 20 ms servo. At servo cycle j the reference is the linear predictor of
+the sensor's own two previous estimates, b_ref_j = 2 Bhat_{j-1} - Bhat_{j-2}; the servo window
+is read out with S shots and Bhat_j = estimate_from_counts(n1_j, S, tau_j, b_ref_j). Each
+navigation window uses the same predictor from the two most recent servo estimates before it
+(`servo_reference`). The recursion is seeded once, from the IGRF plane + the navigator's map
+value at the first GPS fix of the flight (`uav.servo_seed`; no map-error term, no truth). It is
+not re-seeded at the jam: a GPS fix does not change the magnetometer loop, and a map-referenced
+pre-jam reference would see the navigator's map error (up to 6.99 nT on the shipped world)
+against a pi/4 linear range of 2.7-5.5 nT (planner deviation PR-1, quick task 261011-17n).
+Servo windows set the reference only and are not counted in the shot budget S. The crust is
+held constant within one navigation sample's windows (disclosed approximation, 01-RESEARCH A6).
 
-Separation of worlds: the field (B_k, B_at) only enters through `window_phase` and the servo;
-every estimate is formed by `estimate_from_counts` from counts, shots, tau and the reference.
+Separation of worlds: the true field (B_k, B_at, B_servo) only enters through `window_phase`
+(physics: the phase the probe accumulates). The servo reference and the navigation predictor
+depend only on the seed and past estimates; every estimate is formed by `estimate_from_counts`
+from counts, shots, tau and the reference.
 """
 
 from __future__ import annotations
@@ -95,37 +103,83 @@ def readout(phi, shots, rng, n=1, c=1.0):
     return {"n1": n1, "phi_hat": ph, "fringe": fringe}
 
 
-def servo_reference(B_at, t, tau, shots, c1, rng, h=SERVO_CYCLE_S, tone_mean_at=None):
-    """b_ref(t) = 2 Bhat(t - h) - Bhat(t - 2h), h = 20 ms (vectorised no-slip identity).
+def servo_times(t, h=SERVO_CYCLE_S):
+    """Servo cycle times and the servo index of each navigation sample.
 
-    Bhat = B_at(.) (+ tone_mean_at(.) if given: the tone leak seen by a servo window)
-    + projection noise field_from_phase(N(0, 1) / (c1 sqrt(shots)), tau). Servo windows set
-    the reference only; their noise cancels in the output and they are not counted in S.
+    ts = t[0] + (arange(J) - 2) h with J = round((t[-1] - t[0]) / h) + 3: two seed cycles before
+    t[0]. Navigation sample k sits at servo index k_idx[k]; its reference uses cycles k_idx - 1
+    and k_idx - 2 only (all strictly earlier).
     """
     t = np.asarray(t, dtype=np.float64)
-    tau = np.broadcast_to(np.asarray(tau, dtype=np.float64), t.shape)
-    e = field_from_phase(rng.standard_normal((t.size, 2)) / (c1 * np.sqrt(shots)), tau[:, None])
-
-    def bhat(tq, ek):
-        b = np.asarray(B_at(tq), dtype=np.float64)
-        if tone_mean_at is not None:
-            b = b + tone_mean_at(tq)
-        return b + ek
-
-    return 2.0 * bhat(t - h, e[:, 0]) - bhat(t - 2.0 * h, e[:, 1])
+    J = int(np.rint((t[-1] - t[0]) / h)) + 3
+    ts = t[0] + (np.arange(J) - 2) * h
+    k_idx = (2 + np.floor((t - t[0]) / h + 1e-9)).astype(np.int64)
+    assert int(k_idx.max()) < J
+    return ts, k_idx
 
 
-def coarse_track(t, B_k, B_at, tau, m, shots, c1, rng_servo, rng_q1, tone_int=None,
-                 tone_mean_at=None, h=SERVO_CYCLE_S) -> dict:  # fmt: skip
-    """Single-qubit coarse stage over a flight: servo reference, one window per sample.
+def servo_track(B_servo, tone_int_servo, tau_servo, seed_nT, shots, c1, rng) -> dict:
+    """Recursive 20 ms servo: b_ref_j = 2 bhat_{j-1} - bhat_{j-2}, one readout of S shots per cycle.
 
-    B_k (true field at the samples) and B_at (callable) are the world side: they only set the
-    phase via `window_phase` and the servo reference. The estimate comes from counts alone.
+    The true field enters only through `window_phase` (physics: the phase the servo window
+    accumulates); the reference uses only the seed and past estimates. tau_servo (length J)
+    defines the number of cycles; tone_int_servo may be None (0), a scalar or length J.
+    Cycles 0 and 1 hold the seed. Exactly one binomial draw per cycle j >= 2, so the stream's
+    consumption is independent of the field. Servo windows are not counted in S.
+    """
+    tau_s = np.array(tau_servo, dtype=np.float64).ravel()
+    J = tau_s.size
+    ti = np.broadcast_to(np.asarray(0.0 if tone_int_servo is None else tone_int_servo, dtype=np.float64), (J,))
+    S = int(shots)
+    seed = float(seed_nT)
+    bhat = np.empty(J)
+    b_ref = np.empty(J)
+    phi = np.zeros(J)
+    bhat[:2] = seed
+    b_ref[:2] = seed
+    for j in range(2, J):
+        r = 2.0 * bhat[j - 1] - bhat[j - 2]
+        ph = float(window_phase(B_servo[j] - r, ti[j], tau_s[j]))
+        n1 = rng.binomial(S, min(max(float(p1(ph, 1, c1)), 0.0), 1.0))
+        bhat[j] = float(estimate_from_counts(n1, S, tau_s[j], r, 1, c1))
+        b_ref[j] = r
+        phi[j] = ph
+    a = np.abs(phi[2:])
+    return {
+        "bhat_nT": bhat,
+        "b_ref_nT": b_ref,
+        "phi": phi,
+        "max_abs_phi": float(a.max()) if a.size else 0.0,
+        "slips": int(np.count_nonzero(a > SLIP_RAD)),
+        "n_beyond_linear": int(np.count_nonzero(a > LINEAR_RANGE_RAD)),
+    }
+
+
+def servo_reference(bhat_nT, idx):
+    """Navigation predictor from the two most recent servo estimates: 2 bhat[idx-1] - bhat[idx-2]."""
+    bhat_nT = np.asarray(bhat_nT, dtype=np.float64)
+    idx = np.asarray(idx)
+    return 2.0 * bhat_nT[idx - 1] - bhat_nT[idx - 2]
+
+
+def coarse_track(t, B_k, B_at, tau, m, shots, c1, rng_servo, rng_q1, seed_nT, tone_int=None,
+                 tau_at=None, servo_tone_int_at=None, h=SERVO_CYCLE_S) -> dict:  # fmt: skip
+    """Single-qubit coarse stage over a flight: recursive servo reference, one window per sample.
+
+    B_k (true field at the samples) and B_at (callable) are the world side: B_at is evaluated
+    once at the servo times as the servo's physics input and B_k sets the navigation phase,
+    both only via `window_phase`. tau_at(ts) gives the servo interrogation times (default:
+    interpolated tau), servo_tone_int_at(ts, tau) the servo-window tone integrals (default 0).
+    The reference comes from the seed and past servo estimates; the estimate from counts alone.
     """
     t = np.asarray(t, dtype=np.float64)
     tau = np.broadcast_to(np.asarray(tau, dtype=np.float64), t.shape)
     m = np.broadcast_to(np.asarray(m), t.shape)
-    b_ref = servo_reference(B_at, t, tau, shots, c1, rng_servo, h=h, tone_mean_at=tone_mean_at)
+    ts, k_idx = servo_times(t, h)
+    tau_sv = np.asarray(tau_at(ts) if tau_at is not None else np.interp(ts, t, tau), dtype=np.float64)
+    ti_sv = 0.0 if servo_tone_int_at is None else servo_tone_int_at(ts, tau_sv)
+    sv = servo_track(B_at(ts), ti_sv, tau_sv, seed_nT, shots, c1, rng_servo)
+    b_ref = servo_reference(sv["bhat_nT"], k_idx)
     ti = 0.0 if tone_int is None else np.asarray(tone_int, dtype=np.float64)
     phi = window_phase(np.asarray(B_k, dtype=np.float64) - b_ref, ti, tau)
     r = readout(phi, shots, rng_q1, n=1, c=c1)
@@ -142,6 +196,13 @@ def coarse_track(t, B_k, B_at, tau, m, shots, c1, rng_servo, rng_q1, tone_int=No
         "max_abs_phi": float(np.max(np.abs(phi))),
         "slips": int(np.count_nonzero(np.abs(phi) > SLIP_RAD)),
         "n_fringe": int(np.count_nonzero(r["fringe"])),
+        "servo_bhat_nT": sv["bhat_nT"],
+        "servo_b_ref_nT": sv["b_ref_nT"],
+        "servo_k_idx": k_idx,
+        "servo_max_abs_phi": sv["max_abs_phi"],
+        "servo_slips": sv["slips"],
+        "servo_n_beyond_linear": sv["n_beyond_linear"],
+        "servo_n_cycles": int(ts.size - 2),
     }
 
 
@@ -150,12 +211,13 @@ def fine_allowed(shots, n, c1, z_star=Z_STAR):
     return bool(np.pi * c1 * np.sqrt(shots) / (2 * n) >= z_star)
 
 
-def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, n_fine=4, tone_int=None,
-              tone_int_fine=None, tone_mean_at=None, h=SERVO_CYCLE_S) -> dict:  # fmt: skip
-    """Servo + single-qubit coarse stage, then a GHZ-n fine window referenced to the coarse estimate.
+def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, seed_nT, n_fine=4, tone_int=None,
+              tone_int_fine=None, tau_at=None, servo_tone_int_at=None, h=SERVO_CYCLE_S) -> dict:  # fmt: skip
+    """Recursive servo + single-qubit coarse stage, then a GHZ-n fine window referenced to the coarse estimate.
 
     `rngs` holds generators "servo", "q1" and "ghz" (callers: seeds.stream(root, "servo", S),
-    stream(root, "q1", S), stream(root, "ghz", n, S)). The fine window starts at t + tau and
+    stream(root, "q1", S), stream(root, "ghz", n, S)); seed_nT seeds the servo recursion
+    (uav.servo_seed: IGRF plane + map value at the GPS fix). The fine window starts at t + tau and
     sees `tone_int_fine`; its phase is window_phase(B_k - bhat_q1, ...), and the GHZ
     accumulation of n * phi happens inside p1(phi, n, c_n) with c_n = c1 ** n.
 
@@ -166,8 +228,9 @@ def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, n_fine=4, tone_int=None,
     SQL/HL scaling figure compares the fine stage alone at equal qubit-shots (`scaling_trial`).
     With n_fine == 1 the fine stage is a second single-qubit window (scaling checks only).
     """
-    out = coarse_track(t, B_k, B_at, tau, m, shots, c1, rngs["servo"], rngs["q1"],
-                       tone_int=tone_int, tone_mean_at=tone_mean_at, h=h)  # fmt: skip
+    out = coarse_track(t, B_k, B_at, tau, m, shots, c1, rngs["servo"], rngs["q1"], seed_nT,
+                       tone_int=tone_int, tau_at=tau_at, servo_tone_int_at=servo_tone_int_at,
+                       h=h)  # fmt: skip
     tau = out["tau_s"]
     bhat_q1 = out["bhat_nT"]
     n = int(n_fine)
