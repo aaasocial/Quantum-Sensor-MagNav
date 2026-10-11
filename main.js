@@ -868,12 +868,12 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	function be(e) {
 		0 > ve || (e.current = _e[ve], _e[ve] = null, ve--);
 	}
-	function xe(e, t) {
+	function L(e, t) {
 		ve++, _e[ve] = e.current, e.current = t;
 	}
-	var Se = ye(null), Ce = ye(null), we = ye(null), Te = ye(null);
-	function Ee(e, t) {
-		switch (xe(we, t), xe(Ce, e), xe(Se, null), t.nodeType) {
+	var xe = ye(null), Se = ye(null), Ce = ye(null), R = ye(null);
+	function we(e, t) {
+		switch (L(Ce, t), L(Se, e), L(xe, null), t.nodeType) {
 			case 9:
 			case 11:
 				e = (e = t.documentElement) && (e = e.namespaceURI) ? fp(e) : 0;
@@ -889,34 +889,34 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 				default: e = 0;
 			}
 		}
-		be(Se), xe(Se, e);
+		be(xe), L(xe, e);
 	}
-	function L() {
-		be(Se), be(Ce), be(we);
+	function Te() {
+		be(xe), be(Se), be(Ce);
+	}
+	function Ee(e) {
+		var t = e.memoizedState;
+		t !== null && (lh._currentValue = t.memoizedState, L(R, e)), t = xe.current;
+		var n = pp(t, e.type);
+		t !== n && (L(Se, e), L(xe, n));
 	}
 	function De(e) {
-		var t = e.memoizedState;
-		t !== null && (lh._currentValue = t.memoizedState, xe(Te, e)), t = Se.current;
-		var n = pp(t, e.type);
-		t !== n && (xe(Ce, e), xe(Se, n));
+		Se.current === e && (be(xe), be(Se)), R.current === e && (be(R), lh._currentValue = ge);
 	}
-	function Oe(e) {
-		Ce.current === e && (be(Se), be(Ce)), Te.current === e && (be(Te), lh._currentValue = ge);
-	}
-	var ke, Ae;
-	function je(e) {
-		if (ke === void 0) try {
+	var Oe, ke;
+	function Ae(e) {
+		if (Oe === void 0) try {
 			throw Error();
 		} catch (e) {
 			var t = e.stack.trim().match(/\n( *(at )?)/);
-			ke = t && t[1] || "", Ae = -1 < e.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < e.stack.indexOf("@") ? "@unknown:0:0" : "";
+			Oe = t && t[1] || "", ke = -1 < e.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < e.stack.indexOf("@") ? "@unknown:0:0" : "";
 		}
-		return "\n" + ke + e + Ae;
+		return "\n" + Oe + e + ke;
 	}
-	var R = !1;
+	var je = !1;
 	function Me(e, t) {
-		if (!e || R) return "";
-		R = !0;
+		if (!e || je) return "";
+		je = !0;
 		var n = Error.prepareStackTrace;
 		Error.prepareStackTrace = void 0;
 		try {
@@ -987,24 +987,24 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 				}
 			}
 		} finally {
-			R = !1, Error.prepareStackTrace = n;
+			je = !1, Error.prepareStackTrace = n;
 		}
-		return (n = e ? e.displayName || e.name : "") ? je(n) : "";
+		return (n = e ? e.displayName || e.name : "") ? Ae(n) : "";
 	}
 	function Ne(e, t) {
 		switch (e.tag) {
 			case 26:
 			case 27:
-			case 5: return je(e.type);
-			case 16: return je("Lazy");
-			case 13: return e.child !== t && t !== null ? je("Suspense Fallback") : je("Suspense");
-			case 19: return je("SuspenseList");
+			case 5: return Ae(e.type);
+			case 16: return Ae("Lazy");
+			case 13: return e.child !== t && t !== null ? Ae("Suspense Fallback") : Ae("Suspense");
+			case 19: return Ae("SuspenseList");
 			case 0:
 			case 15: return Me(e.type, !1);
 			case 11: return Me(e.type.render, !1);
 			case 1: return Me(e.type, !0);
-			case 31: return je("Activity");
-			case 30: return je("ViewTransition");
+			case 31: return Ae("Activity");
+			case 30: return Ae("ViewTransition");
 			default: return "";
 		}
 	}
@@ -2171,7 +2171,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	function Fi(e, t, n, r, a, o) {
 		var s = 0;
 		if (r = e, typeof r == "function") Mi(r) && (s = 1);
-		else if (typeof r == "string") s = Ym(e, n, Se.current) ? 26 : e === "html" || e === "head" || e === "body" ? 27 : 5;
+		else if (typeof r == "string") s = Ym(e, n, xe.current) ? 26 : e === "html" || e === "head" || e === "body" ? 27 : 5;
 		else a: switch (r) {
 			case P: return e = ji(31, n, t, a), e.elementType = P, e.lanes = o, e;
 			case j: return Ii(n.children, a, o, t);
@@ -2348,7 +2348,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	}
 	var ma = ye(null), ha = null, ga = null;
 	function _a(e, t, n) {
-		xe(ma, t._currentValue), t._currentValue = n;
+		L(ma, t._currentValue), t._currentValue = n;
 	}
 	function va(e) {
 		e._currentValue = ma.current, be(ma);
@@ -2409,7 +2409,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 					var c = a.type;
 					Br(a.pendingProps.value, s.value) || (e === null ? e = [c] : e.push(c));
 				}
-			} else if (a === Te.current) {
+			} else if (a === R.current) {
 				if (s = a.alternate, s === null) throw Error(i(387));
 				s.memoizedState.memoizedState !== a.memoizedState.memoizedState && (e === null ? e = [lh] : e.push(lh));
 			}
@@ -2553,7 +2553,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 		return e === null ? Qu.pooledCache : e;
 	}
 	function Ka(e, t) {
-		t === null ? xe(Wa, Wa.current) : xe(Wa, t.pool);
+		t === null ? L(Wa, Wa.current) : L(Wa, t.pool);
 	}
 	function qa() {
 		var e = Ga();
@@ -2962,10 +2962,10 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	}
 	var To = ye(null), Eo = ye(0);
 	function Do(e, t) {
-		e = id, xe(Eo, e), xe(To, t), id = e | t.baseLanes;
+		e = id, L(Eo, e), L(To, t), id = e | t.baseLanes;
 	}
 	function Oo() {
-		xe(Eo, id), xe(To, To.current);
+		L(Eo, id), L(To, To.current);
 	}
 	function ko() {
 		id = Eo.current, be(To), be(Eo);
@@ -2973,23 +2973,23 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	var Ao = ye(null), H = null;
 	function jo(e) {
 		var t = e.alternate;
-		xe(Fo, Fo.current & 1), xe(Ao, e), H === null && (t === null || To.current !== null || t.memoizedState !== null) && (H = e);
+		L(Fo, Fo.current & 1), L(Ao, e), H === null && (t === null || To.current !== null || t.memoizedState !== null) && (H = e);
 	}
 	function Mo(e) {
-		xe(Fo, Fo.current), xe(Ao, e), H === null && (H = e);
+		L(Fo, Fo.current), L(Ao, e), H === null && (H = e);
 	}
 	function No(e) {
-		e.tag === 22 ? (xe(Fo, Fo.current), xe(Ao, e), H === null && (H = e)) : U();
+		e.tag === 22 ? (L(Fo, Fo.current), L(Ao, e), H === null && (H = e)) : U();
 	}
 	function U() {
-		xe(Fo, Fo.current), xe(Ao, Ao.current);
+		L(Fo, Fo.current), L(Ao, Ao.current);
 	}
 	function Po(e) {
 		be(Ao), H === e && (H = null), be(Fo);
 	}
 	var Fo = ye(0);
 	function Io(e, t) {
-		xe(Ao, Ao.current), xe(Fo, t);
+		L(Ao, Ao.current), L(Fo, t);
 	}
 	function Lo(e) {
 		be(Fo), be(Ao), H === e && (H = null);
@@ -4346,14 +4346,14 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	function cl(e, t, n) {
 		switch (t.tag) {
 			case 3:
-				Ee(t, t.stateNode.containerInfo), _a(t, Aa, e.memoizedState.cache), da();
+				we(t, t.stateNode.containerInfo), _a(t, Aa, e.memoizedState.cache), da();
 				break;
 			case 27:
 			case 5:
-				De(t);
+				Ee(t);
 				break;
 			case 4:
-				Ee(t, t.stateNode.containerInfo);
+				we(t, t.stateNode.containerInfo);
 				break;
 			case 10:
 				_a(t, t.type, t.memoizedProps.value);
@@ -4421,7 +4421,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 			case 1: return r = t.type, a = bc(r, t.pendingProps), Gc(e, t, r, a, n);
 			case 3:
 				a: {
-					if (Ee(t, t.stateNode.containerInfo), e === null) throw Error(i(387));
+					if (we(t, t.stateNode.containerInfo), e === null) throw Error(i(387));
 					r = t.pendingProps;
 					var o = t.memoizedState;
 					a = o.element, ho(e, t), So(t, r, null, n);
@@ -4456,12 +4456,12 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 					t = t.child;
 				}
 				return t;
-			case 26: return Hc(e, t), e === null ? (n = Fm(t.type, null, t.pendingProps, null)) ? t.memoizedState = n : V || (t.stateNode = mp(t.type, t.pendingProps, we.current, t)) : t.memoizedState = Fm(t.type, e.memoizedProps, t.pendingProps, e.memoizedState), null;
-			case 27: return De(t), e === null && V && (r = t.stateNode = _m(t.type, t.pendingProps, we.current), na = t, aa = !0, a = ra, wp(t.type) ? (fm = a, ra = dm(r.firstChild)) : ra = a), Mc(e, t, t.pendingProps.children, n), Hc(e, t), e === null && (t.flags |= 4194304), t.child;
-			case 5: return e === null && V && ((a = r = ra) && (r = am(r, t.type, t.pendingProps, aa), r === null ? a = !1 : (t.stateNode = r, na = t, ra = dm(r.firstChild), aa = !1, a = !0)), a || sa(t)), De(t), a = t.type, o = t.pendingProps, s = e === null ? null : e.memoizedProps, r = o.children, hp(a, o) ? r = null : s !== null && hp(a, s) && (t.flags |= 32), t.memoizedState !== null && (a = Xo(e, t, $o, null, null, n), lh._currentValue = a), Hc(e, t), Mc(e, t, r, n), t.child;
+			case 26: return Hc(e, t), e === null ? (n = Fm(t.type, null, t.pendingProps, null)) ? t.memoizedState = n : V || (t.stateNode = mp(t.type, t.pendingProps, Ce.current, t)) : t.memoizedState = Fm(t.type, e.memoizedProps, t.pendingProps, e.memoizedState), null;
+			case 27: return Ee(t), e === null && V && (r = t.stateNode = _m(t.type, t.pendingProps, Ce.current), na = t, aa = !0, a = ra, wp(t.type) ? (fm = a, ra = dm(r.firstChild)) : ra = a), Mc(e, t, t.pendingProps.children, n), Hc(e, t), e === null && (t.flags |= 4194304), t.child;
+			case 5: return e === null && V && ((a = r = ra) && (r = am(r, t.type, t.pendingProps, aa), r === null ? a = !1 : (t.stateNode = r, na = t, ra = dm(r.firstChild), aa = !1, a = !0)), a || sa(t)), Ee(t), a = t.type, o = t.pendingProps, s = e === null ? null : e.memoizedProps, r = o.children, hp(a, o) ? r = null : s !== null && hp(a, s) && (t.flags |= 32), t.memoizedState !== null && (a = Xo(e, t, $o, null, null, n), lh._currentValue = a), Hc(e, t), Mc(e, t, r, n), t.child;
 			case 6: return e === null && V && ((e = n = ra) && (n = om(n, t.pendingProps, aa), n === null ? e = !1 : (t.stateNode = n, na = t, ra = null, e = !0)), e || sa(t)), null;
 			case 13: return Yc(e, t, n);
-			case 4: return Ee(t, t.stateNode.containerInfo), r = t.pendingProps, e === null ? t.child = uo(t, null, r, n) : Mc(e, t, r, n), t.child;
+			case 4: return we(t, t.stateNode.containerInfo), r = t.pendingProps, e === null ? t.child = uo(t, null, r, n) : Mc(e, t, r, n), t.child;
 			case 11: return Nc(e, t, t.type, t.pendingProps, n);
 			case 7: return r = t.pendingProps, Hc(e, t), Mc(e, t, r, n), t.child;
 			case 8: return Mc(e, t, t.pendingProps.children, n), t.child;
@@ -4544,30 +4544,30 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 			case 9:
 			case 14: return hl(t), null;
 			case 1: return hl(t), null;
-			case 3: return n = t.stateNode, r = null, e !== null && (r = e.memoizedState.cache), t.memoizedState.cache !== r && (t.flags |= 2048), va(Aa), L(), n.pendingContext && (n.context = n.pendingContext, n.pendingContext = null), (e === null || e.child === null) && (ua(t) ? ul(t) : e === null || e.memoizedState.isDehydrated && !(t.flags & 256) || (t.flags |= 1024, fa())), hl(t), null;
+			case 3: return n = t.stateNode, r = null, e !== null && (r = e.memoizedState.cache), t.memoizedState.cache !== r && (t.flags |= 2048), va(Aa), Te(), n.pendingContext && (n.context = n.pendingContext, n.pendingContext = null), (e === null || e.child === null) && (ua(t) ? ul(t) : e === null || e.memoizedState.isDehydrated && !(t.flags & 256) || (t.flags |= 1024, fa())), hl(t), null;
 			case 26:
 				var a = t.type, o = t.memoizedState;
 				return e === null ? (ul(t), o === null ? (hl(t), dl(t, a, null, r, n)) : (hl(t), fl(t, o))) : o ? o === e.memoizedState ? (hl(t), t.flags &= -16777217) : (ul(t), hl(t), fl(t, o)) : (e = e.memoizedProps, e !== r && ul(t), hl(t), dl(t, a, e, r, n)), null;
 			case 27:
-				if (Oe(t), n = we.current, a = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && ul(t);
+				if (De(t), n = Ce.current, a = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && ul(t);
 				else {
 					if (!r) {
 						if (t.stateNode === null) throw Error(i(166));
 						return hl(t), t.subtreeFlags &= -33554433, null;
 					}
-					e = Se.current, ua(t) ? ca(t, e) : (e = _m(a, r, n), t.stateNode = e, ul(t));
+					e = xe.current, ua(t) ? ca(t, e) : (e = _m(a, r, n), t.stateNode = e, ul(t));
 				}
 				return hl(t), t.subtreeFlags &= -33554433, null;
 			case 5:
-				if (Oe(t), a = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && ul(t);
+				if (De(t), a = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && ul(t);
 				else {
 					if (!r) {
 						if (t.stateNode === null) throw Error(i(166));
 						return hl(t), t.subtreeFlags &= -33554433, null;
 					}
-					if (o = Se.current, ua(t)) ca(t, o);
+					if (o = xe.current, ua(t)) ca(t, o);
 					else {
-						var s = dp(we.current);
+						var s = dp(Ce.current);
 						switch (o) {
 							case 1:
 								o = s.createElementNS("http://www.w3.org/2000/svg", a);
@@ -4626,7 +4626,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 				if (e && t.stateNode != null) e.memoizedProps !== r && ul(t);
 				else {
 					if (typeof r != "string" && t.stateNode === null) throw Error(i(166));
-					if (e = we.current, ua(t)) {
+					if (e = Ce.current, ua(t)) {
 						if (e = t.stateNode, n = t.memoizedProps, r = null, a = na, a !== null) switch (a.tag) {
 							case 27:
 							case 5: r = a.memoizedProps;
@@ -4662,7 +4662,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 					if (!a) return t.flags & 256 ? (Po(t), t) : (Po(t), null);
 				}
 				return Po(t), t.flags & 128 ? (t.lanes = n, t) : (n = r !== null, e = e !== null && e.memoizedState !== null, n && (r = t.child, a = null, r.alternate !== null && r.alternate.memoizedState !== null && r.alternate.memoizedState.cachePool !== null && (a = r.alternate.memoizedState.cachePool.pool), o = null, r.memoizedState !== null && r.memoizedState.cachePool !== null && (o = r.memoizedState.cachePool.pool), o !== a && (r.flags |= 2048)), n !== e && n && (t.child.flags |= 8192), pl(t, t.updateQueue), hl(t), null);
-			case 4: return L(), e === null && Gf(t.stateNode.containerInfo), t.flags |= 67108864, hl(t), null;
+			case 4: return Te(), e === null && Gf(t.stateNode.containerInfo), t.flags |= 67108864, hl(t), null;
 			case 10: return va(t.type), hl(t), null;
 			case 19:
 				if (Lo(t), r = t.memoizedState, r === null) return hl(t), null;
@@ -4698,7 +4698,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 						}
 						n = !0;
 					}
-					return r.rendering = e, r.tail = e.sibling, r.renderingStartTime = Be(), e.sibling = null, o = Fo.current, o = a ? o & 1 | 2 : o & 1, r.tailMode === "visible" || r.tailMode === "collapsed" || !n || V ? Io(t, o) : (n = o, xe(Ao, t), xe(Fo, n), H === null && (H = t)), V && Zi(t, r.treeForkCount), e;
+					return r.rendering = e, r.tail = e.sibling, r.renderingStartTime = Be(), e.sibling = null, o = Fo.current, o = a ? o & 1 | 2 : o & 1, r.tailMode === "visible" || r.tailMode === "collapsed" || !n || V ? Io(t, o) : (n = o, L(Ao, t), L(Fo, n), H === null && (H = t)), V && Zi(t, r.treeForkCount), e;
 				}
 				return hl(t), null;
 			case 22:
@@ -4712,10 +4712,10 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	function _l(e, t) {
 		switch (ea(t), t.tag) {
 			case 1: return e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
-			case 3: return va(Aa), L(), e = t.flags, e & 65536 && !(e & 128) ? (t.flags = e & -65537 | 128, t) : null;
+			case 3: return va(Aa), Te(), e = t.flags, e & 65536 && !(e & 128) ? (t.flags = e & -65537 | 128, t) : null;
 			case 26:
 			case 27:
-			case 5: return Oe(t), null;
+			case 5: return De(t), null;
 			case 31:
 				if (t.memoizedState !== null) {
 					if (Po(t), t.alternate === null) throw Error(i(340));
@@ -4729,7 +4729,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 				}
 				return e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
 			case 19: return Lo(t), e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, e = t.memoizedState, e !== null && (e.rendering = null, e.tail = null), t.flags |= 4, t) : null;
-			case 4: return L(), null;
+			case 4: return Te(), null;
 			case 10: return va(t.type), null;
 			case 22:
 			case 23: return Po(t), ko(), e !== null && be(Wa), e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
@@ -4741,15 +4741,15 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 	function vl(e, t) {
 		switch (ea(t), t.tag) {
 			case 3:
-				va(Aa), L();
+				va(Aa), Te();
 				break;
 			case 26:
 			case 27:
 			case 5:
-				Oe(t);
+				De(t);
 				break;
 			case 4:
-				L();
+				Te();
 				break;
 			case 31:
 				t.memoizedState !== null && Po(t);
@@ -8356,7 +8356,7 @@ var t = Object.create, n = Object.defineProperty, r = Object.getOwnPropertyDescr
 		}
 	}
 	function Fm(e, t, n, r) {
-		var a = (a = we.current) ? Sm(a) : null;
+		var a = (a = Ce.current) ? Sm(a) : null;
 		if (!a) throw Error(i(446));
 		switch (e) {
 			case "meta":
@@ -9435,7 +9435,7 @@ async function be({ callPy: e, scenario: t, hasBackend: n = !0, simulateFailure:
 		throw n.stage = m || 1, n.elapsedMs = p(), n.quantum = h, n;
 	}
 }
-function xe(e) {
+function L(e) {
 	let t = !1, n = !1;
 	return {
 		isInFlight: () => t,
@@ -9455,26 +9455,26 @@ function xe(e) {
 }
 //#endregion
 //#region src/components/JobPanel.jsx
-var Se = "not received", Ce = "waiting for IonQ…", we = "Not captured yet. The single Forte 1 job runs only with the builder's explicit approval; until then a forte-1 noise-model run is shown, labelled \"simulator-sampled proxy\".", Te = (e) => e != null && e !== "" && Number.isFinite(Number(e)), Ee = (e, t) => Te(e) ? Number(e).toFixed(t) : Se, L = (e) => typeof e == "string" && e ? e.slice(0, 12) : Se;
-function De(e) {
-	if (typeof e != "string" || !e) return Se;
+var xe = "not received", Se = "waiting for IonQ…", Ce = "Not captured yet. The single Forte 1 job runs only with the builder's explicit approval; until then a forte-1 noise-model run is shown, labelled \"simulator-sampled proxy\".", R = (e) => e != null && e !== "" && Number.isFinite(Number(e)), we = (e, t) => R(e) ? Number(e).toFixed(t) : xe, Te = (e) => typeof e == "string" && e ? e.slice(0, 12) : xe;
+function Ee(e) {
+	if (typeof e != "string" || !e) return xe;
 	let t = new Date(e);
 	return Number.isNaN(t.getTime()) ? e : `${t.toISOString().slice(0, 19).replace("T", " ")} UTC`;
 }
-function Oe(e) {
+function De(e) {
 	return typeof e != "string" || !/^[0-9a-f]{16}$/.test(e) ? null : BigInt(`0x${e}`).toString(2).padStart(64, "0").match(/.{8}/g).join(" ");
 }
-var ke = (e) => e?.is_qpu === !0 ? "QPU-measured" : "simulator-sampled", Ae = (e, t) => Te(e) && Te(t) ? `${Math.round(Number(e))}–${Math.round(Number(t))} RPM (swept)` : Se, je = (e, t) => Array.isArray(e) && e.length ? e.map((e) => Ee(e, t)).join(", ") : Se;
-function R({ label: e, children: t }) {
+var Oe = (e) => e?.is_qpu === !0 ? "QPU-measured" : "simulator-sampled", ke = (e, t) => R(e) && R(t) ? `${Math.round(Number(e))}–${Math.round(Number(t))} RPM (swept)` : xe, Ae = (e, t) => Array.isArray(e) && e.length ? e.map((e) => we(e, t)).join(", ") : xe;
+function je({ label: e, children: t }) {
 	return /* @__PURE__ */ (0, M.jsxs)(M.Fragment, { children: [/* @__PURE__ */ (0, M.jsx)("dt", { children: e }), /* @__PURE__ */ (0, M.jsx)("dd", { children: t })] });
 }
-var Me = (e, t) => Te(t) ? Number(t) ** (e / 4) : null;
+var Me = (e, t) => R(t) ? Number(t) ** (e / 4) : null;
 function Ne({ n: e, c: t, cDefault: n }) {
 	return /* @__PURE__ */ (0, M.jsxs)("span", {
 		className: "dd-inline",
 		children: [/* @__PURE__ */ (0, M.jsx)("span", {
 			className: "mono",
-			children: Te(t) ? `${Number(t).toFixed(3)} (model default ${Ee(n, 3)})` : Se
+			children: R(t) ? `${Number(t).toFixed(3)} (model default ${we(n, 3)})` : xe
 		}), /* @__PURE__ */ (0, M.jsx)(P, { children: `entangled probe n = ${e}` })]
 	});
 }
@@ -9483,34 +9483,34 @@ function Pe({ motor: e }) {
 	return /* @__PURE__ */ (0, M.jsxs)("dl", {
 		className: "job-dl",
 		children: [
-			/* @__PURE__ */ (0, M.jsxs)(R, {
+			/* @__PURE__ */ (0, M.jsxs)(je, {
 				label: "Motor RPM",
 				children: [
-					t.length ? Ae(Math.min(...t), Math.max(...t)) : Se,
+					t.length ? ke(Math.min(...t), Math.max(...t)) : xe,
 					" ",
 					/* @__PURE__ */ (0, M.jsx)(P, { children: "stored motor draw" })
 				]
 			}),
-			/* @__PURE__ */ (0, M.jsx)(R, {
+			/* @__PURE__ */ (0, M.jsx)(je, {
 				label: "Harmonic amplitudes (nT)",
 				children: /* @__PURE__ */ (0, M.jsx)("span", {
 					className: "mono",
-					children: je(e?.amps_nT, 0)
+					children: Ae(e?.amps_nT, 0)
 				})
 			}),
-			/* @__PURE__ */ (0, M.jsx)(R, {
+			/* @__PURE__ */ (0, M.jsx)(je, {
 				label: "Harmonic phases (rad)",
 				children: /* @__PURE__ */ (0, M.jsx)("span", {
 					className: "mono",
-					children: je(e?.phases, 2)
+					children: Ae(e?.phases, 2)
 				})
 			}),
-			/* @__PURE__ */ (0, M.jsxs)(R, {
+			/* @__PURE__ */ (0, M.jsxs)(je, {
 				label: "Seed",
 				children: [
 					/* @__PURE__ */ (0, M.jsx)("span", {
 						className: "mono selectable",
-						children: e?.seed_str ?? Se
+						children: e?.seed_str ?? xe
 					}),
 					" ",
 					/* @__PURE__ */ (0, M.jsx)("span", {
@@ -9529,48 +9529,48 @@ function Fe({ hardware: e }) {
 		n = /* @__PURE__ */ (0, M.jsxs)("dl", {
 			className: "job-dl",
 			children: [
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "Label",
 					children: /* @__PURE__ */ (0, M.jsx)(P, { children: e ? "hardware · QPU-measured" : "simulator-sampled proxy" })
 				}),
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "Job ID",
 					children: /* @__PURE__ */ (0, M.jsx)("span", {
 						className: "mono selectable",
-						children: t.job_id ?? Se
+						children: t.job_id ?? xe
 					})
 				}),
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "Backend",
-					children: /* @__PURE__ */ (0, M.jsx)(P, { children: `backend: ${t.backend ?? Se}` })
+					children: /* @__PURE__ */ (0, M.jsx)(P, { children: `backend: ${t.backend ?? xe}` })
 				}),
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "Shots",
-					children: Te(t.shots) ? `${t.shots} shots` : Se
+					children: R(t.shots) ? `${t.shots} shots` : xe
 				}),
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "Timestamp",
-					children: De(t.timestamp_utc)
+					children: Ee(t.timestamp_utc)
 				}),
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "Circuit SHA-256 (first 12 hex)",
 					children: /* @__PURE__ */ (0, M.jsx)("span", {
 						className: "mono",
-						children: L(t.circuit_sha256)
+						children: Te(t.circuit_sha256)
 					})
 				}),
-				/* @__PURE__ */ (0, M.jsx)(R, {
+				/* @__PURE__ */ (0, M.jsx)(je, {
 					label: "GHZ-2 / GHZ-4 contrast",
 					children: /* @__PURE__ */ (0, M.jsx)("span", {
 						className: "mono",
-						children: `${Ee(r.c2, 3)} / ${Ee(r.c4, 3)}`
+						children: `${we(r.c2, 3)} / ${we(r.c4, 3)}`
 					})
 				})
 			]
 		});
 	} else n = e?.status === "missing" ? /* @__PURE__ */ (0, M.jsx)("p", {
 		className: "help",
-		children: we
+		children: Ce
 	}) : e?.status === "error" ? /* @__PURE__ */ (0, M.jsx)("p", {
 		className: "help",
 		children: `Could not read the capture record (${e.error}).`
@@ -9584,7 +9584,7 @@ function Fe({ hardware: e }) {
 	});
 }
 function Ie({ storedMotor: e = null, quantum: t = null, started: n = !1, failed: r = !1, backendName: i = null, isIonq: a = !1, flownLabel: o = null, hardware: s = null, circuitSha: c = null, modelSha: l = null, headingInSummary: u = !1 }) {
-	let d = t, f = n && !d && !r ? Ce : Se, p = d?.backend ?? i, m = d ? String(d.backend_class ?? "").startsWith("IonQ") || String(d.backend ?? "").startsWith("ionq") : a, h = Oe(d?.seed_hex), g = Array.isArray(d?.rng_hist) ? d.rng_hist : null;
+	let d = t, f = n && !d && !r ? Se : xe, p = d?.backend ?? i, m = d ? String(d.backend_class ?? "").startsWith("IonQ") || String(d.backend ?? "").startsWith("ionq") : a, h = De(d?.seed_hex), g = Array.isArray(d?.rng_hist) ? d.rng_hist : null;
 	return /* @__PURE__ */ (0, M.jsxs)(u ? "div" : "section", {
 		...u ? { className: "job-panel" } : {
 			className: "panel job-panel",
@@ -9610,10 +9610,10 @@ function Ie({ storedMotor: e = null, quantum: t = null, started: n = !1, failed:
 				/* @__PURE__ */ (0, M.jsxs)("div", {
 					className: "badge-row",
 					children: [
-						d && /* @__PURE__ */ (0, M.jsx)(P, { children: ke(d) }),
+						d && /* @__PURE__ */ (0, M.jsx)(P, { children: Oe(d) }),
 						p && (m ? /* @__PURE__ */ (0, M.jsx)(P, { children: `backend: ${p}` }) : /* @__PURE__ */ (0, M.jsx)(P, { children: "built-in simulator" })),
 						/* @__PURE__ */ (0, M.jsx)(P, { children: `${d?.shots ?? 1024} shots` }),
-						d?.timestamp_utc && /* @__PURE__ */ (0, M.jsx)(P, { children: De(d.timestamp_utc) })
+						d?.timestamp_utc && /* @__PURE__ */ (0, M.jsx)(P, { children: Ee(d.timestamp_utc) })
 					]
 				}),
 				o && /* @__PURE__ */ (0, M.jsx)("p", {
@@ -9623,61 +9623,61 @@ function Ie({ storedMotor: e = null, quantum: t = null, started: n = !1, failed:
 				/* @__PURE__ */ (0, M.jsxs)("dl", {
 					className: "job-dl",
 					children: [
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Job ID",
 							children: /* @__PURE__ */ (0, M.jsx)("span", {
 								className: "mono selectable",
 								children: d?.job_id ?? f
 							})
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Backend",
 							children: /* @__PURE__ */ (0, M.jsx)("span", {
 								className: "mono",
-								children: p ?? Se
+								children: p ?? xe
 							})
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Shots",
 							children: `${d?.shots ?? 1024} shots`
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Timestamp",
-							children: d ? De(d.timestamp_utc) : f
+							children: d ? Ee(d.timestamp_utc) : f
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "RNG bits",
 							children: g && h ? /* @__PURE__ */ (0, M.jsxs)(M.Fragment, { children: [/* @__PURE__ */ (0, M.jsx)("span", { children: `${d.rng_n_qubits} qubits, ${g.length}-bin histogram over ${d.counts_sum} shots, hashed to 64 bits:` }), /* @__PURE__ */ (0, M.jsx)("span", {
 								className: "mono selectable bits",
 								children: h
 							})] }) : f
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Seed",
 							children: d?.seed_hex ? /* @__PURE__ */ (0, M.jsx)("span", {
 								className: "mono selectable",
 								children: `0x${d.seed_hex} (${d.seed_str})`
 							}) : f
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Motor RPM",
-							children: d ? Ae(d.motor?.rpm_min, d.motor?.rpm_max) : f
+							children: d ? ke(d.motor?.rpm_min, d.motor?.rpm_max) : f
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Harmonic amplitudes (nT)",
 							children: /* @__PURE__ */ (0, M.jsx)("span", {
 								className: "mono",
-								children: d ? je(d.motor?.amps_nT, 0) : f
+								children: d ? Ae(d.motor?.amps_nT, 0) : f
 							})
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Harmonic phases (rad)",
 							children: /* @__PURE__ */ (0, M.jsx)("span", {
 								className: "mono",
-								children: d ? je(d.motor?.phases, 2) : f
+								children: d ? Ae(d.motor?.phases, 2) : f
 							})
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "GHZ-2 contrast",
 							children: d ? /* @__PURE__ */ (0, M.jsx)(Ne, {
 								n: 2,
@@ -9685,7 +9685,7 @@ function Ie({ storedMotor: e = null, quantum: t = null, started: n = !1, failed:
 								cDefault: Me(2, d.c_n_default)
 							}) : f
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "GHZ-4 contrast",
 							children: d ? /* @__PURE__ */ (0, M.jsx)(Ne, {
 								n: 4,
@@ -9693,14 +9693,14 @@ function Ie({ storedMotor: e = null, quantum: t = null, started: n = !1, failed:
 								cDefault: d.c_n_default
 							}) : f
 						}),
-						/* @__PURE__ */ (0, M.jsx)(R, {
+						/* @__PURE__ */ (0, M.jsx)(je, {
 							label: "Contrast used by the emulator",
 							children: d ? /* @__PURE__ */ (0, M.jsxs)("span", {
 								className: "dd-inline",
 								children: [
 									/* @__PURE__ */ (0, M.jsx)("span", {
 										className: "mono",
-										children: Ee(d.c_n_used, 3)
+										children: we(d.c_n_used, 3)
 									}),
 									/* @__PURE__ */ (0, M.jsx)(P, { children: d.c_n_source === "measured this Run" ? "measured this Run" : "default model, not measured" }),
 									d.c_n_note ? /* @__PURE__ */ (0, M.jsx)("span", {
@@ -9718,17 +9718,17 @@ function Ie({ storedMotor: e = null, quantum: t = null, started: n = !1, failed:
 				className: "job-details",
 				children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: "Provenance" }), /* @__PURE__ */ (0, M.jsxs)("dl", {
 					className: "job-dl",
-					children: [/* @__PURE__ */ (0, M.jsx)(R, {
+					children: [/* @__PURE__ */ (0, M.jsx)(je, {
 						label: "Circuit SHA-256 (first 12 hex)",
 						children: /* @__PURE__ */ (0, M.jsx)("span", {
 							className: "mono",
-							children: L(d?.circuit_sha256 ?? c)
+							children: Te(d?.circuit_sha256 ?? c)
 						})
-					}), /* @__PURE__ */ (0, M.jsx)(R, {
+					}), /* @__PURE__ */ (0, M.jsx)(je, {
 						label: "Model SHA-256 (first 12 hex)",
 						children: /* @__PURE__ */ (0, M.jsx)("span", {
 							className: "mono",
-							children: L(l)
+							children: Te(l)
 						})
 					})]
 				})]
@@ -28095,7 +28095,7 @@ function nz() {
 		requestAnimationFrame(() => e());
 	});
 }
-var rz = xe({
+var rz = L({
 	callPy: $R(YR),
 	now: () => performance.now(),
 	yieldFn: tz,
@@ -28264,27 +28264,27 @@ function Xz() {
 			...n,
 			[e]: t
 		});
-	}, []), [O, k] = (0, y.useState)(null), [A, j] = (0, y.useState)({}), [N, ee] = (0, y.useState)(null), [te, ne] = (0, y.useState)(null), [re, ie] = (0, y.useState)(null), [oe, P] = (0, y.useState)(!1), se = (0, y.useRef)(!1), [ce, fe] = (0, y.useState)(null), [F, I] = (0, y.useState)(null), [ge, _e] = (0, y.useState)({
+	}, []), [O, k] = (0, y.useState)(null), [A, j] = (0, y.useState)({}), [N, ee] = (0, y.useState)(null), [te, ne] = (0, y.useState)(null), [re, ie] = (0, y.useState)(null), oe = (0, y.useRef)(!1), [P, se] = (0, y.useState)(null), [ce, fe] = (0, y.useState)(null), [F, I] = (0, y.useState)({
+		status: "loading",
+		record: null
+	}), [ge, _e] = (0, y.useState)({
 		status: "loading",
 		record: null
 	}), [ve, ye] = (0, y.useState)({
 		status: "loading",
-		record: null
-	}), [be, xe] = (0, y.useState)({
-		status: "loading",
 		payload: null
-	}), Se = i ?? t?.default_scenario ?? null, Ce = c ?? (YL.includes(t?.default_estimator) ? t.default_estimator : "quantum_ghz4"), we = o === "live", Te = we ? A[Se] ?? null : null, Ee = (0, y.useMemo)(() => Te ? Te.scenario : t ? fR(t, Se) : null, [
+	}), be = i ?? t?.default_scenario ?? null, L = c ?? (YL.includes(t?.default_estimator) ? t.default_estimator : "quantum_ghz4"), xe = o === "live", Se = xe ? A[be] ?? null : null, Ce = (0, y.useMemo)(() => Se ? Se.scenario : t ? fR(t, be) : null, [
 		t,
-		Se,
-		Te
-	]), { view: L, viewError: De } = (0, y.useMemo)(() => {
-		if (!Ee) return {
+		be,
+		Se
+	]), { view: R, viewError: we } = (0, y.useMemo)(() => {
+		if (!Ce) return {
 			view: null,
 			viewError: null
 		};
 		try {
 			return {
-				view: _R(Ee),
+				view: _R(Ce),
 				viewError: null
 			};
 		} catch (e) {
@@ -28293,14 +28293,14 @@ function Xz() {
 				viewError: e?.message ?? String(e)
 			};
 		}
-	}, [Ee]), Oe = (0, y.useRef)(L);
-	Oe.current = L;
-	let Ae = (0, y.useRef)(Ce);
-	Ae.current = Ce;
-	let je = (0, y.useRef)(!1), R = (e) => $t[e]?.label ?? e;
+	}, [Ce]), Te = (0, y.useRef)(R);
+	Te.current = R;
+	let Ee = (0, y.useRef)(L);
+	Ee.current = L;
+	let De = (0, y.useRef)(!1), ke = (e) => $t[e]?.label ?? e;
 	(0, y.useEffect)(() => {
-		L && !je.current && (je.current = !0, w.load(L.t), w.seekIndex(L.n - 1), UR(fz(L.label, L.mapLabel)));
-	}, [L]), (0, y.useEffect)(() => {
+		R && !De.current && (De.current = !0, w.load(R.t), w.seekIndex(R.n - 1), UR(fz(R.label, R.mapLabel)));
+	}, [R]), (0, y.useEffect)(() => {
 		w.setSpeed(u);
 	}, [u]), (0, y.useEffect)(() => {
 		w.setReduced(r);
@@ -28308,17 +28308,17 @@ function Xz() {
 		let e = uz(Nz), t = w.getIndex(), n = w.on("play", () => {
 			e.mark(), UR(hz(w.getSpeed()));
 		}), r = w.on("pause", () => UR(gz(w.getTime()))), i = w.on("end", () => {
-			let e = Oe.current;
+			let e = Te.current;
 			if (!e) return;
-			let t = Ae.current, n = e.n - 1;
-			UR(Dz(R(t), vR(e, t, n), vR(e, Az, n)));
+			let t = Ee.current, n = e.n - 1;
+			UR(Dz(ke(t), vR(e, t, n), vR(e, Az, n)));
 		}), a = w.subscribe(() => {
-			let n = Oe.current, r = w.getIndex(), i = t;
+			let n = Te.current, r = w.getIndex(), i = t;
 			if (t = r, n && w.isPlaying()) {
 				if (i < n.jamIdx && n.jamIdx <= r) e.mark(), UR(_z(n.jamT));
 				else if (r >= n.metricStartIdx && r < n.n && e()) {
-					let e = Ae.current, t = vR(n, e, r);
-					t !== null && UR(vz(n.t[r], R(e), t, vR(n, Az, r)));
+					let e = Ee.current, t = vR(n, e, r);
+					t !== null && UR(vz(n.t[r], ke(e), t, vR(n, Az, r)));
 				}
 			}
 		});
@@ -28331,15 +28331,15 @@ function Xz() {
 		let e = !1;
 		return (async () => {
 			let t = await Gz("backend_info", null);
-			!e && t.status === "ok" && fe(t.record);
+			!e && t.status === "ok" && se(t.record);
 			let n = await Gz("circuit_json", "circuit");
-			!e && n.status === "ok" && I(n.record);
+			!e && n.status === "ok" && fe(n.record);
 			let r = await Gz("hardware_json", "hardware");
-			e || _e(r);
+			e || I(r);
 			let i = await Gz("benchmark_json", "benchmark");
-			i.status === "error" && console.error("[benchmark] load failed", i.error), e || ye(i);
+			i.status === "error" && console.error("[benchmark] load failed", i.error), e || _e(i);
 			let a = await Wz(null);
-			a.status !== "ok" && console.error("[ghz] scaling failed", a.error), e || xe((e) => e.status === "ok" ? e : a);
+			a.status !== "ok" && console.error("[ghz] scaling failed", a.error), e || ye((e) => e.status === "ok" ? e : a);
 		})(), () => {
 			e = !0;
 		};
@@ -28348,7 +28348,7 @@ function Xz() {
 			if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
 			let t = e.target;
 			if (t instanceof Element && t.closest(Yz)) return;
-			let n = Oe.current;
+			let n = Te.current;
 			if (n) switch (e.key) {
 				case " ":
 				case "Spacebar":
@@ -28388,33 +28388,33 @@ function Xz() {
 			document.removeEventListener("pointerdown", o, !0), document.removeEventListener("keydown", o, !0), document.removeEventListener("visibilitychange", s), c(), n !== null && cancelAnimationFrame(n);
 		};
 	}, []);
-	let Me = (0, y.useCallback)((e) => {
+	let Ae = (0, y.useCallback)((e) => {
 		let n = t ? fR(t, e) : null;
 		a(e), n && UR(pz(n.label, n.map_label, o === "live" && !!A[e]));
 	}, [
 		t,
 		o,
 		A
-	]), Ne = (0, y.useCallback)((e) => {
+	]), je = (0, y.useCallback)((e) => {
 		s(e), UR(mz(e));
-	}, []), Pe = (0, y.useCallback)((e) => {
-		l(e), UR(yz(R(e)));
-	}, []), Fe = (0, y.useCallback)(async () => {
-		if (se.current || !v || !t || !L) return;
-		se.current = !0;
-		let e = Se, n = fR(t, e)?.label ?? e, i = document.activeElement, a = !!(i && h.current?.closest("fieldset")?.contains(i));
+	}, []), Me = (0, y.useCallback)((e) => {
+		l(e), UR(yz(ke(e)));
+	}, []), Ne = (0, y.useCallback)(async () => {
+		if (oe.current || !v || !t || !R) return;
+		oe.current = !0;
+		let e = be, n = fR(t, e)?.label ?? e, i = document.activeElement, a = !!(i && h.current?.closest("fieldset")?.contains(i));
 		(i === g.current || a) && m.current?.focus(), w.pause(), k(e), ee(null), ne(null), S("running"), Jz.inFlight = !0;
 		let o = uz(Hz);
 		o.mark();
 		try {
 			let t = await b.start({
 				scenario: e,
-				simulateFailure: oe,
+				simulateFailure: !1,
 				onStage: (e) => {
 					e !== 2 && UR(bz(e, le[e]));
 				},
 				onQuantum: (e) => {
-					ee(e), UR(`${Sz(e.job_id, e.backend)} ${Cz(e.motor?.rpm_min, e.motor?.rpm_max, e.c_hat?.c4, ke(e))}`);
+					ee(e), UR(`${Sz(e.job_id, e.backend)} ${Cz(e.motor?.rpm_min, e.motor?.rpm_max, e.c_hat?.c4, Oe(e))}`);
 				},
 				onStep: (e) => {
 					!e.done && o() && UR(wz(e.samples_done, e.samples_total));
@@ -28428,7 +28428,7 @@ function Xz() {
 				a.c4
 			].some((e) => Number.isFinite(e))) {
 				let e = await Wz(a);
-				e.status === "ok" ? xe(e) : console.error("[ghz] measured scaling failed", e.error);
+				e.status === "ok" ? ye(e) : console.error("[ghz] measured scaling failed", e.error);
 			}
 		} catch (e) {
 			console.error("[live] failed", e), e?.quantum && ee(e.quantum), ne({
@@ -28442,19 +28442,18 @@ function Xz() {
 	}, [
 		v,
 		t,
-		L,
-		Se,
+		R,
+		be,
 		b,
-		oe,
 		r
-	]), Le = e === "error" ? n : De, Re = Le ? `Could not load the recorded flights (${Le}). Press Stop, then Run on Qollab, to reload.` : null, ze = e === "ready" && !!L, Be = x === "running", Ve = x !== "idle", He = O && t ? fR(t, O)?.label ?? O : null, Ue = Se === O, We = !!Te, Ge = Iz;
-	we && (Ge = v ? !Ve || Be ? Pz : Ue ? Lz(He) : Rz(He) : Fz);
-	let Ke = null;
-	Be ? Ke = de(b.stage || 1) : L && We && x === "result" ? Ke = Bz(re, L.label, N?.job_id) : L && (Ke = pe(L.label, L.jamT, we && !Ve));
-	let qe = x === "fallback" && te && He ? Vz(te, He) : null, Je = N?.analytic_blocks === !0 && (Be || We) ? ue : null, Ye = "replay";
-	Be ? Ye = "computing" : We && (Ye = "computed");
-	let Xe = "stored";
-	return Be ? Xe = null : We && (Xe = "drawn"), /* @__PURE__ */ (0, M.jsxs)("main", {
+	]), Pe = e === "error" ? n : we, Fe = Pe ? `Could not load the recorded flights (${Pe}). Press Stop, then Run on Qollab, to reload.` : null, Le = e === "ready" && !!R, Re = x === "running", ze = x !== "idle", Be = O && t ? fR(t, O)?.label ?? O : null, Ve = be === O, He = !!Se, Ue = Iz;
+	xe && (Ue = v ? !ze || Re ? Pz : Ve ? Lz(Be) : Rz(Be) : Fz);
+	let We = null;
+	Re ? We = de(b.stage || 1) : R && He && x === "result" ? We = Bz(re, R.label, N?.job_id) : R && (We = pe(R.label, R.jamT, xe && !ze));
+	let Ge = x === "fallback" && te && Be ? Vz(te, Be) : null, Ke = N?.analytic_blocks === !0 && (Re || He) ? ue : null, qe = "replay";
+	Re ? qe = "computing" : He && (qe = "computed");
+	let Je = "stored";
+	return Re ? Je = null : He && (Je = "drawn"), /* @__PURE__ */ (0, M.jsxs)("main", {
 		className: "page",
 		children: [
 			/* @__PURE__ */ (0, M.jsxs)("header", {
@@ -28464,17 +28463,17 @@ function Xz() {
 					children: "After GPS is jammed, the UAV navigates by matching its magnetometer reading to a magnetic anomaly map; an emulated Ramsey quantum sensor and an ordinary magnetometer with a classical notch each feed the same map matcher."
 				})]
 			}),
-			Re && /* @__PURE__ */ (0, M.jsx)("p", {
+			Fe && /* @__PURE__ */ (0, M.jsx)("p", {
 				className: "danger-notice",
-				children: Re
+				children: Fe
 			}),
 			/* @__PURE__ */ (0, M.jsxs)("div", {
 				className: "layout",
 				children: [/* @__PURE__ */ (0, M.jsx)("div", {
 					className: "col-left",
 					children: /* @__PURE__ */ (0, M.jsx)(Yn, {
-						view: L,
-						quantumKey: Ce,
+						view: R,
+						quantumKey: L,
 						mapMode: f
 					})
 				}), /* @__PURE__ */ (0, M.jsxs)("div", {
@@ -28489,8 +28488,8 @@ function Xz() {
 									children: "Navigation accuracy"
 								}),
 								/* @__PURE__ */ (0, M.jsx)(SR, {
-									view: L,
-									quantumKey: Ce
+									view: R,
+									quantumKey: L
 								}),
 								/* @__PURE__ */ (0, M.jsxs)("div", {
 									className: "controls",
@@ -28499,38 +28498,38 @@ function Xz() {
 									children: [
 										t && /* @__PURE__ */ (0, M.jsx)(Xn, {
 											scenarios: t.scenarios,
-											value: Se,
-											onChange: Me,
-											disabled: !ze || Be,
-											lockHelp: Be && He ? zz(He) : null,
+											value: be,
+											onChange: Ae,
+											disabled: !Le || Re,
+											lockHelp: Re && Be ? zz(Be) : null,
 											focusRef: h
 										}),
 										/* @__PURE__ */ (0, M.jsx)(Qn, {
 											value: o,
-											onChange: Ne,
-											disabled: !ze
+											onChange: je,
+											disabled: !Le
 										}),
 										/* @__PURE__ */ (0, M.jsxs)("div", {
 											className: "run-row",
 											children: [
-												we && /* @__PURE__ */ (0, M.jsx)("button", {
+												xe && /* @__PURE__ */ (0, M.jsx)("button", {
 													type: "button",
 													className: "btn-primary run-button",
 													ref: g,
-													onClick: Fe,
-													disabled: !ze || !v || Ve,
+													onClick: Ne,
+													disabled: !Le || !v || ze,
 													"aria-describedby": "run-help",
 													children: "Run one IonQ job"
 												}),
 												/* @__PURE__ */ (0, M.jsx)("p", {
 													id: "run-help",
 													className: "help run-help",
-													children: Ge
+													children: Ue
 												}),
-												/* @__PURE__ */ (0, M.jsxs)("details", {
+												/* @__PURE__ */ (0, M.jsxs)("fieldset", {
 													className: "demo-options",
 													children: [
-														/* @__PURE__ */ (0, M.jsx)("summary", { children: "Demo options" }),
+														/* @__PURE__ */ (0, M.jsx)("legend", { children: "Demo options" }),
 														/* @__PURE__ */ (0, M.jsxs)("fieldset", {
 															className: "map-mode",
 															children: [/* @__PURE__ */ (0, M.jsx)("legend", { children: "Map view" }), dn.map((e) => /* @__PURE__ */ (0, M.jsxs)("label", {
@@ -28544,32 +28543,20 @@ function Xz() {
 																}), e.label]
 															}, e.key))]
 														}),
-														we && /* @__PURE__ */ (0, M.jsxs)(M.Fragment, { children: [/* @__PURE__ */ (0, M.jsxs)("label", {
-															className: "check-row",
-															children: [/* @__PURE__ */ (0, M.jsx)("input", {
-																type: "checkbox",
-																checked: oe,
-																onChange: (e) => P(e.target.checked),
-																disabled: Ve
-															}), "Simulate a failure"]
-														}), /* @__PURE__ */ (0, M.jsx)("p", {
-															className: "help",
-															children: "Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback."
-														})] }),
 														/* @__PURE__ */ (0, M.jsx)(er, {
-															value: Ce,
-															onChange: Pe,
-															disabled: !ze
+															value: L,
+															onChange: Me,
+															disabled: !Le
 														})
 													]
 												})
 											]
 										}),
 										/* @__PURE__ */ (0, M.jsx)(ae, {
-											view: L,
+											view: R,
 											speed: u,
 											onSpeedChange: d,
-											disabled: !ze || Be
+											disabled: !Le || Re
 										})
 									]
 								})
@@ -28578,22 +28565,22 @@ function Xz() {
 						/* @__PURE__ */ (0, M.jsxs)("section", {
 							className: "panel benchmark-card",
 							"aria-label": "Benchmark",
-							children: [/* @__PURE__ */ (0, M.jsx)(jR, { benchmark: ve }), /* @__PURE__ */ (0, M.jsx)(zR, {
-								view: L,
-								ghz: be.payload
+							children: [/* @__PURE__ */ (0, M.jsx)(jR, { benchmark: ge }), /* @__PURE__ */ (0, M.jsx)(zR, {
+								view: R,
+								ghz: ve.payload
 							})]
 						}),
 						/* @__PURE__ */ (0, M.jsx)(he, {
-							mode: Ye,
-							motor: Xe,
-							mapLabel: L ? L.mapLabel : null,
-							fallbackLabel: we && x === "fallback" && Ue ? He : null,
-							bitsLabel: We && N ? ke(N) : null,
-							message: Ke,
-							danger: qe,
-							notice: Je,
+							mode: qe,
+							motor: Je,
+							mapLabel: R ? R.mapLabel : null,
+							fallbackLabel: xe && x === "fallback" && Ve ? Be : null,
+							bitsLabel: He && N ? Oe(N) : null,
+							message: We,
+							danger: Ge,
+							notice: Ke,
 							focusRef: m,
-							children: Be ? /* @__PURE__ */ (0, M.jsx)(me, {
+							children: Re ? /* @__PURE__ */ (0, M.jsx)(me, {
 								stage: b.stage,
 								progress: b.progress,
 								elapsedS: b.elapsedS,
@@ -28611,13 +28598,13 @@ function Xz() {
 								headingInSummary: !0,
 								storedMotor: t?.motor ?? null,
 								quantum: N,
-								started: Ve,
+								started: ze,
 								failed: x === "fallback",
-								backendName: ce?.name ?? null,
-								isIonq: ce?.is_ionq === !0,
-								flownLabel: x === "result" ? He : null,
-								hardware: ge,
-								circuitSha: F?.circuit_sha256 ?? null,
+								backendName: P?.name ?? null,
+								isIonq: P?.is_ionq === !0,
+								flownLabel: x === "result" ? Be : null,
+								hardware: F,
+								circuitSha: ce?.circuit_sha256 ?? null,
 								modelSha: A[O]?.model_sha256 ?? t?.model_sha256 ?? null
 							})]
 						}),
@@ -28630,10 +28617,10 @@ function Xz() {
 								children: "Sensor"
 							}) }), C.charts && /* @__PURE__ */ (0, M.jsx)(WL, {
 								headingInSummary: !0,
-								view: L,
-								quantumKey: Ce,
-								ghz: be.payload,
-								ghzStatus: be.status,
+								view: R,
+								quantumKey: L,
+								ghz: ve.payload,
+								ghzStatus: ve.status,
 								measuredSource: N?.c_n_source ?? null
 							})]
 						})

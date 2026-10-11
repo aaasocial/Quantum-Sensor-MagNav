@@ -127,7 +127,6 @@ export default function App() {
   const [quantum, setQuantum] = useState(null);
   const [failure, setFailure] = useState(null);
   const [doneS, setDoneS] = useState(null);
-  const [simulateFailure, setSimulateFailure] = useState(false);
   const latchRef = useRef(false);
   const [backendInfo, setBackendInfo] = useState(null);
   const [circuitInfo, setCircuitInfo] = useState(null);
@@ -375,7 +374,7 @@ export default function App() {
     try {
       const res = await liveRun.start({
         scenario: sc,
-        simulateFailure,
+        simulateFailure: false, // forced-failure control removed from the page (adhoc5); the automatic fallback stays
         // Step 2 is announced by the job and decode summary below (the same moment).
         onStage: (n) => { if (n !== 2) announce(stageText(n, STEP_TEXT[n])); },
         onQuantum: (q) => {
@@ -420,7 +419,7 @@ export default function App() {
       liveRunFlag.inFlight = false;
       if (fromScenario && document.activeElement === statusFocusRef.current) scenarioFocusRef.current?.focus();
     }
-  }, [hasBackend, artifact, view, activeSid, liveRun, simulateFailure, reduced]);
+  }, [hasBackend, artifact, view, activeSid, liveRun, reduced]);
 
   const loadError = status === 'error' ? error : viewError;
   const danger = loadError
@@ -510,8 +509,8 @@ export default function App() {
                 </button>
               )}
               <p id="run-help" className="help run-help">{helpLine}</p>
-              <details className="demo-options">
-                <summary>Demo options</summary>
+              <fieldset className="demo-options">
+                <legend>Demo options</legend>
                 {/* Map view (Eason, 2026-10-11): follow the UAV zoomed in (default) or the full trajectory. */}
                 <fieldset className="map-mode">
                   <legend>Map view</legend>
@@ -528,24 +527,8 @@ export default function App() {
                     </label>
                   ))}
                 </fieldset>
-                {live && (
-                  <>
-                    <label className="check-row">
-                      <input
-                        type="checkbox"
-                        checked={simulateFailure}
-                        onChange={(e) => setSimulateFailure(e.target.checked)}
-                        disabled={latched}
-                      />
-                      Simulate a failure
-                    </label>
-                    <p className="help">
-                      Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback.
-                    </p>
-                  </>
-                )}
                 <QuantumTrackToggle value={activeQuantum} onChange={onQuantumChange} disabled={!ready} />
-              </details>
+              </fieldset>
             </div>
             <ControlBar view={view} speed={speed} onSpeedChange={setSpeed} disabled={!ready || running} />
           </div>

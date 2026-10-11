@@ -194,7 +194,8 @@ figure:focus-visible, section:focus-visible { outline: 3px solid var(--color-acc
 .run-row .help { margin: 0; }
 .run-button { min-width: 200px; }
 .demo-options { font-size: var(--text-sm); color: var(--color-text-muted); }
-.demo-options summary { cursor: pointer; min-height: 32px; display: list-item; color: var(--color-text); }
+.demo-options { border: 0; margin: 0; padding: 0; min-width: 0; }
+.demo-options > legend { padding: 0; margin-bottom: var(--space-1); color: var(--color-text); font-weight: 600; }
 .demo-options .map-mode { border: 0; margin: 0 0 var(--space-2); padding: 0; min-width: 0; }
 .demo-options .map-mode legend { padding: 0; color: var(--color-text); }
 .check-row { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 32px; font-weight: 400; color: var(--color-text); }
