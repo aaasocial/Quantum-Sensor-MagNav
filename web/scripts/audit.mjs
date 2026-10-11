@@ -11,7 +11,9 @@
 // Since the second ad-hoc change: the left column holds only the map; the right column runs
 // Navigation accuracy, Run controls, Run status, job, Sensor (DOM order = single-column order); at
 // the wide viewport the error box sits beside the map (to its right, within its height) and the
-// map column is the wider one; the map legend and overlay carry no classical-baseline track.
+// map column is the wider one. Since the fourth ad-hoc change: the map follows the UAV zoomed in
+// by default (Map view radio group in Demo options, keyboard operable), and the legend and overlay
+// carry the classical-baseline track again.
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
@@ -122,8 +124,9 @@ const layoutCheck = (page) => page.evaluate(() => {
         const st = r(document.querySelector('.map-stage'));
         return st ? [Math.round(st.width), Math.round(st.height)] : null;
       })(),
-      legend_lists_baseline: /baseline/i.test(legend),
+      legend_lists_baseline: /Baseline: magnetometer \+ notch/.test(legend),
       map_draws_baseline: strokes.includes('#D55E00'),
+      map_mode: document.querySelector('input[name="map-mode"]:checked')?.value ?? null,
     };
   }
 });
@@ -144,8 +147,9 @@ const layoutProblems = (name, L) => {
     if (!L.map_column_wider) out.push(`${name}: map column is not the wider one`);
     if (!L.error_box_beside_map) out.push(`${name}: error box is not beside the map`);
   } else if (L.two_columns) out.push(`${name}: two columns at the narrow viewport`);
-  if (L.legend_lists_baseline) out.push(`${name}: map legend still lists the baseline`);
-  if (L.map_draws_baseline) out.push(`${name}: map overlay still draws the baseline`);
+  if (!L.legend_lists_baseline) out.push(`${name}: map legend does not list the baseline`);
+  if (!L.map_draws_baseline) out.push(`${name}: map overlay does not draw the baseline`);
+  if (L.map_mode !== 'follow') out.push(`${name}: map view is ${L.map_mode}, expected follow`);
   return out;
 };
 
@@ -263,6 +267,35 @@ try {
       const afterSpace = (await detailsOpen(page2)).charts;
       const toggles = { sensor_enter_opens: afterEnter === true, sensor_space_closes: afterSpace === false };
 
+      // Map view radio group: open Demo options with Enter, Tab into the group (Follow checked),
+      // ArrowDown selects Full trajectory (caption follows), ArrowUp returns to Follow.
+      const caption = () => page2.locator('figure.map-figure figcaption').evaluate((el) => el.textContent);
+      await page2.locator('details.demo-options > summary').focus();
+      await page2.keyboard.press('Enter');
+      await page2.waitForTimeout(200);
+      await page2.keyboard.press('Tab');
+      const mvFirst = await focused(page2);
+      await page2.keyboard.press('ArrowDown');
+      await page2.waitForTimeout(200);
+      const mvFull = await caption();
+      const mvFullVal = await page2.evaluate(() => document.querySelector('input[name="map-mode"]:checked')?.value);
+      await page2.keyboard.press('ArrowUp');
+      await page2.waitForTimeout(200);
+      const mvFollowVal = await page2.evaluate(() => document.querySelector('input[name="map-mode"]:checked')?.value);
+      await page2.locator('details.demo-options > summary').focus();
+      await page2.keyboard.press('Enter'); // close again
+      await page2.waitForTimeout(200);
+      const mapView = {
+        first_stop: mvFirst,
+        arrow_down_selects_full: mvFullVal === 'full' && /full trajectory/i.test(mvFull),
+        arrow_up_returns_to_follow: mvFollowVal === 'follow',
+      };
+      if (!(mvFirst && mvFirst.role === 'radio' && mvFirst.group === 'Map view' && /Follow the UAV/.test(mvFirst.name))) {
+        problems.push(`map view radio not the first stop in Demo options: ${JSON.stringify(mvFirst)}`);
+      }
+      if (!mapView.arrow_down_selects_full) problems.push('map view: ArrowDown did not select Full trajectory');
+      if (!mapView.arrow_up_returns_to_follow) problems.push('map view: ArrowUp did not return to Follow');
+
       const idle = await readoutHeight(page2);
       const boxIdle = await errorBoxHeight(page2);
       const { running, boxRunning } = await keyboardRun(page2);
@@ -276,6 +309,7 @@ try {
       keyOut.focus_order = order;
       keyOut.reached = { ...reached, real_flight_link: realFlight };
       keyOut.summary_keyboard_toggle = toggles;
+      keyOut.map_view_keyboard = mapView;
       keyOut.details_open_after_run = openAfter;
       keyOut.readout_row_height = { idle, running, after_run: afterRun, jam_banner_after_run: jamShown };
       keyOut.error_box_height = { idle: boxIdle, running: boxRunning, after_run: boxAfter };
