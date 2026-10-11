@@ -27580,15 +27580,29 @@ function fR({ view: e, quantumKey: t, ghz: n, ghzStatus: r, measuredSource: i, h
 		]
 	});
 }
-var pR = (0, y.memo)(fR), mR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toLocaleString("en-US", {
-	maximumFractionDigits: 1,
-	minimumFractionDigits: 1
-}) : "n/a", hR = (e) => Number.isInteger(e?.accepted) && Number.isInteger(e?.windows) ? `${e.accepted} of ${e.windows}` : "n/a";
-function gR({ view: e, quantumKey: t, thresholds: n, isLive: r }) {
-	if (!e) return null;
-	let i = Array.isArray(n) && n.length ? n[0] : null, a = i === null ? null : `pct_under_${i}`, o = r ? "this Run" : "recorded flight";
+var pR = (0, y.memo)(fR);
+//#endregion
+//#region src/components/TableScroll.jsx
+function mR({ label: e, children: t }) {
 	return /* @__PURE__ */ (0, M.jsx)("div", {
 		className: "table-scroll",
+		role: "region",
+		"aria-label": e,
+		tabIndex: 0,
+		children: t
+	});
+}
+//#endregion
+//#region src/components/MetricsTable.jsx
+var hR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toLocaleString("en-US", {
+	maximumFractionDigits: 1,
+	minimumFractionDigits: 1
+}) : "n/a", gR = (e) => Number.isInteger(e?.accepted) && Number.isInteger(e?.windows) ? `${e.accepted} of ${e.windows}` : "n/a";
+function _R({ view: e, quantumKey: t, thresholds: n, isLive: r }) {
+	if (!e) return null;
+	let i = Array.isArray(n) && n.length ? n[0] : null, a = i === null ? null : `pct_under_${i}`, o = r ? "this Run" : "recorded flight";
+	return /* @__PURE__ */ (0, M.jsx)(mR, {
+		label: "Position error table",
 		children: /* @__PURE__ */ (0, M.jsxs)("table", {
 			className: "data-table",
 			children: [
@@ -27628,11 +27642,11 @@ function gR({ view: e, quantumKey: t, thresholds: n, isLive: r }) {
 								scope: "row",
 								children: o ? `${s} (on map)` : s
 							}),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: mR(r?.cep50_m) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: mR(r?.cep95_m) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: a ? mR(r?.[a]) : "n/a" }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: i ? "n/a" : mR(r?.signal_rmse_nT) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: i ? "n/a" : hR(r) })
+							/* @__PURE__ */ (0, M.jsx)("td", { children: hR(r?.cep50_m) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: hR(r?.cep95_m) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: a ? hR(r?.[a]) : "n/a" }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: i ? "n/a" : hR(r?.signal_rmse_nT) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: i ? "n/a" : gR(r) })
 						]
 					}, n);
 				}) })
@@ -27640,8 +27654,8 @@ function gR({ view: e, quantumKey: t, thresholds: n, isLive: r }) {
 		})
 	});
 }
-var _R = (0, y.memo)(gR), vR = (e, t) => t.value === null || t.value === void 0 ? "n/a" : e === "matches_lost" ? t.windows === null ? String(t.value) : `${t.value} of ${t.windows}` : String(t.value);
-function yR({ artifact: e }) {
+var vR = (0, y.memo)(_R), yR = (e, t) => t.value === null || t.value === void 0 ? "n/a" : e === "matches_lost" ? t.windows === null ? String(t.value) : `${t.value} of ${t.windows}` : String(t.value);
+function bR({ artifact: e }) {
 	let t = (0, y.useId)(), n = (0, y.useMemo)(() => Tn(e), [e]);
 	return /* @__PURE__ */ (0, M.jsxs)("section", {
 		className: "comparison",
@@ -27662,8 +27676,8 @@ function yR({ artifact: e }) {
 				className: "badge-row",
 				children: /* @__PURE__ */ (0, M.jsx)(P, { children: `verdict: ${n.verdict}` })
 			}),
-			/* @__PURE__ */ (0, M.jsx)("div", {
-				className: "table-scroll",
+			/* @__PURE__ */ (0, M.jsx)(mR, {
+				label: "Comparison table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table comparison-table",
 					children: [
@@ -27695,7 +27709,7 @@ function yR({ artifact: e }) {
 						}), e.rows.map((e) => /* @__PURE__ */ (0, M.jsxs)("tr", { children: [/* @__PURE__ */ (0, M.jsx)("th", {
 							scope: "row",
 							children: e.label
-						}), e.cells.map((t, r) => /* @__PURE__ */ (0, M.jsx)("td", { children: vR(e.key, t) }, n.columns[r].id))] }, e.key))] }, e.estimator))
+						}), e.cells.map((t, r) => /* @__PURE__ */ (0, M.jsx)("td", { children: yR(e.key, t) }, n.columns[r].id))] }, e.key))] }, e.estimator))
 					]
 				})
 			}),
@@ -27709,39 +27723,39 @@ function yR({ artifact: e }) {
 		})]
 	});
 }
-var bR = (0, y.memo)(yR), xR = "Benchmark summary unavailable", SR = (e) => typeof e == "object" && !!e && !Array.isArray(e), CR = (e) => typeof e == "string" ? e : "";
-function wR(e) {
+var xR = (0, y.memo)(bR), SR = "Benchmark summary unavailable", CR = (e) => typeof e == "object" && !!e && !Array.isArray(e), wR = (e) => typeof e == "string" ? e : "";
+function TR(e) {
 	return typeof e == "number" && Number.isFinite(e) ? e.toFixed(1) : "n/a";
 }
-var TR = (e, t, n) => `${wR(e)} ± ${wR(t)} ${n}`;
-function ER(e) {
-	if (!SR(e) || e.kind !== "benchmark_summary" || !Array.isArray(e.rows)) return { error: xR };
-	let t = e.rows.filter(SR).map((e) => ({
-		key: CR(e.estimator),
-		label: CR(e.label),
-		cep50: TR(e.cep50_mean_m, e.cep50_std_m, "m"),
-		cep95: TR(e.cep95_mean_m, e.cep95_std_m, "m"),
-		pct556: TR(e.pct556_mean, e.pct556_std, "%")
-	})), n = (Array.isArray(e.recorded) ? e.recorded : []).filter(SR).map((e) => ({
-		key: `${CR(e.job_id)}/${CR(e.scenario)}`,
-		label: CR(e.label),
-		jobShort: CR(e.job_id).slice(0, 8),
-		seedHex: CR(e.seed_hex),
-		scenarioLabel: CR(e.scenario_label),
-		cep50Baseline: `${wR(e.cep50_baseline_m)} m`,
-		cep50Quantum: `${wR(e.cep50_quantum_m)} m`
+var ER = (e, t, n) => `${TR(e)} ± ${TR(t)} ${n}`;
+function DR(e) {
+	if (!CR(e) || e.kind !== "benchmark_summary" || !Array.isArray(e.rows)) return { error: SR };
+	let t = e.rows.filter(CR).map((e) => ({
+		key: wR(e.estimator),
+		label: wR(e.label),
+		cep50: ER(e.cep50_mean_m, e.cep50_std_m, "m"),
+		cep95: ER(e.cep95_mean_m, e.cep95_std_m, "m"),
+		pct556: ER(e.pct556_mean, e.pct556_std, "%")
+	})), n = (Array.isArray(e.recorded) ? e.recorded : []).filter(CR).map((e) => ({
+		key: `${wR(e.job_id)}/${wR(e.scenario)}`,
+		label: wR(e.label),
+		jobShort: wR(e.job_id).slice(0, 8),
+		seedHex: wR(e.seed_hex),
+		scenarioLabel: wR(e.scenario_label),
+		cep50Baseline: `${TR(e.cep50_baseline_m)} m`,
+		cep50Quantum: `${TR(e.cep50_quantum_m)} m`
 	}));
 	return {
-		heading: CR(e.heading),
-		caption: CR(e.caption),
+		heading: wR(e.heading),
+		caption: wR(e.caption),
 		rows: t,
 		recorded: n
 	};
 }
 //#endregion
 //#region src/components/BenchmarkTable.jsx
-function DR({ benchmark: e }) {
-	let t = (0, y.useId)(), n = e?.status === "loading", r = (0, y.useMemo)(() => e?.status === "ok" ? ER(e.record) : ER(null), [e]);
+function OR({ benchmark: e }) {
+	let t = (0, y.useId)(), n = e?.status === "loading", r = (0, y.useMemo)(() => e?.status === "ok" ? DR(e.record) : DR(null), [e]);
 	return n ? null : r.error ? /* @__PURE__ */ (0, M.jsx)("section", {
 		className: "benchmark",
 		children: /* @__PURE__ */ (0, M.jsx)("p", {
@@ -27756,8 +27770,8 @@ function DR({ benchmark: e }) {
 				id: t,
 				children: r.heading
 			}),
-			/* @__PURE__ */ (0, M.jsx)("div", {
-				className: "table-scroll",
+			/* @__PURE__ */ (0, M.jsx)(mR, {
+				label: "Benchmark summary table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table benchmark-table",
 					children: [
@@ -27792,8 +27806,8 @@ function DR({ benchmark: e }) {
 					]
 				})
 			}),
-			r.recorded.length > 0 && /* @__PURE__ */ (0, M.jsx)("div", {
-				className: "table-scroll",
+			r.recorded.length > 0 && /* @__PURE__ */ (0, M.jsx)(mR, {
+				label: "Recorded IonQ seeds table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table benchmark-recorded",
 					children: [
@@ -27841,26 +27855,26 @@ function DR({ benchmark: e }) {
 		]
 	});
 }
-var OR = (0, y.memo)(DR), kR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(1) : "n/a", AR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", jR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", MR = (e) => Number.isFinite(Number(e)) ? Number(e).toFixed(2) : "n/a";
-function NR({ view: e, i: t }) {
+var kR = (0, y.memo)(OR), AR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(1) : "n/a", jR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", MR = (e) => typeof e == "number" && Number.isFinite(e) ? e.toFixed(3) : "n/a", NR = (e) => Number.isFinite(Number(e)) ? Number(e).toFixed(2) : "n/a";
+function PR({ view: e, i: t }) {
 	let n = Number(e.t[t]).toFixed(1);
 	return /* @__PURE__ */ (0, M.jsx)("th", {
 		scope: "row",
 		children: t === e.jamIdx ? `${n} (GPS jammed)` : n
 	});
 }
-var PR = [
+var FR = [
 	["baseline_ls", "Baseline"],
 	["quantum_q1", "Single-qubit"],
 	["quantum_ghz4", "GHZ-4"]
 ];
-function FR({ view: e, ghz: t }) {
+function IR({ view: e, ghz: t }) {
 	let n = (0, y.useMemo)(() => e ? aR(e, 60) : [], [e]), r = (0, y.useMemo)(() => RL(t), [t]);
 	return /* @__PURE__ */ (0, M.jsxs)("div", {
 		className: "text-alternatives",
 		children: [
-			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Map track data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)("div", {
-				className: "table-scroll",
+			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Map track data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)(mR, {
+				label: "Map track data table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table",
 					children: [
@@ -27878,7 +27892,7 @@ function FR({ view: e, ghz: t }) {
 								scope: "col",
 								children: "True y (m)"
 							}),
-							PR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
+							FR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
 								scope: "col",
 								children: `${t} error (m)`
 							}, e)),
@@ -27888,20 +27902,20 @@ function FR({ view: e, ghz: t }) {
 							})
 						] }) }),
 						/* @__PURE__ */ (0, M.jsx)("tbody", { children: n.map((t) => /* @__PURE__ */ (0, M.jsxs)("tr", { children: [
-							/* @__PURE__ */ (0, M.jsx)(NR, {
+							/* @__PURE__ */ (0, M.jsx)(PR, {
 								view: e,
 								i: t
 							}),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(e.truth.x[t]) }),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(e.truth.y[t]) }),
-							PR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: k(xn(e, n, t)) }, n)),
+							FR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: k(xn(e, n, t)) }, n)),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(Sn(e, t)) })
 						] }, t)) })
 					]
 				})
 			})] }),
-			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Sensor data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)("div", {
-				className: "table-scroll",
+			e && /* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: `Sensor data, ${e.label} (every 60 s)` }), /* @__PURE__ */ (0, M.jsx)(mR, {
+				label: "Sensor data table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table",
 					children: [
@@ -27915,7 +27929,7 @@ function FR({ view: e, ghz: t }) {
 								scope: "col",
 								children: "Truth (nT)"
 							}),
-							PR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
+							FR.map(([e, t]) => /* @__PURE__ */ (0, M.jsx)("th", {
 								scope: "col",
 								children: `${t} (nT)`
 							}, e)),
@@ -27929,14 +27943,14 @@ function FR({ view: e, ghz: t }) {
 							})
 						] }) }),
 						/* @__PURE__ */ (0, M.jsx)("tbody", { children: n.map((t) => /* @__PURE__ */ (0, M.jsxs)("tr", { children: [
-							/* @__PURE__ */ (0, M.jsx)(NR, {
+							/* @__PURE__ */ (0, M.jsx)(PR, {
 								view: e,
 								i: t
 							}),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: kR(e.truth.anomaly[t]) }),
-							PR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: kR(e.est[n]?.signal[t]) }, n)),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: AR(e.truth.anomaly[t]) }),
+							FR.map(([n]) => /* @__PURE__ */ (0, M.jsx)("td", { children: AR(e.est[n]?.signal[t]) }, n)),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: k(e.sensor?.rpm?.[t]) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: MR(e.sensor?.tau_ms?.[t]) })
+							/* @__PURE__ */ (0, M.jsx)("td", { children: NR(e.sensor?.tau_ms?.[t]) })
 						] }, t)) }),
 						/* @__PURE__ */ (0, M.jsx)("tfoot", { children: /* @__PURE__ */ (0, M.jsxs)("tr", { children: [
 							/* @__PURE__ */ (0, M.jsx)("th", {
@@ -27944,7 +27958,7 @@ function FR({ view: e, ghz: t }) {
 								children: "RMSE after GPS loss"
 							}),
 							/* @__PURE__ */ (0, M.jsx)("td", { children: "reference" }),
-							PR.map(([t]) => /* @__PURE__ */ (0, M.jsx)("td", { children: kR(nR(e, t)) }, t)),
+							FR.map(([t]) => /* @__PURE__ */ (0, M.jsx)("td", { children: AR(nR(e, t)) }, t)),
 							/* @__PURE__ */ (0, M.jsx)("td", {}),
 							/* @__PURE__ */ (0, M.jsx)("td", {})
 						] }) })
@@ -27954,8 +27968,8 @@ function FR({ view: e, ghz: t }) {
 			/* @__PURE__ */ (0, M.jsxs)("details", { children: [/* @__PURE__ */ (0, M.jsx)("summary", { children: "GHZ scaling data" }), r.length === 0 ? /* @__PURE__ */ (0, M.jsx)("p", {
 				className: "help",
 				children: "GHZ scaling data is not in this artifact yet."
-			}) : /* @__PURE__ */ (0, M.jsx)("div", {
-				className: "table-scroll",
+			}) : /* @__PURE__ */ (0, M.jsx)(mR, {
+				label: "GHZ scaling data table",
 				children: /* @__PURE__ */ (0, M.jsxs)("table", {
 					className: "data-table",
 					children: [
@@ -27995,12 +28009,12 @@ function FR({ view: e, ghz: t }) {
 								scope: "row",
 								children: e.n
 							}),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: AR(e.sql) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: AR(e.hl) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: AR(e.unentangled) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: AR(e.ghzIdeal) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: e.ghzMeasured === null ? "not measured" : AR(e.ghzMeasured) }),
-							/* @__PURE__ */ (0, M.jsx)("td", { children: jR(IL(t, e.n)) })
+							/* @__PURE__ */ (0, M.jsx)("td", { children: jR(e.sql) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: jR(e.hl) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: jR(e.unentangled) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: jR(e.ghzIdeal) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: e.ghzMeasured === null ? "not measured" : jR(e.ghzMeasured) }),
+							/* @__PURE__ */ (0, M.jsx)("td", { children: MR(IL(t, e.n)) })
 						] }, e.n)) })
 					]
 				})
@@ -28008,27 +28022,27 @@ function FR({ view: e, ghz: t }) {
 		]
 	});
 }
-var IR = (0, y.memo)(FR), LR = null, RR = null, zR = null;
-function BR(e) {
+var LR = (0, y.memo)(IR), RR = null, zR = null, BR = null;
+function VR(e) {
 	if (!e) return;
-	if (!LR) {
-		RR = e;
+	if (!RR) {
+		zR = e;
 		return;
 	}
-	let t = LR;
-	t(""), zR !== null && cancelAnimationFrame(zR), zR = requestAnimationFrame(() => {
-		zR = null, t(e);
+	let t = RR;
+	t(""), BR !== null && cancelAnimationFrame(BR), BR = requestAnimationFrame(() => {
+		BR = null, t(e);
 	});
 }
-function VR() {
+function HR() {
 	let [e, t] = (0, y.useState)("");
 	return (0, y.useEffect)(() => {
-		if (LR = t, RR) {
-			let e = RR;
-			RR = null, BR(e);
+		if (RR = t, zR) {
+			let e = zR;
+			zR = null, VR(e);
 		}
 		return () => {
-			LR === t && (LR = null), zR !== null && cancelAnimationFrame(zR), zR = null;
+			RR === t && (RR = null), BR !== null && cancelAnimationFrame(BR), BR = null;
 		};
 	}, []), /* @__PURE__ */ (0, M.jsx)("p", {
 		role: "status",
@@ -28039,24 +28053,24 @@ function VR() {
 }
 //#endregion
 //#region src/bridge.js
-var HR = typeof backend < "u" ? backend : globalThis.backend ?? null, UR = Promise.resolve();
-function WR(e) {
-	let t = UR.then(e, e);
-	return UR = t.catch(() => {}), t;
+var UR = typeof backend < "u" ? backend : globalThis.backend ?? null, WR = Promise.resolve();
+function GR(e) {
+	let t = WR.then(e, e);
+	return WR = t.catch(() => {}), t;
 }
-function GR(t, ...n) {
-	return WR(async () => {
+function KR(t, ...n) {
+	return GR(async () => {
 		let r = e[t];
 		if (!r) throw Error(`magnav.api.${t} not found`);
-		return String(await r.callPromising(HR, ...n));
+		return String(await r.callPromising(UR, ...n));
 	});
 }
-async function KR(e, ...t) {
-	return JSON.parse(await GR(e, ...t));
+async function qR(e, ...t) {
+	return JSON.parse(await KR(e, ...t));
 }
 //#endregion
 //#region src/probe.js
-function qR() {
+function JR() {
 	let e = null;
 	try {
 		e = typeof setTimeout(() => {}, 0)?.then == "function";
@@ -28071,7 +28085,7 @@ function qR() {
 		setIntervalNative: String(globalThis.setInterval).includes("[native code]")
 	}));
 }
-function JR() {
+function YR() {
 	requestAnimationFrame(() => requestAnimationFrame(() => {
 		console.log("[probe] frame", JSON.stringify({
 			innerHeight: window.innerHeight,
@@ -28080,7 +28094,7 @@ function JR() {
 		}));
 	}));
 }
-async function YR(e) {
+async function XR(e) {
 	let t = 0, n = 0, r = performance.now(), i = !0, a = 0, o = (e) => {
 		i && (t += 1, n = Math.max(n, e - r), r = e, a = requestAnimationFrame(o));
 	};
@@ -28097,9 +28111,9 @@ async function YR(e) {
 		i = !1, cancelAnimationFrame(a);
 	}
 }
-function XR(e) {
+function ZR(e) {
 	return async (t, ...n) => {
-		let { result: r, ms: i, frames: a, maxGapMs: o } = await YR(() => e(t, ...n));
+		let { result: r, ms: i, frames: a, maxGapMs: o } = await XR(() => e(t, ...n));
 		return t === "live_step" ? console.log("[probe] live_step", JSON.stringify({
 			ms: i,
 			budgetMs: n[0],
@@ -28117,7 +28131,7 @@ function XR(e) {
 }
 //#endregion
 //#region src/hooks/useArtifact.js
-function ZR() {
+function QR() {
 	let [e, t] = (0, y.useState)({
 		status: "loading",
 		artifact: null,
@@ -28127,7 +28141,7 @@ function ZR() {
 		let e = !1, n = performance.now();
 		return (async () => {
 			try {
-				let r = await YR(() => GR("artifact_json"));
+				let r = await XR(() => KR("artifact_json"));
 				console.log("[probe] main_thread", JSON.stringify({
 					call: "artifact_json",
 					ms: r.ms,
@@ -28159,7 +28173,7 @@ function ZR() {
 }
 //#endregion
 //#region src/hooks/useLiveRun.js
-function QR() {
+function $R() {
 	return new Promise((e) => {
 		let t = new MessageChannel();
 		t.port1.onmessage = () => {
@@ -28167,26 +28181,26 @@ function QR() {
 		}, t.port2.postMessage(0);
 	});
 }
-function $R() {
+function ez() {
 	return new Promise((e) => {
 		requestAnimationFrame(() => e());
 	});
 }
-var ez = L({
-	callPy: XR(KR),
+var tz = L({
+	callPy: ZR(qR),
 	now: () => performance.now(),
-	yieldFn: QR,
-	nextFrame: $R,
+	yieldFn: $R,
+	nextFrame: ez,
 	validate: mn
-}), tz = {
+}), nz = {
 	samplesDone: 0,
 	samplesTotal: 0,
 	windowsDone: 0,
 	windowsTotal: 0,
 	stage: null
 };
-function nz({ hasBackend: e }) {
-	let [t, n] = (0, y.useState)(!1), [r, i] = (0, y.useState)(0), [a, o] = (0, y.useState)(tz), [s, c] = (0, y.useState)(0), l = (0, y.useRef)(0);
+function rz({ hasBackend: e }) {
+	let [t, n] = (0, y.useState)(!1), [r, i] = (0, y.useState)(0), [a, o] = (0, y.useState)(nz), [s, c] = (0, y.useState)(0), l = (0, y.useRef)(0);
 	return (0, y.useEffect)(() => {
 		if (!t) return;
 		let e = null, n = -1, r = () => {
@@ -28202,10 +28216,10 @@ function nz({ hasBackend: e }) {
 		progress: a,
 		elapsedS: s,
 		start: (0, y.useCallback)(async ({ scenario: t, simulateFailure: r = !1, onStage: a, onQuantum: s, onStep: u }) => {
-			if (ez.isInFlight()) throw Object.assign(/* @__PURE__ */ Error("A live run is already in progress"), { name: "Busy" });
-			l.current = performance.now(), n(!0), i(0), o(tz), c(0);
+			if (tz.isInFlight()) throw Object.assign(/* @__PURE__ */ Error("A live run is already in progress"), { name: "Busy" });
+			l.current = performance.now(), n(!0), i(0), o(nz), c(0);
 			try {
-				let n = await ez.start({
+				let n = await tz.start({
 					scenario: t,
 					hasBackend: e,
 					simulateFailure: r,
@@ -28239,24 +28253,24 @@ function nz({ hasBackend: e }) {
 				n(!1);
 			}
 		}, [e]),
-		cancel: (0, y.useCallback)(() => ez.cancel(), [])
+		cancel: (0, y.useCallback)(() => tz.cancel(), [])
 	};
 }
 //#endregion
 //#region src/hooks/useReducedMotion.js
-var rz = "(prefers-reduced-motion: reduce)";
-function iz() {
-	let [e, t] = (0, y.useState)(() => typeof window < "u" && typeof window.matchMedia == "function" && window.matchMedia(rz).matches);
+var iz = "(prefers-reduced-motion: reduce)";
+function az() {
+	let [e, t] = (0, y.useState)(() => typeof window < "u" && typeof window.matchMedia == "function" && window.matchMedia(iz).matches);
 	return (0, y.useEffect)(() => {
 		if (typeof window.matchMedia != "function") return;
-		let e = window.matchMedia(rz), n = () => t(e.matches);
+		let e = window.matchMedia(iz), n = () => t(e.matches);
 		return n(), e.addEventListener("change", n), () => e.removeEventListener("change", n);
 	}, []), e;
 }
 //#endregion
 //#region src/lib/announce.js
-var az = (e) => String(Math.round(Number(e))), oz = (e) => String(e).replace(/…$/, "");
-function sz(e, t = () => globalThis.performance.now()) {
+var oz = (e) => String(Math.round(Number(e))), sz = (e) => String(e).replace(/…$/, "");
+function cz(e, t = () => globalThis.performance.now()) {
 	let n = null, r = () => {
 		let r = t();
 		return n !== null && r - n < e ? !1 : (n = r, !0);
@@ -28267,14 +28281,14 @@ function sz(e, t = () => globalThis.performance.now()) {
 		n = null;
 	}, r;
 }
-var cz = (e) => `${az(e)} times speed`, lz = (e, t) => `Recorded flights loaded. Scenario: ${e}, ${t}. Press Run one IonQ job, or Play.`, uz = (e, t, n = !1) => `Scenario: ${e}, ${t}. ${n ? "Showing this Run's live result" : "Showing recorded replay"}.`, dz = (e) => `Run mode: ${e === "live" ? "live" : "recorded replay"}.`, fz = (e) => `Playing at ${cz(e)}.`, pz = (e) => `Paused at ${az(e)} seconds.`, mz = (e) => `GPS jammed at ${az(e)} seconds. Navigating by magnetic map matching.`, hz = (e, t, n, r) => `${az(e)} seconds. ${t}: ${az(n)} metres. Baseline: ${az(r)} metres.`, gz = (e) => `Quantum track: ${e}.`, _z = (e, t) => `Step ${az(e)} of 4: ${oz(t)}.`, vz = (e) => String(e ?? "").slice(0, 8), yz = (e, t) => `IonQ job ${vz(e)} submitted, ${t}.`, bz = (e, t, n, r) => `Motor drawn: ${az(e)} to ${az(t)} RPM. GHZ-4 contrast ${Number(n).toFixed(3)}. Bits ${r}.`, xz = (e, t) => `${az(e)} of ${az(t)} samples.`, Sz = (e) => `Live run finished on ${e}. Mode: computed in-page.`, Cz = (e) => `Live run failed. Mode: fallback, precomputed replay of ${e}.`, wz = (e, t, n) => {
+var lz = (e) => `${oz(e)} times speed`, uz = (e, t) => `Recorded flights loaded. Scenario: ${e}, ${t}. Press Run one IonQ job, or Play.`, dz = (e, t, n = !1) => `Scenario: ${e}, ${t}. ${n ? "Showing this Run's live result" : "Showing recorded replay"}.`, fz = (e) => `Run mode: ${e === "live" ? "live" : "recorded replay"}.`, pz = (e) => `Playing at ${lz(e)}.`, mz = (e) => `Paused at ${oz(e)} seconds.`, hz = (e) => `GPS jammed at ${oz(e)} seconds. Navigating by magnetic map matching.`, gz = (e, t, n, r) => `${oz(e)} seconds. ${t}: ${oz(n)} metres. Baseline: ${oz(r)} metres.`, _z = (e) => `Quantum track: ${e}.`, vz = (e, t) => `Step ${oz(e)} of 4: ${sz(t)}.`, yz = (e) => String(e ?? "").slice(0, 8), bz = (e, t) => `IonQ job ${yz(e)} submitted, ${t}.`, xz = (e, t, n, r) => `Motor drawn: ${oz(e)} to ${oz(t)} RPM. GHZ-4 contrast ${Number(n).toFixed(3)}. Bits ${r}.`, Sz = (e, t) => `${oz(e)} of ${oz(t)} samples.`, Cz = (e) => `Live run finished on ${e}. Mode: computed in-page.`, wz = (e) => `Live run failed. Mode: fallback, precomputed replay of ${e}.`, Tz = (e, t, n) => {
 	let r = (e) => e != null && Number.isFinite(Number(e));
-	return !r(t) || !r(n) ? "Replay finished." : `Replay finished. ${e}: ${az(t)} metres. Baseline: ${az(n)} metres.`;
-}, Tz = Object.freeze({
+	return !r(t) || !r(n) ? "Replay finished." : `Replay finished. ${e}: ${oz(t)} metres. Baseline: ${oz(n)} metres.`;
+}, Ez = Object.freeze({
 	job: !1,
 	charts: !1
 });
-function Ez(e, t, n) {
+function Dz(e, t, n) {
 	return n === t ? e : n === "result" ? e.job && e.charts ? e : {
 		job: !0,
 		charts: !0
@@ -28285,10 +28299,10 @@ function Ez(e, t, n) {
 }
 //#endregion
 //#region src/App.jsx
-var Dz = "baseline_ls", Oz = 18e5, kz = 3e4, Az = 1e4, jz = "Draws this Run's motor from quantum random bits, measures the GHZ contrast, then flies the UAV over the selected map in your browser (up to 90 s). If anything fails, that map's recorded replay is shown.", Mz = "Needs a backend: press Run on Qollab and pick one. The recorded replays work without it.", Nz = "Recorded replay: stored motor draw, no IonQ job.", Pz = (e) => `One IonQ job per Run, flown on ${e}. Press Stop, then Run on Qollab, to draw a new motor.`, Fz = (e) => `This Run's IonQ job was flown on ${e}. Showing the recorded replay here.`, Iz = (e) => `Map scenario is locked while the live run flies ${e}.`, Lz = (e, t, n) => `Live run finished in ${e} s on ${t}. Motor drawn by IonQ job ${vz(n)}.`, Rz = (e, t) => e.timeout ? `Live run took longer than 90 s. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try again.` : `Live run failed: ${e.name}: ${e.message}. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`, zz = 1e4, Bz = "The quantum sensor's filter function is a physical fact about how such sensors work; the field it filters here is injected as gate angles rather than felt; the downstream benefit equals that of a classical notch filter, achieved earlier and without consuming dynamic range.";
-async function Vz(e) {
+var Oz = "baseline_ls", kz = 18e5, Az = 3e4, jz = 1e4, Mz = "Draws this Run's motor from quantum random bits, measures the GHZ contrast, then flies the UAV over the selected map in your browser (up to 90 s). If anything fails, that map's recorded replay is shown.", Nz = "Needs a backend: press Run on Qollab and pick one. The recorded replays work without it.", Pz = "Recorded replay: stored motor draw, no IonQ job.", Fz = (e) => `One IonQ job per Run, flown on ${e}. Press Stop, then Run on Qollab, to draw a new motor.`, Iz = (e) => `This Run's IonQ job was flown on ${e}. Showing the recorded replay here.`, Lz = (e) => `Map scenario is locked while the live run flies ${e}.`, Rz = (e, t, n) => `Live run finished in ${e} s on ${t}. Motor drawn by IonQ job ${yz(n)}.`, zz = (e, t) => e.timeout ? `Live run took longer than 90 s. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try again.` : `Live run failed: ${e.name}: ${e.message}. Showing the recorded replay of ${t} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`, Bz = 1e4, Vz = "The quantum sensor's filter function is a physical fact about how such sensors work; the field it filters here is injected as gate angles rather than felt; the downstream benefit equals that of a classical notch filter, achieved earlier and without consuming dynamic range.";
+async function Hz(e) {
 	try {
-		let t = e ? await KR("ghz_scaling_json", e.c1 ?? null, e.c2 ?? null, e.c4 ?? null) : await KR("ghz_scaling_json");
+		let t = e ? await qR("ghz_scaling_json", e.c1 ?? null, e.c2 ?? null, e.c4 ?? null) : await qR("ghz_scaling_json");
 		return t?.ok === !0 ? {
 			status: "ok",
 			payload: t
@@ -28305,9 +28319,9 @@ async function Vz(e) {
 		};
 	}
 }
-async function Hz(e, t) {
+async function Uz(e, t) {
 	try {
-		let n = await KR(e);
+		let n = await qR(e);
 		return n?.ok === !0 ? {
 			status: "ok",
 			record: t ? n[t] : n
@@ -28327,14 +28341,14 @@ async function Hz(e, t) {
 		};
 	}
 }
-var Uz, Wz = new Promise((e) => {
-	Uz = e;
-}), Gz = { inFlight: !1 }, Kz = "input, select, textarea, button, summary, [contenteditable]";
-function qz() {
-	let { status: e, artifact: t, error: n } = ZR(), r = iz(), [i, a] = (0, y.useState)(null), [o, s] = (0, y.useState)("live"), [c, l] = (0, y.useState)(null), [u, d] = (0, y.useState)(30), f = (0, y.useRef)(null), p = (0, y.useRef)(null), m = (0, y.useRef)(null), h = (0, y.useRef)(!1), g = !!HR || !1, _ = nz({ hasBackend: g }), [v, b] = (0, y.useState)("idle"), [x, S] = (0, y.useState)(Tz), C = (0, y.useRef)("idle");
+var Wz, Gz = new Promise((e) => {
+	Wz = e;
+}), Kz = { inFlight: !1 }, qz = "input, select, textarea, button, summary, [contenteditable], .table-scroll";
+function Jz() {
+	let { status: e, artifact: t, error: n } = QR(), r = az(), [i, a] = (0, y.useState)(null), [o, s] = (0, y.useState)("live"), [c, l] = (0, y.useState)(null), [u, d] = (0, y.useState)(30), f = (0, y.useRef)(null), p = (0, y.useRef)(null), m = (0, y.useRef)(null), h = (0, y.useRef)(!1), g = !!UR || !1, _ = rz({ hasBackend: g }), [v, b] = (0, y.useState)("idle"), [x, S] = (0, y.useState)(Ez), C = (0, y.useRef)("idle");
 	(0, y.useEffect)(() => {
 		let e = C.current;
-		C.current = v, S((t) => Ez(t, e, v));
+		C.current = v, S((t) => Dz(t, e, v));
 	}, [v]);
 	let T = (0, y.useCallback)((e, t) => {
 		S((n) => n[e] === t ? n : {
@@ -28376,26 +28390,26 @@ function qz() {
 	Ee.current = L;
 	let De = (0, y.useRef)(!1), ke = (e) => kn[e]?.label ?? e;
 	(0, y.useEffect)(() => {
-		R && !De.current && (De.current = !0, w.load(R.t), w.seekIndex(R.n - 1), BR(lz(R.label, R.mapLabel)));
+		R && !De.current && (De.current = !0, w.load(R.t), w.seekIndex(R.n - 1), VR(uz(R.label, R.mapLabel)));
 	}, [R]), (0, y.useEffect)(() => {
 		w.setSpeed(u);
 	}, [u]), (0, y.useEffect)(() => {
 		w.setReduced(r);
 	}, [r]), (0, y.useEffect)(() => {
-		let e = sz(Az), t = w.getIndex(), n = w.on("play", () => {
-			e.mark(), BR(fz(w.getSpeed()));
-		}), r = w.on("pause", () => BR(pz(w.getTime()))), i = w.on("end", () => {
+		let e = cz(jz), t = w.getIndex(), n = w.on("play", () => {
+			e.mark(), VR(pz(w.getSpeed()));
+		}), r = w.on("pause", () => VR(mz(w.getTime()))), i = w.on("end", () => {
 			let e = Te.current;
 			if (!e) return;
 			let t = Ee.current, n = e.n - 1;
-			BR(wz(ke(t), xn(e, t, n), xn(e, Dz, n)));
+			VR(Tz(ke(t), xn(e, t, n), xn(e, Oz, n)));
 		}), a = w.subscribe(() => {
 			let n = Te.current, r = w.getIndex(), i = t;
 			if (t = r, n && w.isPlaying()) {
-				if (i < n.jamIdx && n.jamIdx <= r) e.mark(), BR(mz(n.jamT));
+				if (i < n.jamIdx && n.jamIdx <= r) e.mark(), VR(hz(n.jamT));
 				else if (r >= n.metricStartIdx && r < n.n && e()) {
 					let e = Ee.current, t = xn(n, e, r);
-					t !== null && BR(hz(n.t[r], ke(e), t, xn(n, Dz, r)));
+					t !== null && VR(gz(n.t[r], ke(e), t, xn(n, Oz, r)));
 				}
 			}
 		});
@@ -28403,19 +28417,19 @@ function qz() {
 			n(), r(), i(), a();
 		};
 	}, []), (0, y.useEffect)(() => {
-		qR(), JR();
+		JR(), YR();
 	}, []), (0, y.useEffect)(() => {
 		let e = !1;
 		return (async () => {
-			let t = await Hz("backend_info", null);
+			let t = await Uz("backend_info", null);
 			!e && t.status === "ok" && se(t.record);
-			let n = await Hz("circuit_json", "circuit");
+			let n = await Uz("circuit_json", "circuit");
 			!e && n.status === "ok" && fe(n.record);
-			let r = await Hz("hardware_json", "hardware");
+			let r = await Uz("hardware_json", "hardware");
 			e || I(r);
-			let i = await Hz("benchmark_json", "benchmark");
+			let i = await Uz("benchmark_json", "benchmark");
 			i.status === "error" && console.error("[benchmark] load failed", i.error), e || _e(i);
-			let a = await Vz(null);
+			let a = await Hz(null);
 			a.status !== "ok" && console.error("[ghz] scaling failed", a.error), e || ye((e) => e.status === "ok" ? e : a);
 		})(), () => {
 			e = !0;
@@ -28424,7 +28438,7 @@ function qz() {
 		function e(e) {
 			if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
 			let t = e.target;
-			if (t instanceof Element && t.closest(Kz)) return;
+			if (t instanceof Element && t.closest(qz)) return;
 			let n = Te.current;
 			if (n) switch (e.key) {
 				case " ":
@@ -28448,10 +28462,10 @@ function qz() {
 		}
 		return document.addEventListener("keydown", e), () => document.removeEventListener("keydown", e);
 	}, []), (0, y.useEffect)(() => {
-		let e = performance.now(), t = e, n = null, r = () => w.isPlaying() || Gz.inFlight, i = (t) => {
-			h.current || (r() ? e = t : t - e >= Oz && (h.current = !0, Uz()));
+		let e = performance.now(), t = e, n = null, r = () => w.isPlaying() || Kz.inFlight, i = (t) => {
+			h.current || (r() ? e = t : t - e >= kz && (h.current = !0, Wz()));
 		}, a = (e) => {
-			n = null, !h.current && (e - t >= kz && (t = e, i(performance.now())), n = requestAnimationFrame(a));
+			n = null, !h.current && (e - t >= Az && (t = e, i(performance.now())), n = requestAnimationFrame(a));
 		}, o = () => {
 			e = performance.now();
 		}, s = () => {
@@ -28467,44 +28481,44 @@ function qz() {
 	}, []);
 	let Ae = (0, y.useCallback)((e) => {
 		let n = t ? hn(t, e) : null;
-		a(e), n && BR(uz(n.label, n.map_label, o === "live" && !!O[e]));
+		a(e), n && VR(dz(n.label, n.map_label, o === "live" && !!O[e]));
 	}, [
 		t,
 		o,
 		O
 	]), je = (0, y.useCallback)((e) => {
-		s(e), BR(dz(e));
+		s(e), VR(fz(e));
 	}, []), Me = (0, y.useCallback)((e) => {
-		l(e), BR(gz(ke(e)));
+		l(e), VR(_z(ke(e)));
 	}, []), Ne = (0, y.useCallback)(async () => {
 		if (oe.current || !g || !t || !R) return;
 		oe.current = !0;
 		let e = be, n = hn(t, e)?.label ?? e, i = document.activeElement, a = !!(i && p.current?.closest("fieldset")?.contains(i));
-		(i === m.current || a) && f.current?.focus(), w.pause(), D(e), j(null), ee(null), b("running"), Gz.inFlight = !0;
-		let o = sz(zz);
+		(i === m.current || a) && f.current?.focus(), w.pause(), D(e), j(null), ee(null), b("running"), Kz.inFlight = !0;
+		let o = cz(Bz);
 		o.mark();
 		try {
 			let t = await _.start({
 				scenario: e,
 				simulateFailure: re,
 				onStage: (e) => {
-					e !== 2 && BR(_z(e, le[e]));
+					e !== 2 && VR(vz(e, le[e]));
 				},
 				onQuantum: (e) => {
-					j(e), BR(`${yz(e.job_id, e.backend)} ${bz(e.motor?.rpm_min, e.motor?.rpm_max, e.c_hat?.c4, Oe(e))}`);
+					j(e), VR(`${bz(e.job_id, e.backend)} ${xz(e.motor?.rpm_min, e.motor?.rpm_max, e.c_hat?.c4, Oe(e))}`);
 				},
 				onStep: (e) => {
-					!e.done && o() && BR(xz(e.samples_done, e.samples_total));
+					!e.done && o() && VR(Sz(e.samples_done, e.samples_total));
 				}
 			}), i = bn(t.result.scenario);
-			j(t.quantum), k({ [e]: t.result }), ne(Math.round(t.elapsedMs / 1e3)), b("result"), w.load(i.t), r ? w.seekIndex(i.n - 1) : (w.seekIndex(0), w.play()), BR(Sz(n));
+			j(t.quantum), k({ [e]: t.result }), ne(Math.round(t.elapsedMs / 1e3)), b("result"), w.load(i.t), r ? w.seekIndex(i.n - 1) : (w.seekIndex(0), w.play()), VR(Cz(n));
 			let a = t.quantum?.c_hat;
 			if (a && [
 				a.c1,
 				a.c2,
 				a.c4
 			].some((e) => Number.isFinite(e))) {
-				let e = await Vz(a);
+				let e = await Hz(a);
 				e.status === "ok" ? ye(e) : console.error("[ghz] measured scaling failed", e.error);
 			}
 		} catch (e) {
@@ -28512,9 +28526,9 @@ function qz() {
 				name: String(e?.name ?? "Error"),
 				message: String(e?.message ?? e),
 				timeout: e?.name === "TimeoutError"
-			}), b("fallback"), BR(Cz(n));
+			}), b("fallback"), VR(wz(n));
 		} finally {
-			Gz.inFlight = !1, a && document.activeElement === f.current && p.current?.focus();
+			Kz.inFlight = !1, a && document.activeElement === f.current && p.current?.focus();
 		}
 	}, [
 		g,
@@ -28524,11 +28538,11 @@ function qz() {
 		_,
 		re,
 		r
-	]), Pe = e === "error" ? n : we, Fe = Pe ? `Could not load the recorded flights (${Pe}). Press Stop, then Run on Qollab, to reload.` : null, Le = e === "ready" && !!R, Re = v === "running", ze = v !== "idle", Be = E && t ? hn(t, E)?.label ?? E : null, Ve = be === E, He = !!Se, Ue = Nz;
-	xe && (Ue = g ? !ze || Re ? jz : Ve ? Pz(Be) : Fz(Be) : Mz);
+	]), Pe = e === "error" ? n : we, Fe = Pe ? `Could not load the recorded flights (${Pe}). Press Stop, then Run on Qollab, to reload.` : null, Le = e === "ready" && !!R, Re = v === "running", ze = v !== "idle", Be = E && t ? hn(t, E)?.label ?? E : null, Ve = be === E, He = !!Se, Ue = Pz;
+	xe && (Ue = g ? !ze || Re ? Mz : Ve ? Fz(Be) : Iz(Be) : Nz);
 	let We = null;
-	Re ? We = de(_.stage || 1) : R && He && v === "result" ? We = Lz(te, R.label, A?.job_id) : R && (We = pe(R.label, R.jamT, xe && !ze));
-	let Ge = v === "fallback" && N && Be ? Rz(N, Be) : null, Ke = A?.analytic_blocks === !0 && (Re || He) ? ue : null, qe = "replay";
+	Re ? We = de(_.stage || 1) : R && He && v === "result" ? We = Rz(te, R.label, A?.job_id) : R && (We = pe(R.label, R.jamT, xe && !ze));
+	let Ge = v === "fallback" && N && Be ? zz(N, Be) : null, Ke = A?.analytic_blocks === !0 && (Re || He) ? ue : null, qe = "replay";
 	Re ? qe = "computing" : He && (qe = "computed");
 	let Je = "stored";
 	return Re ? Je = null : He && (Je = "drawn"), /* @__PURE__ */ (0, M.jsxs)("main", {
@@ -28563,7 +28577,7 @@ function qz() {
 									value: be,
 									onChange: Ae,
 									disabled: !Le || Re,
-									lockHelp: Re && Be ? Iz(Be) : null,
+									lockHelp: Re && Be ? Lz(Be) : null,
 									focusRef: p
 								}),
 								/* @__PURE__ */ (0, M.jsx)(xr, {
@@ -28651,15 +28665,15 @@ function qz() {
 									id: "results-heading",
 									children: "Navigation accuracy"
 								}),
-								/* @__PURE__ */ (0, M.jsx)(_R, {
+								/* @__PURE__ */ (0, M.jsx)(vR, {
 									view: R,
 									quantumKey: L,
 									thresholds: t?.thresholds_m ?? null,
 									isLive: He
 								}),
-								t && /* @__PURE__ */ (0, M.jsx)(bR, { artifact: t }),
-								/* @__PURE__ */ (0, M.jsx)(OR, { benchmark: ge }),
-								/* @__PURE__ */ (0, M.jsx)(IR, {
+								t && /* @__PURE__ */ (0, M.jsx)(xR, { artifact: t }),
+								/* @__PURE__ */ (0, M.jsx)(kR, { benchmark: ge }),
+								/* @__PURE__ */ (0, M.jsx)(LR, {
 									view: R,
 									ghz: ve.payload
 								})
@@ -28720,14 +28734,14 @@ function qz() {
 					] }),
 					/* @__PURE__ */ (0, M.jsx)("p", {
 						className: "dg-sentence",
-						children: Bz
+						children: Vz
 					})
 				]
 			}),
-			/* @__PURE__ */ (0, M.jsx)(VR, {}),
+			/* @__PURE__ */ (0, M.jsx)(HR, {}),
 			/* @__PURE__ */ (0, M.jsx)("footer", { children: /* @__PURE__ */ (0, M.jsx)("p", { children: "This effort is supported by Qollab & IonQ. · Survey map: MagNav.jl Eastern_395 · Data supported by USAF FA8750-19-2-1000 · Synthetic map generated by this project from a fixed seed · MIT License" }) })
 		]
 	});
 }
-(0, v.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, M.jsx)(qz, {})), await Wz;
+(0, v.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, M.jsx)(Jz, {})), await Gz;
 //#endregion

@@ -5,6 +5,7 @@ import { drErrorAt, errorAt } from '../lib/artifactV2.js';
 import { fmtInt } from '../lib/format.js';
 import { contrastUsed, rowsFromPayload } from '../lib/ghzScaling.js';
 import { rmseValue, sampleIndices } from '../lib/signal.js';
+import TableScroll from './TableScroll.jsx';
 
 const nT = (v) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(1) : 'n/a');
 const nT3 = (v) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(3) : 'n/a');
@@ -30,7 +31,7 @@ function TextAlternatives({ view, ghz }) {
       {view && (
         <details>
           <summary>{`Map track data, ${view.label} (every 60 s)`}</summary>
-          <div className="table-scroll">
+          <TableScroll label="Map track data table">
             <table className="data-table">
               <caption>{`True position and position errors: ${view.mapLabel}`}</caption>
               <thead>
@@ -54,13 +55,13 @@ function TextAlternatives({ view, ghz }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         </details>
       )}
       {view && (
         <details>
           <summary>{`Sensor data, ${view.label} (every 60 s)`}</summary>
-          <div className="table-scroll">
+          <TableScroll label="Sensor data table">
             <table className="data-table">
               <caption>{`Sensed magnetic field in nanotesla and sensor timing: ${view.mapLabel}`}</caption>
               <thead>
@@ -93,7 +94,7 @@ function TextAlternatives({ view, ghz }) {
                 </tr>
               </tfoot>
             </table>
-          </div>
+          </TableScroll>
         </details>
       )}
       <details>
@@ -101,7 +102,7 @@ function TextAlternatives({ view, ghz }) {
         {ghzRows.length === 0 ? (
           <p className="help">GHZ scaling data is not in this artifact yet.</p>
         ) : (
-          <div className="table-scroll">
+          <TableScroll label="GHZ scaling data table">
             <table className="data-table">
               <caption>{`Signal RMSE (nT) at S = ${ghz.S} shots per probe qubit`}</caption>
               <thead>
@@ -129,7 +130,7 @@ function TextAlternatives({ view, ghz }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         )}
       </details>
     </div>
