@@ -1,15 +1,16 @@
 """Static guards: estimators never accept Truth; no h5py or pickle loading in magnav/."""
 
 import ast
+import inspect
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MAGNAV = ROOT / "magnav"
-# Plans 01-02 and 01-03 extend REQUIRED with motor.py, ramsey.py, quantum.py and baseline.py.
+# Plan 01-03 extends REQUIRED with baseline.py.
 # uav.py (and later uav_pipeline.py) legitimately build and score Truth, so they are not guarded.
-REQUIRED = [MAGNAV / n for n in ("nav.py", "frames.py")]
+REQUIRED = [MAGNAV / n for n in ("nav.py", "frames.py", "motor.py", "ramsey.py", "quantum.py")]
 GUARDED = REQUIRED
 
 
@@ -66,3 +67,36 @@ def test_no_h5py_or_pickle_in_magnav():
                 assert "allow_pickle" in kw, f"{path.name}:{node.lineno} np.load without allow_pickle"
                 v = kw["allow_pickle"]
                 assert isinstance(v, ast.Constant) and v.value is False, f"{path.name}:{node.lineno}"
+
+
+ESTIMATOR_ALLOWED = {"n1", "shots", "n", "c", "phi", "tau_s", "b_ref_nT"}
+ESTIMATOR_FORBIDDEN = {"truth", "crust", "b_true", "field", "B_k", "B_at", "world"}
+
+
+def test_quantum_estimator_signatures():
+    from magnav import ramsey
+
+    for fn in (ramsey.phi_hat, ramsey.field_from_phase, ramsey.estimate_from_counts):
+        names = set(inspect.signature(fn).parameters)
+        assert names <= ESTIMATOR_ALLOWED, (fn.__name__, names - ESTIMATOR_ALLOWED)
+        assert not names & ESTIMATOR_FORBIDDEN, (fn.__name__, names & ESTIMATOR_FORBIDDEN)
+
+
+def _called_names(fn_node) -> set[str]:
+    out = set()
+    for sub in ast.walk(fn_node):
+        if isinstance(sub, ast.Call):
+            f = sub.func
+            if isinstance(f, ast.Name):
+                out.add(f.id)
+            elif isinstance(f, ast.Attribute):
+                out.add(f.attr)
+    return out
+
+
+def test_coarse_estimate_via_counts():
+    tree = ast.parse((MAGNAV / "ramsey.py").read_text(encoding="utf-8"))
+    fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    calls = _called_names(fns["coarse_track"])
+    assert "estimate_from_counts" in calls
+    assert "field_from_phase" not in calls
