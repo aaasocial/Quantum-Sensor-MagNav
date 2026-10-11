@@ -63,7 +63,7 @@ test('the left column holds only the map; the right column runs results, control
     '<ScenarioPicker',
     '<RunModePicker',
     'Run one IonQ job',
-    '<summary>Demo options</summary>',
+    '<legend>Demo options</legend>',
     '<QuantumTrackToggle',
     '<ControlBar',
     '<section className="panel benchmark-card" aria-label="Benchmark">',
@@ -95,10 +95,10 @@ test('the map draws and lists the classical baseline track again (follow view se
 test('the map view control sits in Demo options, defaults to following the UAV, outside the live-only block', () => {
   assert.ok(mapView.includes("export const DEFAULT_MAP_MODE = 'follow';"));
   assert.match(mapView, /\{ key: 'follow', label: 'Follow the UAV \(zoomed\)' \},\s*\{ key: 'full', label: 'Full trajectory' \}/);
-  const demo = app.slice(app.indexOf('<details className="demo-options">'), app.indexOf('</details>', app.indexOf('<details className="demo-options">')));
+  const demo = app.slice(app.indexOf('<fieldset className="demo-options">'), app.indexOf('<QuantumTrackToggle', app.indexOf('<fieldset className="demo-options">')));
   assert.ok(demo.includes('<legend>Map view</legend>'));
   assert.ok(demo.includes('type="radio"'));
-  assert.ok(demo.indexOf('<legend>Map view</legend>') < demo.indexOf('{live && ('), 'map view must not depend on live mode');
+  assert.ok(!demo.includes('{live && ('), 'map view must not depend on live mode');
   assert.ok(app.includes('<MapView view={view} quantumKey={activeQuantum} mapMode={mapMode} />'));
   assert.ok(app.includes('useState(DEFAULT_MAP_MODE)'));
 });
@@ -108,11 +108,18 @@ test('one card holds Navigation accuracy and the Run controls; the benchmark is 
   const end = app.indexOf('</section>', start);
   const card = app.slice(start, end);
   for (const needle of ['<ErrorReadout', 'aria-label="Run controls"', '<ScenarioPicker', '<RunModePicker',
-    'Run one IonQ job', '<summary>Demo options</summary>', '<legend>Map view</legend>', '<QuantumTrackToggle', '<ControlBar']) {
+    'Run one IonQ job', '<legend>Demo options</legend>', '<legend>Map view</legend>', '<QuantumTrackToggle', '<ControlBar']) {
     assert.ok(card.includes(needle), `${needle} not in the Navigation accuracy card`);
   }
-  const demo = card.slice(card.indexOf('<details className="demo-options">'), card.indexOf('</details>'));
+  const demo = card.slice(card.indexOf('<fieldset className="demo-options">'), card.indexOf('<ControlBar'));
   assert.ok(demo.includes('<QuantumTrackToggle'), 'quantum-track toggle sits in Demo options');
   const bench = app.slice(app.indexOf('className="panel benchmark-card"'));
   assert.ok(bench.slice(0, bench.indexOf('</section>')).includes('<BenchmarkTable'));
+});
+
+test('Demo options is always visible and the forced-failure control is gone (adhoc5)', () => {
+  assert.ok(app.includes('<fieldset className="demo-options">'));
+  assert.ok(!app.includes('<details className="demo-options">'));
+  assert.ok(!app.includes('Simulate a failure'));
+  assert.ok(!app.includes('setSimulateFailure'));
 });

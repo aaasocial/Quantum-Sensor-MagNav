@@ -76,8 +76,8 @@ const layoutCheck = (page) => page.evaluate(() => {
   const box = results?.querySelector(':scope > .error-readout') ?? null;
   const bench = document.querySelector('section.benchmark-card > .benchmark');
   const controlsInCard = Boolean(results?.querySelector(':scope > .controls[aria-label="Run controls"]'));
-  const toggleInDemo = Boolean(document.querySelector('details.demo-options .quantum-toggle, details.demo-options fieldset input[name="quantum-track"], details.demo-options [data-quantum-toggle]'))
-    || [...document.querySelectorAll('details.demo-options legend')].some((l) => /quantum/i.test(l.textContent));
+  const toggleInDemo = Boolean(document.querySelector('fieldset.demo-options .quantum-toggle, fieldset.demo-options fieldset input[name="quantum-track"], fieldset.demo-options [data-quantum-toggle]'))
+    || [...document.querySelectorAll('fieldset.demo-options legend')].some((l) => /quantum/i.test(l.textContent));
   const captions = [...document.querySelectorAll('caption')].map((c) => c.textContent);
   const headings = [...document.querySelectorAll('h2, h3')].map((h) => h.textContent.trim());
   return {
@@ -261,6 +261,14 @@ try {
         job_summary: has((f) => f.role === 'summary' && f.name === "This Run's IonQ job"),
         sensor_summary: has((f) => f.role === 'summary' && f.name === 'Sensor'),
       };
+      // Demo options is always visible (adhoc5): the two stops after the Run button are its
+      // Map view and quantum-track radio groups, and there is no summary for it.
+      const runIdx = order.findIndex((f) => f.role === 'button' && f.name === 'Run one IonQ job');
+      const demoStops = runIdx >= 0 ? order.slice(runIdx + 1, runIdx + 3).map((f) => f.group) : [];
+      if (!(demoStops[0] === 'Map view' && /quantum/i.test(demoStops[1] ?? ''))) {
+        problems.push(`Demo options stops after Run are ${JSON.stringify(demoStops)}`);
+      }
+      if (order.some((f) => f.role === 'summary' && /Demo options/.test(f.name))) problems.push('Demo options is still a summary');
       // The page carries no real-flight link by design (UI-SPEC A-8, SCN-03: only the README
       // links the published v0.1.1-smoke project). Record that; if a link ever appears it must
       // be reachable by Tab.
@@ -278,13 +286,12 @@ try {
       const afterSpace = (await detailsOpen(page2)).charts;
       const toggles = { sensor_enter_opens: afterEnter === true, sensor_space_closes: afterSpace === false };
 
-      // Map view radio group: open Demo options with Enter, Tab into the group (Follow checked),
+      // Map view radio group (Follow checked by default),
       // ArrowDown selects Full trajectory (caption follows), ArrowUp returns to Follow.
       const caption = () => page2.locator('figure.map-figure figcaption').evaluate((el) => el.textContent);
-      await page2.locator('details.demo-options > summary').focus();
-      await page2.keyboard.press('Enter');
-      await page2.waitForTimeout(200);
-      await page2.keyboard.press('Tab');
+      // Demo options is an always-visible fieldset (adhoc5): Tab from the Run button's help text
+      // lands on the Map view radio group first.
+      await page2.locator('input[name="map-mode"]:checked').focus();
       const mvFirst = await focused(page2);
       await page2.keyboard.press('ArrowDown');
       await page2.waitForTimeout(200);
@@ -293,9 +300,6 @@ try {
       await page2.keyboard.press('ArrowUp');
       await page2.waitForTimeout(200);
       const mvFollowVal = await page2.evaluate(() => document.querySelector('input[name="map-mode"]:checked')?.value);
-      await page2.locator('details.demo-options > summary').focus();
-      await page2.keyboard.press('Enter'); // close again
-      await page2.waitForTimeout(200);
       const mapView = {
         first_stop: mvFirst,
         arrow_down_selects_full: mvFullVal === 'full' && /full trajectory/i.test(mvFull),

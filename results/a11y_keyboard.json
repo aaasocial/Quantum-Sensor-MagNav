@@ -24,8 +24,14 @@
    "name": "Run one IonQ job"
   },
   {
-   "role": "summary",
-   "name": "Demo options"
+   "role": "radio",
+   "name": "Follow the UAV (zoomed)",
+   "group": "Map view"
+  },
+  {
+   "role": "radio",
+   "name": "GHZ-4 entangled",
+   "group": "Quantum track on map and charts"
   },
   {
    "role": "button",
