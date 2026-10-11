@@ -5,6 +5,26 @@
    "name": "Mapsynthetic map (sensitivity study), not survey dataGPS jam"
   },
   {
+   "role": "region",
+   "name": "Benchmark summary table"
+  },
+  {
+   "role": "region",
+   "name": "Recorded IonQ seeds table"
+  },
+  {
+   "role": "summary",
+   "name": "Map track data, UAV at 100 m over a synthetic crustal map (e"
+  },
+  {
+   "role": "summary",
+   "name": "Sensor data, UAV at 100 m over a synthetic crustal map (ever"
+  },
+  {
+   "role": "summary",
+   "name": "GHZ scaling data"
+  },
+  {
    "role": "radio",
    "name": "UAV at 100 m over a synthetic crustal mapsynthetic map (sens",
    "group": "Map scenario"
@@ -43,26 +63,6 @@
   {
    "role": "combobox",
    "name": "Speed"
-  },
-  {
-   "role": "region",
-   "name": "Benchmark summary table"
-  },
-  {
-   "role": "region",
-   "name": "Recorded IonQ seeds table"
-  },
-  {
-   "role": "summary",
-   "name": "Map track data, UAV at 100 m over a synthetic crustal map (e"
-  },
-  {
-   "role": "summary",
-   "name": "Sensor data, UAV at 100 m over a synthetic crustal map (ever"
-  },
-  {
-   "role": "summary",
-   "name": "GHZ scaling data"
   },
   {
    "role": "summary",
@@ -112,7 +112,26 @@
    ],
    "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 m",
    "per_track_table_present": false,
-   "comparison_present": false
+   "comparison_present": false,
+   "left_column": [
+    "map"
+   ],
+   "right_column": [
+    "navigation_accuracy",
+    "run_controls",
+    "run_status",
+    "job",
+    "sensor"
+   ],
+   "two_columns": true,
+   "map_column_wider": true,
+   "error_box_beside_map": true,
+   "map_stage_px": [
+    700,
+    640
+   ],
+   "legend_lists_baseline": false,
+   "map_draws_baseline": false
   },
   "after_run": {
    "error_box_first_in_results": true,
@@ -124,7 +143,26 @@
    ],
    "error_box_text": "Position error, Quantum: GHZ-4 entangled181 mBaseline 181 m · Dead reckoning 2,163 m",
    "per_track_table_present": false,
-   "comparison_present": false
+   "comparison_present": false,
+   "left_column": [
+    "map"
+   ],
+   "right_column": [
+    "navigation_accuracy",
+    "run_controls",
+    "run_status",
+    "job",
+    "sensor"
+   ],
+   "two_columns": true,
+   "map_column_wider": true,
+   "error_box_beside_map": true,
+   "map_stage_px": [
+    700,
+    640
+   ],
+   "legend_lists_baseline": false,
+   "map_draws_baseline": false
   }
  },
  "error_box_follows_playhead": {

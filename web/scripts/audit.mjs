@@ -8,6 +8,10 @@
 // (D-03) or of the position-error box, or a layout check failure: the error box must be the first
 // item of "Navigation accuracy" (above the benchmark) and not under the map, and the per-track CEP
 // table and the two-scenario comparison (README-only since the 03-07 ad-hoc change) must be absent.
+// Since the second ad-hoc change: the left column holds only the map; the right column runs
+// Navigation accuracy, Run controls, Run status, job, Sensor (DOM order = single-column order); at
+// the wide viewport the error box sits beside the map (to its right, within its height) and the
+// map column is the wider one; the map legend and overlay carry no classical-baseline track.
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
@@ -81,8 +85,49 @@ const layoutCheck = (page) => page.evaluate(() => {
     comparison_present: headings.includes('Both scenarios, as found')
       || captions.some((t) => t.startsWith('Navigation and signal results for both maps'))
       || Boolean(document.querySelector('.comparison, .verdict-statement')),
+    ...columns(),
   };
+
+  function columns() {
+    const left = document.querySelector('.layout > .col-left');
+    const right = document.querySelector('.layout > .col-right');
+    const map = document.querySelector('figure.map-figure');
+    const tag = (el) => {
+      const c = el.classList;
+      if (c.contains('map-figure')) return 'map';
+      if (c.contains('results')) return 'navigation_accuracy';
+      if (c.contains('controls')) return 'run_controls';
+      if (c.contains('status-strip')) return 'run_status';
+      if (c.contains('job-section')) return 'job';
+      if (c.contains('sensor-section')) return 'sensor';
+      return el.className;
+    };
+    const r = (el) => el?.getBoundingClientRect();
+    const mapR = r(map);
+    const boxR = r(document.querySelector('.results .error-readout'));
+    const leftR = r(left);
+    const rightR = r(right);
+    const two = Boolean(leftR && rightR && rightR.left >= leftR.right);
+    const legend = document.querySelector('.map-legend')?.textContent ?? '';
+    const strokes = [...document.querySelectorAll('.map-overlay [stroke]')].map((e) => e.getAttribute('stroke').toUpperCase());
+    return {
+      left_column: left ? [...left.children].map(tag) : null,
+      right_column: right ? [...right.children].map(tag) : null,
+      two_columns: two,
+      map_column_wider: two ? leftR.width > rightR.width : null,
+      error_box_beside_map: two
+        ? boxR.left >= mapR.right && boxR.top >= mapR.top && boxR.bottom <= mapR.bottom
+        : null,
+      map_stage_px: (() => {
+        const st = r(document.querySelector('.map-stage'));
+        return st ? [Math.round(st.width), Math.round(st.height)] : null;
+      })(),
+      legend_lists_baseline: /baseline/i.test(legend),
+      map_draws_baseline: strokes.includes('#D55E00'),
+    };
+  }
 });
+const RIGHT_ORDER = '["navigation_accuracy","run_controls","run_status","job","sensor"]';
 const layoutProblems = (name, L) => {
   const out = [];
   if (!L.error_box_first_in_results) out.push(`${name}: error box is not the first item of Navigation accuracy`);
@@ -92,6 +137,15 @@ const layoutProblems = (name, L) => {
   if (JSON.stringify(L.readout_row_children) !== '["jam-slot"]') out.push(`${name}: row under the map holds ${L.readout_row_children}`);
   if (L.per_track_table_present) out.push(`${name}: per-track CEP table still on the page`);
   if (L.comparison_present) out.push(`${name}: comparison block still on the page`);
+  if (JSON.stringify(L.left_column) !== '["map"]') out.push(`${name}: left column holds ${L.left_column}`);
+  if (JSON.stringify(L.right_column) !== RIGHT_ORDER) out.push(`${name}: right column order ${L.right_column}`);
+  if (name.startsWith('wide')) {
+    if (!L.two_columns) out.push(`${name}: not two columns`);
+    if (!L.map_column_wider) out.push(`${name}: map column is not the wider one`);
+    if (!L.error_box_beside_map) out.push(`${name}: error box is not beside the map`);
+  } else if (L.two_columns) out.push(`${name}: two columns at the narrow viewport`);
+  if (L.legend_lists_baseline) out.push(`${name}: map legend still lists the baseline`);
+  if (L.map_draws_baseline) out.push(`${name}: map overlay still draws the baseline`);
   return out;
 };
 
@@ -150,11 +204,13 @@ try {
     if (!reduced) problems.push(`${name}: reduced-motion emulation not active`);
     if (name === 'wide') {
       mkdirSync(`${ROOT}docs`, { recursive: true });
-      // First screen at 1280 px wide, extended down to just past the Run row so the hero shows
-      // the map with its full trajectory and the Run controls under it (D-13).
-      const runBottom = await page.locator('.run-row').evaluate(
+      // First screen at 1280 px wide, extended down to just past whichever ends lower, the map
+      // figure (left column) or the Run row (right column, under Navigation accuracy), so the
+      // hero shows the map with its full trajectory and the Run button (D-13).
+      const bottomOf = (sel) => page.locator(sel).evaluate(
         (el) => Math.ceil(el.getBoundingClientRect().bottom + window.scrollY),
       );
+      const runBottom = Math.max(await bottomOf('.run-row'), await bottomOf('figure.map-figure'));
       const height = Math.max(viewport.height, runBottom + 24);
       await page.screenshot({ path: HERO, fullPage: true, clip: { x: 0, y: 0, width: viewport.width, height } });
     }
