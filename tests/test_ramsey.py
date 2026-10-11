@@ -10,7 +10,7 @@ import pytest
 from qiskit.quantum_info import Statevector
 
 from magnav import motor, ramsey, seeds, uav
-from magnav.quantum import ramsey_block
+from magnav.quantum import ghz_block, ramsey_block
 
 # Explicit TEST amplitude for the motor tones; the frozen amplitude arrives in plan 01-03.
 TEST_A1_NT = 5000.0
@@ -177,3 +177,107 @@ def test_readout_fringe_flags():
     assert r["n1"].shape == (4,)
     assert not r["fringe"][0]
     assert r["fringe"][1] and r["fringe"][2]
+
+
+# ---------------------------------------------------------------- GHZ-n fine stage (QS-06)
+
+@pytest.mark.parametrize("n", [1, 2, 4])
+def test_statevector_ghz_n1_n2_n4(n):
+    for nphi in PHIS:
+        phi = nphi / n
+        sv = Statevector(ghz_block(n, phi))
+        assert abs(sv.probabilities([0])[1] - ramsey.p1(phi, n)) < 1e-12
+        for q in range(1, n):
+            assert sv.probabilities([q])[0] > 1 - 1e-12
+    if n == 4:
+        assert abs(Statevector(ghz_block(4, -0.2)).probabilities([0])[1] - 0.1413) < 1e-4
+        assert abs(Statevector(ghz_block(4, 0.2)).probabilities([0])[1] - 0.8587) < 1e-4
+
+
+def test_ghz4_gate_counts():
+    assert dict(ghz_block(4, 0.1).count_ops()) == {"cx": 6, "rz": 5, "h": 2}
+
+
+def test_fine_allowed_static_rule():
+    assert ramsey.Z_STAR == 4.5
+    assert ramsey.GHZ_N_SET == (1, 2, 4)
+    assert not ramsey.fine_allowed(64, 4, 0.98)
+    assert ramsey.fine_allowed(256, 4, 0.98)
+    assert ramsey.fine_allowed(64, 2, 0.98)
+
+
+def _two_stage(world, S, n_fine=4, tones=True, c1=ramsey.C1_DEFAULT):
+    p, tau, m, tone_int, tone_mean_at = _flight_inputs(world, tones)
+    tone_int_fine = motor.tone_window_integral(p, world.t + tau, tau) if tones else None
+    rngs = {
+        "servo": seeds.stream(0, "servo", S),
+        "q1": seeds.stream(0, "q1", S),
+        "ghz": seeds.stream(0, "ghz", n_fine, S),
+    }
+    return ramsey.two_stage(
+        world.t,
+        world.b_true,
+        lambda tq: uav.field_at(world, tq),
+        tau,
+        m,
+        S,
+        c1,
+        rngs,
+        n_fine=n_fine,
+        tone_int=tone_int,
+        tone_int_fine=tone_int_fine,
+        tone_mean_at=tone_mean_at,
+    )
+
+
+def test_ghz4_zero_fine_slips_over_flight(world):
+    r = _two_stage(world, 256)
+    n = len(world.t)
+    assert r["fine_slips"] == 0
+    assert r["n_fallback"] <= 0.01 * n
+    assert r["fine_used"].shape == r["fallback"].shape == (n,)
+    assert r["n_fine"] == 4 and abs(r["c_n"] - 0.98**4) < 1e-15
+    # coarse keys pass through unchanged
+    for key in ("tau_s", "m", "b_ref_nT", "phi", "bhat_nT", "fringe", "slips"):
+        assert key in r
+    np.testing.assert_array_equal(r["bhat_q1_nT"], r["bhat_nT"])
+    print("S=256 GHZ-4:", r["n_fallback"], "fallbacks; max|n*phi_f| =",
+          round(float(np.max(np.abs(4 * r["phi_fine"]))), 4))  # fmt: skip
+
+
+def test_ghz4_fallback_at_S64(world):
+    r = _two_stage(world, 64)
+    assert r["fallback"].all()
+    assert r["fine_slips"] == 0
+    np.testing.assert_array_equal(r["bhat_ghz_nT"], r["bhat_q1_nT"])
+
+
+def test_ghz_track_beats_coarse_noise(world):
+    r = _two_stage(world, 256, tones=False)
+    jam = int(world.flight["jam_fraction"] * len(world.t))
+    e_q1 = (r["bhat_q1_nT"] - world.b_true)[jam:]
+    e_ghz = (r["bhat_ghz_nT"] - world.b_true)[jam:]
+    rq, rg = np.sqrt(np.mean(e_q1**2)), np.sqrt(np.mean(e_ghz**2))
+    assert rg < rq
+    print(f"post-jam RMSE q1 {rq:.4f} nT, GHZ-4 {rg:.4f} nT")
+
+
+def _slope(entangled, c1, S=256, trials=40_000):
+    ns = np.array(ramsey.GHZ_N_SET)
+    rmse = [
+        ramsey.scaling_trial(int(n), S, c1, trials, seeds.stream(0, "test_noise", int(n), int(entangled)), entangled)
+        for n in ns
+    ]
+    return np.polyfit(np.log(ns), np.log(rmse), 1)[0], rmse
+
+
+def test_sql_hl_slopes():
+    s_sql, r_sql = _slope(False, 1.0)
+    s_hl, r_hl = _slope(True, 1.0)
+    assert abs(s_sql + 0.5) < 0.03, s_sql
+    assert abs(s_hl + 1.0) < 0.03, s_hl
+    s_er, _ = _slope(True, 0.95)
+    assert abs(s_er + 0.886) < 0.03, s_er
+    assert s_er > -0.97
+    assert abs(r_sql[0] - 1 / 16) < 0.003 and abs(r_hl[2] - 1 / 64) < 0.001
+    print(f"slopes: SQL {s_sql:.4f}, HL {s_hl:.4f}, HL c1=0.95 {s_er:.4f}")

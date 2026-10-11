@@ -94,9 +94,10 @@ def _called_names(fn_node) -> set[str]:
     return out
 
 
-def test_coarse_estimate_via_counts():
+def test_estimates_via_counts():
     tree = ast.parse((MAGNAV / "ramsey.py").read_text(encoding="utf-8"))
     fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
-    calls = _called_names(fns["coarse_track"])
-    assert "estimate_from_counts" in calls
-    assert "field_from_phase" not in calls
+    for name in ("coarse_track", "two_stage"):
+        calls = _called_names(fns[name])
+        assert "estimate_from_counts" in calls, name
+        assert "field_from_phase" not in calls, name
