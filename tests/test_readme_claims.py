@@ -164,7 +164,7 @@ def test_required_images_linked():
         "results/fig_filter_function.png",
         "results/fig_amp_sweep.png",
     ):
-        assert f"]({img})" in text
+        assert f"]({img})" in text or f"/main/{img})" in text, img
 
 
 def test_line_count():
