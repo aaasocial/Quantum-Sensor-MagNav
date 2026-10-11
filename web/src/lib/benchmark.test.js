@@ -17,7 +17,7 @@ const fixture = () => ({
     { estimator: 'baseline_ls', label: 'Row A', cep50_mean_m: 154.772, cep50_std_m: 5.07401,
       cep95_mean_m: 266.547, cep95_std_m: 21.0216, pct556_mean: 100, pct556_std: 0 },
     { estimator: 'quantum_ghz4', label: 'Row B', cep50_mean_m: 150.196, cep50_std_m: 0,
-      cep95_mean_m: 251.385, cep95_std_m: 0, pct556_mean: 87.25, pct556_std: 3.05 },
+      cep95_mean_m: 251.385, cep95_std_m: 0, pct556_mean: 87.25, pct556_std: 3.06 },
   ],
   recorded: [
     { label: 'QPU-measured', job_id: '01a12aee-d8a8-7e14-b9aa-b11329aca850', seed_hex: 'c1dfff10e69fae05',

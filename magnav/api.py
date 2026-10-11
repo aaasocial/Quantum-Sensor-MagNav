@@ -11,6 +11,7 @@ import math
 import sys
 
 CIRCUIT_FREEZE_PATH = "data/circuit_freeze.json"  # literal: Qollab preloads literal paths only
+BENCHMARK_PATH = "data/benchmark_summary.json"  # literal: Qollab preloads literal paths only
 ALLOWED_JOB_SHOTS = (1024,)
 SCALING_TRIALS = 4000
 SCALING_N = (1, 2, 4)
@@ -161,6 +162,14 @@ def circuit_json(backend) -> str:
     """The frozen packed circuit (data/circuit_freeze.json)."""
     try:
         return _splice("circuit", CIRCUIT_FREEZE_PATH)
+    except Exception as e:  # noqa: BLE001
+        return _fail(e)
+
+
+def benchmark_json(backend) -> str:
+    """The N-draw benchmark summary (data/benchmark_summary.json, written by magnav.regen)."""
+    try:
+        return _splice("benchmark", BENCHMARK_PATH)
     except Exception as e:  # noqa: BLE001
         return _fail(e)
 
