@@ -169,6 +169,22 @@ def test_no_unsafe_html_in_web_src():
         "GHZ-4 entangled",
         "Single-qubit",
         SYNTH_LABEL,
+        # Live run (02-06)
+        "Run one IonQ job",
+        "This Run's IonQ job",
+        "simulator-sampled",
+        "QPU-measured",
+        "simulator-sampled proxy",
+        "Not captured yet",
+        "computed in-page",
+        "motor drawn by this Run's IonQ job",
+        "fallback: precomputed replay",
+        "Live run took longer than 90 s",
+        "entangled probe n = ",
+        "measured this Run",
+        "default model, not measured",
+        "built-in simulator",
+        "waiting for IonQ",
     ],
 )
 def test_ui_copy_in_bundle(copy):

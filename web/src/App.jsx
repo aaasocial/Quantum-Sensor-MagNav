@@ -1,25 +1,30 @@
 // Page shell: artifact load, selection state (scenario, run mode, quantum track), the map-first
 // layout, the global keyboard map, focus management, the single Announcer and the Qollab
-// keep-alive. Per-frame state lives in the playback store, never in App state. In this slice
-// the page shows the recorded replay of the selected scenario; the live run (plan 02-06) and
-// the sensor panel and results (plan 02-07) plug into the slots below.
+// keep-alive. Per-frame state lives in the playback store, never in App state. The live run
+// (plan 02-06) flies the scenario selected when Run is pressed and renders its result through
+// the same uavView path as the replay; any failure shows that scenario's recorded replay from
+// memory (no Python call). The sensor panel and results (plan 02-07) plug into the slots below.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ControlBar, { DEFAULT_SPEED } from './components/ControlBar.jsx';
-import StatusStrip, { idleHint } from './components/StatusStrip.jsx';
+import StatusStrip, {
+  BUILTIN_NOTICE, LiveProgress, STEP_TEXT, idleHint, stepLine,
+} from './components/StatusStrip.jsx';
+import JobPanel, { bitsLabelOf } from './components/JobPanel.jsx';
 import MapView from './components/MapView.jsx';
 import ScenarioPicker from './components/ScenarioPicker.jsx';
 import RunModePicker from './components/RunModePicker.jsx';
 import QuantumTrackToggle from './components/QuantumTrackToggle.jsx';
 import Announcer, { announce } from './components/Announcer.jsx';
 import { useArtifact } from './hooks/useArtifact.js';
+import { useLiveRun } from './hooks/useLiveRun.js';
 import { useReducedMotion } from './hooks/useReducedMotion.js';
 import { playback } from './hooks/usePlayback.js';
 import { QUANTUM_KEYS, errorAt, scenarioById, uavView } from './lib/artifactV2.js';
 import {
-  createThrottle, finishedText, jamText, loadedText, pausedText, playText, readoutText, runModeText,
-  scenarioText, trackText,
+  createThrottle, decodedText, fallbackText, finishedText, jamText, jobText, liveResultText, loadedText,
+  pausedText, playText, progressText, readoutText, runModeText, scenarioText, shortJobId, stageText, trackText,
 } from './lib/announce.js';
-import { qBackend } from './bridge.js';
+import { callPy, qBackend } from './bridge.js';
 import { logFrameProbe, logTimerProbe } from './probe.js';
 import { SERIES } from './theme.js';
 
@@ -32,6 +37,26 @@ const RUN_HELP_IDLE = 'Draws this Run\'s motor from quantum random bits, measure
   + 'over the selected map in your browser (up to 90 s). If anything fails, that map\'s recorded replay is shown.';
 const RUN_HELP_NO_BACKEND = 'Needs a backend: press Run on Qollab and pick one. The recorded replays work without it.';
 const REPLAY_HELP = 'Recorded replay: stored motor draw, no IonQ job.';
+const runHelpAfter = (label) => `One IonQ job per Run, flown on ${label}. Press Stop, then Run on Qollab, to draw a new motor.`;
+const otherHelp = (label) => `This Run's IonQ job was flown on ${label}. Showing the recorded replay here.`;
+const lockHelp = (label) => `Map scenario is locked while the live run flies ${label}.`;
+const successText = (s, label, jobId) => `Live run finished in ${s} s on ${label}. Motor drawn by IonQ job ${shortJobId(jobId)}.`;
+const failureText = (failure, label) => (failure.timeout
+  ? `Live run took longer than 90 s. Showing the recorded replay of ${label} with its stored motor. Press Stop, then Run on Qollab, to try again.`
+  : `Live run failed: ${failure.name}: ${failure.message}. Showing the recorded replay of ${label} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`);
+const PROGRESS_EVERY_MS = 10 * 1000; // announced replay progress: at most once per 10 s wall time
+
+// One JSON call at mount for the static panels; a failure leaves that panel's empty state.
+async function loadJson(name, key) {
+  try {
+    const res = await callPy(name);
+    if (res?.ok === true) return { status: 'ok', record: key ? res[key] : res };
+    if (res?.error_type === 'NotCaptured') return { status: 'missing', record: null };
+    return { status: 'error', record: null, error: `${res?.error_type ?? 'Error'}: ${res?.error ?? name}` };
+  } catch (e) {
+    return { status: 'error', record: null, error: e?.message ?? String(e) };
+  }
+}
 
 // main.jsx awaits runDone to keep the Qollab run alive. It resolves only on the idle bound;
 // never because no backend is selected (the replay needs none). Resolving twice is harmless.
@@ -51,12 +76,36 @@ export default function App() {
   const [quantumKey, setQuantumKey] = useState(null);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const statusFocusRef = useRef(null);
+  const scenarioFocusRef = useRef(null);
+  const runButtonRef = useRef(null);
   const endedRef = useRef(false);
+
+  // Live run state: one job per Qollab Run (latched on the first press, never re-enabled).
+  const hasBackend = Boolean(qBackend) || import.meta.env.DEV;
+  const liveRun = useLiveRun({ hasBackend });
+  const [runPhase, setRunPhase] = useState('idle'); // idle | running | result | fallback
+  const [liveScenario, setLiveScenario] = useState(null);
+  const [liveResults, setLiveResults] = useState({});
+  const [quantum, setQuantum] = useState(null);
+  const [failure, setFailure] = useState(null);
+  const [doneS, setDoneS] = useState(null);
+  const [simulateFailure, setSimulateFailure] = useState(false);
+  const latchRef = useRef(false);
+  const [backendInfo, setBackendInfo] = useState(null);
+  const [circuitInfo, setCircuitInfo] = useState(null);
+  const [hardware, setHardware] = useState({ status: 'loading', record: null });
 
   const activeSid = sid ?? artifact?.default_scenario ?? null;
   const activeQuantum = quantumKey
     ?? (QUANTUM_KEYS.includes(artifact?.default_estimator) ? artifact.default_estimator : 'quantum_ghz4');
-  const scenario = useMemo(() => (artifact ? scenarioById(artifact, activeSid) : null), [artifact, activeSid]);
+  const live = mode === 'live';
+  const liveEntry = live ? (liveResults[activeSid] ?? null) : null;
+  // The live result renders through the same uavView path as the replay; otherwise (including
+  // every fallback) the recorded replay of the selected scenario, straight from memory.
+  const scenario = useMemo(() => {
+    if (liveEntry) return liveEntry.scenario;
+    return artifact ? scenarioById(artifact, activeSid) : null;
+  }, [artifact, activeSid, liveEntry]);
 
   const { view, viewError } = useMemo(() => {
     if (!scenario) return { view: null, viewError: null };
@@ -135,6 +184,20 @@ export default function App() {
   useEffect(() => {
     logTimerProbe();
     logFrameProbe();
+  }, []);
+
+  // Static panels at mount, queued on the bridge before any live call can be made.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const b = await loadJson('backend_info', null);
+      if (!cancelled && b.status === 'ok') setBackendInfo(b.record);
+      const c = await loadJson('circuit_json', 'circuit');
+      if (!cancelled && c.status === 'ok') setCircuitInfo(c.record);
+      const h = await loadJson('hardware_json', 'hardware');
+      if (!cancelled) setHardware(h);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Global keyboard map (UI-SPEC Keyboard table). Form controls keep their native keys; the
@@ -227,8 +290,8 @@ export default function App() {
   const onScenarioChange = useCallback((id) => {
     const sc = artifact ? scenarioById(artifact, id) : null;
     setSid(id);
-    if (sc) announce(scenarioText(sc.label, sc.map_label, false));
-  }, [artifact]);
+    if (sc) announce(scenarioText(sc.label, sc.map_label, mode === 'live' && Boolean(liveResults[id])));
+  }, [artifact, mode, liveResults]);
 
   const onModeChange = useCallback((m) => {
     setMode(m);
@@ -240,15 +303,99 @@ export default function App() {
     announce(trackText(qLabelOf(k)));
   }, []);
 
+  // Run one IonQ job: flies the selected scenario; latched for the rest of this Qollab Run.
+  const onRun = useCallback(async () => {
+    if (latchRef.current || !hasBackend || !artifact || !view) return;
+    latchRef.current = true;
+    const sc = activeSid;
+    const label = scenarioById(artifact, sc)?.label ?? sc;
+    // The Run button and the scenario radios disable themselves: park focus on the status
+    // message rather than letting it drop to <body> (WR-02), and return it afterwards.
+    const ae = document.activeElement;
+    const fromScenario = Boolean(ae && scenarioFocusRef.current?.closest('fieldset')?.contains(ae));
+    if (ae === runButtonRef.current || fromScenario) statusFocusRef.current?.focus();
+    playback.pause();
+    setLiveScenario(sc);
+    setQuantum(null);
+    setFailure(null);
+    setRunPhase('running');
+    liveRunFlag.inFlight = true;
+    const progressAllowed = createThrottle(PROGRESS_EVERY_MS);
+    progressAllowed.mark();
+    try {
+      const res = await liveRun.start({
+        scenario: sc,
+        simulateFailure,
+        // Step 2 is announced by the job and decode summary below (the same moment).
+        onStage: (n) => { if (n !== 2) announce(stageText(n, STEP_TEXT[n])); },
+        onQuantum: (q) => {
+          setQuantum(q);
+          announce(`${jobText(q.job_id, q.backend)} ${decodedText(q.motor?.rpm_min, q.motor?.rpm_max, q.c_hat?.c4, bitsLabelOf(q))}`);
+        },
+        onStep: (step) => {
+          if (!step.done && progressAllowed()) announce(progressText(step.samples_done, step.samples_total));
+        },
+      });
+      const v = uavView(res.result.scenario);
+      setQuantum(res.quantum);
+      setLiveResults({ [sc]: res.result });
+      setDoneS(Math.round(res.elapsedMs / 1000));
+      setRunPhase('result');
+      playback.load(v.t);
+      if (reduced) {
+        playback.seekIndex(v.n - 1);
+      } else {
+        playback.seekIndex(0);
+        playback.play();
+      }
+      announce(liveResultText(label));
+    } catch (e) {
+      console.error('[live] failed', e);
+      if (e?.quantum) setQuantum(e.quantum);
+      setFailure({
+        name: String(e?.name ?? 'Error'),
+        message: String(e?.message ?? e),
+        timeout: e?.name === 'TimeoutError',
+      });
+      setRunPhase('fallback');
+      announce(fallbackText(label));
+    } finally {
+      liveRunFlag.inFlight = false;
+      if (fromScenario && document.activeElement === statusFocusRef.current) scenarioFocusRef.current?.focus();
+    }
+  }, [hasBackend, artifact, view, activeSid, liveRun, simulateFailure, reduced]);
+
   const loadError = status === 'error' ? error : viewError;
   const danger = loadError
     ? `Could not load the recorded flights (${loadError}). Press Stop, then Run on Qollab, to reload.`
     : null;
   const ready = status === 'ready' && Boolean(view);
-  const hasBackend = Boolean(qBackend) || import.meta.env.DEV;
-  const live = mode === 'live';
-  const helpLine = live ? (hasBackend ? RUN_HELP_IDLE : RUN_HELP_NO_BACKEND) : REPLAY_HELP;
-  const message = view ? idleHint(view.label, view.jamT, live) : null;
+  const running = runPhase === 'running';
+  const latched = runPhase !== 'idle';
+  const flownLabel = liveScenario && artifact ? (scenarioById(artifact, liveScenario)?.label ?? liveScenario) : null;
+  const onFlown = activeSid === liveScenario;
+  const showingLive = Boolean(liveEntry);
+
+  let helpLine = REPLAY_HELP;
+  if (live) {
+    if (!hasBackend) helpLine = RUN_HELP_NO_BACKEND;
+    else if (!latched || running) helpLine = RUN_HELP_IDLE;
+    else helpLine = onFlown ? runHelpAfter(flownLabel) : otherHelp(flownLabel);
+  }
+
+  let message = null;
+  if (running) message = stepLine(liveRun.stage || 1);
+  else if (view && showingLive && runPhase === 'result') message = successText(doneS, view.label, quantum?.job_id);
+  else if (view) message = idleHint(view.label, view.jamT, live && !latched);
+
+  const runDanger = runPhase === 'fallback' && failure && flownLabel ? failureText(failure, flownLabel) : null;
+  const builtinNotice = quantum?.analytic_blocks === true && (running || showingLive) ? BUILTIN_NOTICE : null;
+  let modeKey = 'replay';
+  if (running) modeKey = 'computing';
+  else if (showingLive) modeKey = 'computed';
+  let motorKey = 'stored';
+  if (running) motorKey = null;
+  else if (showingLive) motorKey = 'drawn';
 
   return (
     <main className="page">
@@ -273,21 +420,80 @@ export default function App() {
                 scenarios={artifact.scenarios}
                 value={activeSid}
                 onChange={onScenarioChange}
-                disabled={!ready}
+                disabled={!ready || running}
+                lockHelp={running && flownLabel ? lockHelp(flownLabel) : null}
+                focusRef={scenarioFocusRef}
               />
             )}
             <RunModePicker value={mode} onChange={onModeChange} disabled={!ready} />
-            <p className="help run-help">{helpLine}</p>
+            <div className="run-row">
+              {live && (
+                <button
+                  type="button"
+                  className="btn-primary run-button"
+                  ref={runButtonRef}
+                  onClick={onRun}
+                  disabled={!ready || !hasBackend || latched}
+                  aria-describedby="run-help"
+                >
+                  Run one IonQ job
+                </button>
+              )}
+              <p id="run-help" className="help run-help">{helpLine}</p>
+              {live && (
+                <details className="demo-options">
+                  <summary>Demo options</summary>
+                  <label className="check-row">
+                    <input
+                      type="checkbox"
+                      checked={simulateFailure}
+                      onChange={(e) => setSimulateFailure(e.target.checked)}
+                      disabled={latched}
+                    />
+                    Simulate a failure
+                  </label>
+                  <p className="help">
+                    Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback.
+                  </p>
+                </details>
+              )}
+            </div>
             <QuantumTrackToggle value={activeQuantum} onChange={onQuantumChange} disabled={!ready} />
-            <ControlBar view={view} speed={speed} onSpeedChange={setSpeed} disabled={!ready} />
+            <ControlBar view={view} speed={speed} onSpeedChange={setSpeed} disabled={!ready || running} />
           </section>
 
           <StatusStrip
-            mode="replay"
-            motor="stored"
+            mode={modeKey}
+            motor={motorKey}
             mapLabel={view ? view.mapLabel : null}
+            fallbackLabel={live && runPhase === 'fallback' && onFlown ? flownLabel : null}
+            bitsLabel={showingLive && quantum ? bitsLabelOf(quantum) : null}
             message={message}
+            danger={runDanger}
+            notice={builtinNotice}
             focusRef={statusFocusRef}
+          >
+            {running ? (
+              <LiveProgress
+                stage={liveRun.stage}
+                progress={liveRun.progress}
+                elapsedS={liveRun.elapsedS}
+                reduced={reduced}
+              />
+            ) : null}
+          </StatusStrip>
+
+          <JobPanel
+            storedMotor={artifact?.motor ?? null}
+            quantum={quantum}
+            started={latched}
+            failed={runPhase === 'fallback'}
+            backendName={backendInfo?.name ?? null}
+            isIonq={backendInfo?.is_ionq === true}
+            flownLabel={runPhase === 'result' ? flownLabel : null}
+            hardware={hardware}
+            circuitSha={circuitInfo?.circuit_sha256 ?? null}
+            modelSha={liveResults[liveScenario]?.model_sha256 ?? artifact?.model_sha256 ?? null}
           />
         </div>
       </div>

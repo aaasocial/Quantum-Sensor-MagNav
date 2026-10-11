@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   createThrottle, speedWords, loadedText, scenarioText, runModeText, playText, pausedText,
   jamText, readoutText, trackText, modeText, stageText, finishedText,
+  shortJobId, jobText, decodedText, progressText, liveResultText, fallbackText,
 } from './announce.js';
 
 const art = JSON.parse(readFileSync(new URL('../../../data/precomputed_uav.json', import.meta.url), 'utf8'));
@@ -64,6 +65,34 @@ test('builders return the exact UI-SPEC strings', () => {
     'Replay finished. Quantum: GHZ-4 entangled: 150 metres. Baseline: 160 metres.',
   );
   assert.equal(finishedText('x', null, 1), 'Replay finished.');
+});
+
+test('live-run announcements match the UI-SPEC aria-live phrasing', () => {
+  assert.equal(shortJobId('55dade7a-5be3-4a32-9018-85efabd7b5f6'), '55dade7a');
+  assert.equal(shortJobId('abc'), 'abc');
+  assert.equal(
+    jobText('55dade7a-5be3-4a32-9018-85efabd7b5f6', 'basic_simulator'),
+    'IonQ job 55dade7a submitted, basic_simulator.',
+  );
+  assert.equal(
+    decodedText(4516.05, 8178.98, 0.9, 'simulator-sampled'),
+    'Motor drawn: 4516 to 8179 RPM. GHZ-4 contrast 0.900. Bits simulator-sampled.',
+  );
+  assert.equal(
+    decodedText(4516, 8179, 0.87654, 'QPU-measured'),
+    'Motor drawn: 4516 to 8179 RPM. GHZ-4 contrast 0.877. Bits QPU-measured.',
+  );
+  assert.equal(progressText(450, 1800), '450 of 1800 samples.');
+  assert.equal(
+    liveResultText(synth.label),
+    `Live run finished on ${synth.label}. Mode: computed in-page.`,
+  );
+  assert.equal(
+    fallbackText(east.label),
+    `Live run failed. Mode: fallback, precomputed replay of ${east.label}.`,
+  );
+  const all = [jobText('a', 'b'), decodedText(1, 2, 0.5, 'x'), progressText(1, 2), liveResultText('l'), fallbackText('l')];
+  for (const s of all) assert.ok(!s.includes('×'), s);
 });
 
 test('no output contains the multiplication sign', () => {
