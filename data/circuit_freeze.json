@@ -1,0 +1,60 @@
+{
+ "c_floor": 0.5,
+ "circuit_sha256": "45215a38b2b17c206f657e897ede7e1311332c8996fbbbe232c950ea82212560",
+ "gates": [
+  "h",
+  "rz",
+  "cx",
+  "measure",
+  "barrier"
+ ],
+ "hash_method": "sha256(qiskit.qasm3.dumps(logical circuit, pre-transpile)) utf-8",
+ "hw_shots": 500,
+ "job_shots_live": 1024,
+ "kind": "circuit_freeze",
+ "layout": {
+  "cal": [
+   3
+  ],
+  "fringe": [
+   0,
+   1,
+   2
+  ],
+  "ghz2": [
+   4,
+   5
+  ],
+  "ghz4": [
+   6,
+   7,
+   8,
+   9
+  ],
+  "rng": [
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ]
+ },
+ "model_file": "data/qsensor_model.json",
+ "model_sha256": "a10a6f62456eb49458dd42071384b5a51cf00ca388c71702dfce16e5b27ac891",
+ "n_qubits": 16,
+ "phases": {
+  "cal": 1.5707963267948966,
+  "fringe": [
+   -0.7853981633974483,
+   0.39269908169872414,
+   0.7853981633974483
+  ],
+  "ghz2": 0.7853981633974483,
+  "ghz4": 0.39269908169872414
+ },
+ "qasm3": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nbit[16] meas;\nqubit[16] q;\nh q[0];\nrz(-pi/16) q[0];\nrz(-pi/16) q[0];\nrz(-pi/16) q[0];\nrz(-pi/16) q[0];\nrz(pi/2) q[0];\nh q[0];\nh q[1];\nrz(pi/32) q[1];\nrz(pi/32) q[1];\nrz(pi/32) q[1];\nrz(pi/32) q[1];\nrz(pi/2) q[1];\nh q[1];\nh q[2];\nrz(pi/16) q[2];\nrz(pi/16) q[2];\nrz(pi/16) q[2];\nrz(pi/16) q[2];\nrz(pi/2) q[2];\nh q[2];\nh q[3];\nrz(pi/2) q[3];\nrz(pi/2) q[3];\nh q[3];\nh q[4];\ncx q[4], q[5];\nrz(pi/4) q[4];\nrz(pi/4) q[5];\nrz(pi/2) q[4];\ncx q[4], q[5];\nh q[4];\nh q[6];\ncx q[6], q[7];\ncx q[6], q[8];\ncx q[6], q[9];\nrz(pi/8) q[6];\nrz(pi/8) q[7];\nrz(pi/8) q[8];\nrz(pi/8) q[9];\nrz(pi/2) q[6];\ncx q[6], q[9];\ncx q[6], q[8];\ncx q[6], q[7];\nh q[6];\nh q[10];\nh q[11];\nh q[12];\nh q[13];\nh q[14];\nh q[15];\nbarrier q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], q[9], q[10], q[11], q[12], q[13], q[14], q[15];\nmeas[0] = measure q[0];\nmeas[1] = measure q[1];\nmeas[2] = measure q[2];\nmeas[3] = measure q[3];\nmeas[4] = measure q[4];\nmeas[5] = measure q[5];\nmeas[6] = measure q[6];\nmeas[7] = measure q[7];\nmeas[8] = measure q[8];\nmeas[9] = measure q[9];\nmeas[10] = measure q[10];\nmeas[11] = measure q[11];\nmeas[12] = measure q[12];\nmeas[13] = measure q[13];\nmeas[14] = measure q[14];\nmeas[15] = measure q[15];\n",
+ "schema_version": 1,
+ "segments": 4,
+ "transpile_optimization_level": 0
+}

@@ -398,6 +398,20 @@ def freeze_model(path=QSENSOR_MODEL, force=False) -> dict:
     return model
 
 
+def freeze_circuit(path=None, force=False) -> dict:
+    """Write data/circuit_freeze.json once (D-C): the packed circuit bound to the frozen model."""
+    from magnav import quantum  # imported here: keeps qiskit out of this module's import
+
+    path = quantum.CIRCUIT_FREEZE if path is None else path
+    if Path(path).exists() and not force:
+        raise FileExistsError(f"{path} exists; the circuit is frozen (use force only before its commit)")
+    payload = quantum.freeze_payload(model_sha256())
+    text = json.dumps(payload, indent=1, sort_keys=True, allow_nan=False) + "\n"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return payload
+
+
 def load_model(path=QSENSOR_MODEL) -> dict:
     """Load and validate the frozen model."""
     with open(path, encoding="utf-8") as f:
@@ -516,12 +530,17 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("freeze", help="write data/qsensor_model.json once")
     sub.add_parser("build", help="motor-on run with the frozen model -> data/precomputed_uav.json")
+    sub.add_parser("freeze-circuit", help="write data/circuit_freeze.json once (D-C)")
     args = ap.parse_args(argv)
     if args.cmd == "freeze":
         m = freeze_model()
         amp = m["tone_amplitude_rule"]
         print(f"wrote {QSENSOR_MODEL}: A1 = {amp['A1_nT']} nT (S_ref {amp['S_ref']}), "
               f"median sigma_s {amp['sigma_s_median_nT']:.2f} nT, sha256 {model_sha256()}")  # fmt: skip
+    elif args.cmd == "freeze-circuit":
+        fz = freeze_circuit()
+        print(f"wrote data/circuit_freeze.json: circuit_sha256 {fz['circuit_sha256']}, "
+              f"model_sha256 {fz['model_sha256']}")  # fmt: skip
     elif args.cmd == "build":
         from magnav import artifact  # imported here: artifact must not import this module back
 
