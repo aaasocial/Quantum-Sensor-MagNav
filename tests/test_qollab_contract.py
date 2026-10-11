@@ -111,7 +111,7 @@ def _web_sources(*suffixes):
 def test_charts_disable_accessibility_layer():
     for path in _web_sources(".jsx"):
         text = path.read_text(encoding="utf-8")
-        charts = text.count("<LineChart")
+        charts = len(re.findall(r"<(LineChart|ComposedChart|ScatterChart|AreaChart|BarChart)\b", text))
         assert charts == text.count("accessibilityLayer={false}"), path.name
 
 
@@ -156,6 +156,14 @@ def test_no_unsafe_html_in_web_src():
             assert bad not in text, f"{bad} in {path.relative_to(ROOT)}"
 
 
+# CLAUDE.md honesty constraint: the D-G framing sentence, verbatim, on the page.
+DG_SENTENCE = (
+    "The quantum sensor's filter function is a physical fact about how such sensors work; the field it "
+    "filters here is injected as gate angles rather than felt; the downstream benefit equals that of a "
+    "classical notch filter, achieved earlier and without consuming dynamic range."
+)
+
+
 @pytest.mark.parametrize(
     "copy",
     [
@@ -185,6 +193,18 @@ def test_no_unsafe_html_in_web_src():
         "default model, not measured",
         "built-in simulator",
         "waiting for IonQ",
+        # Sensor panel, results and honesty section (02-07)
+        "Sensor",
+        "emulated sensor",
+        "Ramsey filter function",
+        "GHZ scaling",
+        "Navigation accuracy",
+        "Both scenarios, as found",
+        "Comparison rule",
+        "What is quantum here",
+        "Map track data",
+        "GHZ scaling data",
+        DG_SENTENCE,
     ],
 )
 def test_ui_copy_in_bundle(copy):
