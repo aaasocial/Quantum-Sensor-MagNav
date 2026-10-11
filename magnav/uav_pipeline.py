@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 
 from magnav import baseline, motor, ramsey, seeds, synthmap, uav
-from magnav.data import MAP_EASTERN, load_map
+from magnav.data import MAP_EASTERN, load_map, load_provenance
 from magnav.metrics import position_metrics, signal_metrics
 from magnav.motor import motor_to_dict, rev_at, rpm_at, tone_field, tone_window_integral
 from magnav.nav import anomaly_signal, tercom
@@ -522,7 +522,10 @@ def main(argv=None) -> int:
     elif args.cmd == "build":
         from magnav import artifact  # imported here: artifact must not import this module back
 
-        art = artifact.build_uav_artifact(run_uav())
+        runs = [run_uav(scenario=s) for s in SCENARIO_ORDER]
+        files = load_provenance()["files"]
+        map_infos = [files[SCENARIOS[s]["map_file"]] for s in SCENARIO_ORDER]
+        art = artifact.build_scenarios_artifact(runs, [SCENARIOS[s] for s in SCENARIO_ORDER], map_infos)
         errs = artifact.validate_uav_artifact(art)
         if errs:
             print("artifact invalid:\n  " + "\n  ".join(errs), file=sys.stderr)
@@ -531,11 +534,15 @@ def main(argv=None) -> int:
         with open(artifact.UAV_ARTIFACT_PATH, "wb") as f:
             f.write(data)
         print(f"wrote {artifact.UAV_ARTIFACT_PATH}: {len(data)} bytes, S = {art['S']}, "
-              f"motor seed {art['motor']['seed']}")  # fmt: skip
-        for name in ("dead_reckoning", *ESTIMATORS):
-            row = art["line"]["metrics"][name]
-            print(f"  {name:15s} CEP50 {row['cep50_m']} m, under 556 m {row['pct_under_556']}%, "
-                  f"signal RMSE {row.get('signal_rmse_nT')} nT")  # fmt: skip
+              f"motor seed {art['motor']['seed']}, default scenario {art['default_scenario']}")  # fmt: skip
+        for sc in art["scenarios"]:
+            print(f"[{sc['id']}] {sc['label']} ({sc['map_label']})")
+            for name in ("dead_reckoning", *ESTIMATORS):
+                row = sc["line"]["metrics"][name]
+                print(f"  {name:15s} CEP50 {row['cep50_m']} m, CEP95 {row['cep95_m']} m, "
+                      f"under 556 m {row['pct_under_556']}%, signal RMSE {row.get('signal_rmse_nT')} nT, "
+                      f"accepted {row.get('accepted')}/{row.get('windows')}")  # fmt: skip
+        print(art["comparison"]["statement"])
     return 0
 
 

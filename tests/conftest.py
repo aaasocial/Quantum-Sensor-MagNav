@@ -38,3 +38,13 @@ def worlds_100m(synth_tile):
     flight = dict(model["flight"], alt_m=100.0)
     me = {k: v for k, v in model["map_error"].items() if k != "seed"}
     return {r: build_world(synth_tile, flight, me, r) for r in (0, 1, 2)}
+
+
+@pytest.fixture(scope="session")
+def scenario_runs(tile, synth_tile):
+    """One motor-on run_uav per scenario per session, shared by every artifact/scenario test
+    (defined only after the plan 01.1-02 checkpoint; nothing earlier runs the 100 m comparison)."""
+    from magnav.uav_pipeline import SCENARIO_ORDER, run_uav
+
+    tiles = {"synthetic_100m": synth_tile, "eastern_400m": tile}
+    return {s: run_uav(tile=tiles[s], scenario=s) for s in SCENARIO_ORDER}
