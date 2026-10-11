@@ -1,6 +1,7 @@
 """magnav.regen (plan 03-01, D-08): one command, same bytes twice. Always writes into tmp dirs."""
 
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -10,7 +11,10 @@ import pytest
 from magnav import regen
 
 ROOT = Path(__file__).resolve().parents[1]
-CSVS = ("ladder.csv", "rpm_2x2.csv", "amp_sweep.csv", "benchmark.csv", "ghz_scaling.csv")
+CSVS = ("ladder.csv", "rpm_2x2.csv", "amp_sweep.csv", "benchmark.csv", "ghz_scaling.csv", "filter_function.csv")
+FIGS = ("fig_ladder.png", "fig_amp_sweep.png", "fig_filter_function.png", "fig_ghz_scaling.png")
+HAS_MPL = importlib.util.find_spec("matplotlib") is not None  # figures are dev-only (plan 03-03)
+PNG_SIG = b"\x89PNG\r\n\x1a\n"
 
 
 def _sha(p: Path) -> str:
@@ -29,8 +33,8 @@ def _reject(constant):
 @pytest.fixture(scope="module")
 def quick_builds(tmp_path_factory):
     a, b = tmp_path_factory.mktemp("regen_a"), tmp_path_factory.mktemp("regen_b")
-    ma = regen.build(a, quick=True)
-    regen.build(b, quick=True)
+    ma = regen.build(a, quick=True, figures=HAS_MPL)
+    regen.build(b, quick=True, figures=HAS_MPL)
     return a, b, ma
 
 
@@ -69,6 +73,35 @@ def test_benchmark_summary_strict_and_small(quick_builds):
     rows_text = json.dumps(s["rows"])
     assert "QPU-measured" not in rows_text and "simulator-sampled" not in rows_text  # D-06: never in the mean
     assert all(r["label"] in ("QPU-measured", "simulator-sampled") for r in s["recorded"])
+
+
+def test_quick_figures_byte_identical(quick_builds):
+    """Plan 03-03 (METR-05): every PNG and the circuit drawing are the same bytes on two runs."""
+    pytest.importorskip("matplotlib")
+    a, b, m = quick_builds
+    for name in (*FIGS, "circuit.txt"):
+        pa, pb = a / "results" / name, b / "results" / name
+        assert pa.is_file() and pb.is_file(), name
+        assert _sha(pa) == _sha(pb), name
+    for name in FIGS:
+        data = (a / "results" / name).read_bytes()
+        assert data.startswith(PNG_SIG), name
+        assert len(data) < 2_000_000, name
+        assert str(ROOT).encode() not in data and str(a).encode() not in data, name  # T-03-07
+    assert "fig_ghz_scaling.png" in FIGS
+    circ = (a / "results" / "circuit.txt").read_text(encoding="utf-8")
+    assert "rz" in circ and "M" in circ and m["inputs"]["circuit_sha256"] in circ
+    ff = m["filter_function"]
+    assert ff["harmonic_hz"] == pytest.approx(ff["null_hz"][: len(ff["harmonic_hz"])])  # m = 1: nulls at harmonics
+    assert all(v <= -100.0 for v in ff["quantum_db_at_harmonics"])
+
+
+def test_no_figures_flag_keeps_numbers(tmp_path, quick_builds):
+    a, _, _ = quick_builds
+    regen.build(tmp_path, quick=True, figures=False)
+    assert not (tmp_path / "results" / "fig_ladder.png").exists()
+    for name in ("metrics.json", "filter_function.csv"):
+        assert _sha(tmp_path / "results" / name) == _sha(a / "results" / name), name
 
 
 def test_regen_seed_rule_reserved_key():

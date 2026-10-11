@@ -2634,6 +2634,49 @@
   "seed_rule": "SeedSequence(root, spawn_key=(12, d)).generate_state(1, uint64)[0] >> 1, d = 0..N-1"
  },
  "cut_items": [],
+ "filter_function": {
+  "K": 4,
+  "baseline": "ls_notch, S = 256 readouts over one 0.5 s block (read rate 512 Hz), constant RPM",
+  "baseline_db_at_harmonics": [
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0
+  ],
+  "baseline_ls_drops": 0,
+  "crustal_band_hz": [
+   0.0,
+   1.0
+  ],
+  "crustal_band_label": "crustal band (nominal 0-1 Hz)",
+  "crustal_band_source": "nominal",
+  "csv": "results/filter_function.csv",
+  "f1_hz": 111.038,
+  "floor_db": -120.0,
+  "harmonic_hz": [
+   111.038,
+   222.076,
+   333.115,
+   444.153
+  ],
+  "m": 1,
+  "motor": "shipped",
+  "null_hz": [
+   111.038,
+   222.076,
+   333.115,
+   444.153,
+   555.191
+  ],
+  "quantum_db_at_harmonics": [
+   -120.0,
+   -120.0,
+   -120.0,
+   -120.0
+  ],
+  "rpm": 6662.29,
+  "tau_s": 0.00900591
+ },
  "ghz_row": {
   "N": 8,
   "S": 256,

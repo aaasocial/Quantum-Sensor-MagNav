@@ -1,11 +1,14 @@
 """One regeneration entry point for every numeric evidence file (D-08; dev-only, never shipped).
 
-CLI: `python -m magnav.regen [--out DIR] [--quick]` (run from the repository root: data paths are
+CLI: `python -m magnav.regen [--out DIR] [--quick] [--no-figures]` (run from the repository root: data paths are
 relative literals). Writes, under DIR (default: the current directory):
 
   results/metrics.json      every evidence number (benchmark, ladder, 2x2, amplitude sweep,
                             recorded IonQ rows, GHZ scaling, GHZ row, input hashes)
-  results/ladder.csv, rpm_2x2.csv, amp_sweep.csv, benchmark.csv, ghz_scaling.csv
+  results/ladder.csv, rpm_2x2.csv, amp_sweep.csv, benchmark.csv, ghz_scaling.csv,
+  results/filter_function.csv
+  results/fig_ladder.png, fig_amp_sweep.png, fig_filter_function.png, fig_ghz_scaling.png and
+  results/circuit.txt (magnav.figures.render_all; skipped with --no-figures)
   data/benchmark_summary.json   the page's benchmark table (D-05)
   data/precomputed_uav.json     the replay artifact, seeded from the QPU record when it is
                                 labelled QPU-measured (D-08), model-default c_n
@@ -440,8 +443,15 @@ def build_replay(bits) -> tuple:
     return art, errs, artifact.dumps_artifact(art).encode("utf-8")
 
 
-def build(out_dir=".", quick=False, max_workers=None) -> dict:
-    """Run the job matrix and write every numeric evidence file under out_dir; returns metrics."""
+def build(out_dir=".", quick=False, max_workers=None, figures=True) -> dict:
+    """Run the job matrix and write every evidence file under out_dir; returns metrics.
+
+    figures=False (CLI --no-figures) skips the PNGs and circuit.txt only; metrics.json and
+    filter_function.csv are the same either way.
+    """
+    # imported here: figures is numpy-only at import and imports matplotlib inside its functions
+    from magnav import figures as figs
+
     out = Path(out_dir)
     profile = "quick" if quick else "full"
     prof = PROFILES[profile]
@@ -463,13 +473,18 @@ def build(out_dir=".", quick=False, max_workers=None) -> dict:
                          "c_n": "model default (c1^n)",
                          "comparison_statement": art["comparison"]["statement"],
                          "metrics": {sc["id"]: sc["line"]["metrics"] for sc in art["scenarios"]}}  # fmt: skip
+    ff = figs.filter_function_data(model)
+    metrics["filter_function"] = ff["summary"]
     res = out / "results"
     _write_bytes(res / "metrics.json", _dump_json(metrics))
     write_csvs(res, metrics)
+    _write_csv(res / "filter_function.csv", ff["header"], ff["rows"])
     labels = {sc["id"]: sc["label"] for sc in art["scenarios"]}
     summ = benchmark_summary(model, metrics, labels)
     _write_bytes(out / BENCHMARK_SUMMARY, _dump_json(summ))
     _write_bytes(out / "data" / "precomputed_uav.json", art_bytes)
+    if figures:
+        figs.render_all(metrics, model, out, ff=ff)
     return metrics
 
 
@@ -493,9 +508,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="magnav.regen", description="regenerate every numeric evidence file")
     ap.add_argument("--out", default=".", help="output root (writes results/ and data/ under it)")
     ap.add_argument("--quick", action="store_true", help="small profile for tests (N = 2, S in {64, 256})")
+    ap.add_argument("--no-figures", action="store_true", help="skip the PNG figures and circuit.txt (needs no matplotlib)")
     args = ap.parse_args(argv)
     try:
-        metrics = build(args.out, quick=args.quick)
+        metrics = build(args.out, quick=args.quick, figures=not args.no_figures)
     except ValueError as e:
         print(str(e), file=sys.stderr)
         return 1
