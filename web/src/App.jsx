@@ -31,6 +31,7 @@ import {
   createThrottle, decodedText, fallbackText, finishedText, jamText, jobText, liveResultText, loadedText,
   pausedText, playText, progressText, readoutText, runModeText, scenarioText, shortJobId, stageText, trackText,
 } from './lib/announce.js';
+import { CLOSED, nextOpenState } from './lib/sections.js';
 import { callPy, qBackend } from './bridge.js';
 import { logFrameProbe, logTimerProbe } from './probe.js';
 import { SERIES } from './theme.js';
@@ -106,6 +107,18 @@ export default function App() {
   const hasBackend = Boolean(qBackend) || import.meta.env.DEV;
   const liveRun = useLiveRun({ hasBackend });
   const [runPhase, setRunPhase] = useState('idle'); // idle | running | result | fallback
+  // Collapsed "This Run's IonQ job" / "Sensor" sections (UI-07, D-02): auto-open on a live result
+  // (job panel also on fallback), otherwise they stay as the user left them.
+  const [sectionsOpen, setSectionsOpen] = useState(CLOSED);
+  const prevPhaseRef = useRef('idle');
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    prevPhaseRef.current = runPhase;
+    setSectionsOpen((prev) => nextOpenState(prev, prevPhase, runPhase));
+  }, [runPhase]);
+  const onSectionToggle = useCallback((key, isOpen) => {
+    setSectionsOpen((prev) => (prev[key] === isOpen ? prev : { ...prev, [key]: isOpen }));
+  }, []);
   const [liveScenario, setLiveScenario] = useState(null);
   const [liveResults, setLiveResults] = useState({});
   const [quantum, setQuantum] = useState(null);
@@ -519,43 +532,61 @@ export default function App() {
               />
             ) : null}
           </StatusStrip>
-
-          <JobPanel
-            storedMotor={artifact?.motor ?? null}
-            quantum={quantum}
-            started={latched}
-            failed={runPhase === 'fallback'}
-            backendName={backendInfo?.name ?? null}
-            isIonq={backendInfo?.is_ionq === true}
-            flownLabel={runPhase === 'result' ? flownLabel : null}
-            hardware={hardware}
-            circuitSha={circuitInfo?.circuit_sha256 ?? null}
-            modelSha={liveResults[liveScenario]?.model_sha256 ?? artifact?.model_sha256 ?? null}
-          />
         </div>
 
         <div className="col-right">
-          <SensorPanel
-            view={view}
-            quantumKey={activeQuantum}
-            ghz={ghz.payload}
-            ghzStatus={ghz.status}
-            measuredSource={quantum?.c_n_source ?? null}
-          />
+          <section className="panel results" aria-labelledby="results-heading">
+            <h2 id="results-heading">Navigation accuracy</h2>
+            <MetricsTable
+              view={view}
+              quantumKey={activeQuantum}
+              thresholds={artifact?.thresholds_m ?? null}
+              isLive={showingLive}
+            />
+            {artifact && <ComparisonBlock artifact={artifact} />}
+            <TextAlternatives view={view} ghz={ghz.payload} />
+          </section>
+
+          <details
+            className="panel job-section"
+            open={sectionsOpen.job}
+            onToggle={(e) => onSectionToggle('job', e.currentTarget.open)}
+          >
+            <summary><h2 id="job-panel-h2">This Run&apos;s IonQ job</h2></summary>
+            <JobPanel
+              headingInSummary
+              storedMotor={artifact?.motor ?? null}
+              quantum={quantum}
+              started={latched}
+              failed={runPhase === 'fallback'}
+              backendName={backendInfo?.name ?? null}
+              isIonq={backendInfo?.is_ionq === true}
+              flownLabel={runPhase === 'result' ? flownLabel : null}
+              hardware={hardware}
+              circuitSha={circuitInfo?.circuit_sha256 ?? null}
+              modelSha={liveResults[liveScenario]?.model_sha256 ?? artifact?.model_sha256 ?? null}
+            />
+          </details>
+
+          <details
+            className="panel sensor-section"
+            open={sectionsOpen.charts}
+            onToggle={(e) => onSectionToggle('charts', e.currentTarget.open)}
+          >
+            <summary><h2 id="sensor-panel-h2">Sensor</h2></summary>
+            {sectionsOpen.charts && (
+              <SensorPanel
+                headingInSummary
+                view={view}
+                quantumKey={activeQuantum}
+                ghz={ghz.payload}
+                ghzStatus={ghz.status}
+                measuredSource={quantum?.c_n_source ?? null}
+              />
+            )}
+          </details>
         </div>
       </div>
-
-      <section className="panel results" aria-labelledby="results-heading">
-        <h2 id="results-heading">Navigation accuracy</h2>
-        <MetricsTable
-          view={view}
-          quantumKey={activeQuantum}
-          thresholds={artifact?.thresholds_m ?? null}
-          isLive={showingLive}
-        />
-        {artifact && <ComparisonBlock artifact={artifact} />}
-        <TextAlternatives view={view} ghz={ghz.payload} />
-      </section>
 
       <section className="panel quantum-here" aria-labelledby="quantum-here-heading">
         <h2 id="quantum-here-heading">What is quantum here</h2>

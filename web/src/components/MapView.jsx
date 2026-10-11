@@ -417,10 +417,13 @@ function MapBody({ view, quantumKey }) {
             <Overlay W={geom.W} H={geom.H} px={px} jamIdx={view.jamIdx} quantum={quantum} />
           </div>
         )}
-        <ErrorReadout view={view} quantumKey={quantumKey} />
       </div>
-      <div className="jam-slot">
-        <JamBanner view={view} />
+      {/* D-03: nothing overlays the map box; the readout sits in a fixed-height row under it. */}
+      <div className="readout-row">
+        <ErrorReadout view={view} quantumKey={quantumKey} />
+        <div className="jam-slot">
+          <JamBanner view={view} />
+        </div>
       </div>
       <ul className="map-legend">
         <li className="legend-item"><LegendSwatch series={TRUTH} dash="" /><span>{TRUTH.label}</span></li>

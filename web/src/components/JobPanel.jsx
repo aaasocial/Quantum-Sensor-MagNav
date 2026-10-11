@@ -117,6 +117,7 @@ function HardwareDetails({ hardware }) {
 export default function JobPanel({
   storedMotor = null, quantum = null, started = false, failed = false, backendName = null,
   isIonq = false, flownLabel = null, hardware = null, circuitSha = null, modelSha = null,
+  headingInSummary = false,
 }) {
   const q = quantum;
   const pending = started && !q && !failed;
@@ -126,9 +127,16 @@ export default function JobPanel({
   const bin = seedBinary(q?.seed_hex);
   const hist = Array.isArray(q?.rng_hist) ? q.rng_hist : null;
 
+  // With headingInSummary the h2#job-panel-h2 lives in the enclosing details summary (App.jsx),
+  // so the panel renders as a plain body block and no duplicate heading appears.
+  const Wrap = headingInSummary ? 'div' : 'section';
+  const wrapProps = headingInSummary
+    ? { className: 'job-panel' }
+    : { className: 'panel job-panel', 'aria-labelledby': 'job-panel-h2' };
+
   return (
-    <section className="panel job-panel" aria-labelledby="job-panel-h2">
-      <h2 id="job-panel-h2">This Run&apos;s IonQ job</h2>
+    <Wrap {...wrapProps}>
+      {!headingInSummary && <h2 id="job-panel-h2">This Run&apos;s IonQ job</h2>}
 
       {!started && (
         <>
@@ -201,6 +209,6 @@ export default function JobPanel({
           <Row label="Model SHA-256 (first 12 hex)"><span className="mono">{hex12(modelSha)}</span></Row>
         </dl>
       </details>
-    </section>
+    </Wrap>
   );
 }
