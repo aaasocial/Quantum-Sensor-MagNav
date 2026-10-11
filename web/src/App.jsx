@@ -20,6 +20,7 @@ import QuantumTrackToggle from './components/QuantumTrackToggle.jsx';
 import SensorPanel from './components/SensorPanel.jsx';
 import MetricsTable from './components/MetricsTable.jsx';
 import ComparisonBlock from './components/ComparisonBlock.jsx';
+import BenchmarkTable from './components/BenchmarkTable.jsx';
 import TextAlternatives from './components/TextAlternatives.jsx';
 import Announcer, { announce } from './components/Announcer.jsx';
 import { useArtifact } from './hooks/useArtifact.js';
@@ -129,6 +130,7 @@ export default function App() {
   const [backendInfo, setBackendInfo] = useState(null);
   const [circuitInfo, setCircuitInfo] = useState(null);
   const [hardware, setHardware] = useState({ status: 'loading', record: null });
+  const [benchmark, setBenchmark] = useState({ status: 'loading', record: null });
   const [ghz, setGhz] = useState({ status: 'loading', payload: null });
 
   const activeSid = sid ?? artifact?.default_scenario ?? null;
@@ -232,6 +234,9 @@ export default function App() {
       if (!cancelled && c.status === 'ok') setCircuitInfo(c.record);
       const h = await loadJson('hardware_json', 'hardware');
       if (!cancelled) setHardware(h);
+      const bm = await loadJson('benchmark_json', 'benchmark');
+      if (bm.status === 'error') console.error('[benchmark] load failed', bm.error);
+      if (!cancelled) setBenchmark(bm);
       const g = await loadGhz(null);
       if (g.status !== 'ok') console.error('[ghz] scaling failed', g.error);
       // A live result may already have replaced the model payload: never overwrite it.
@@ -544,6 +549,7 @@ export default function App() {
               isLive={showingLive}
             />
             {artifact && <ComparisonBlock artifact={artifact} />}
+            <BenchmarkTable benchmark={benchmark} />
             <TextAlternatives view={view} ghz={ghz.payload} />
           </section>
 

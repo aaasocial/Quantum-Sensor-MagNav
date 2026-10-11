@@ -160,6 +160,7 @@ def test_never_raises_json_contract(bad):
         lambda: api.artifact_json(bad),
         lambda: api.circuit_json(bad),
         lambda: api.hardware_json(bad),
+        lambda: api.benchmark_json(bad),
         lambda: api.ghz_scaling_json(None, bad, bad, bad),
         lambda: api.uav_start(None, bad, bad),
         lambda: api.uav_quantum(bad, bad),
@@ -223,6 +224,21 @@ def test_artifact_circuit_hardware_json():
         assert h["ok"] is True and isinstance(h["hardware"], dict)
     else:
         assert h["ok"] is False and h["error_type"] == "NotCaptured"
+
+
+def test_benchmark_json():
+    assert api.BENCHMARK_PATH == "data/benchmark_summary.json"
+    b = _strict(api.benchmark_json(None))
+    assert b["ok"] is True, b
+    assert b["benchmark"]["kind"] == "benchmark_summary"
+    want = json.loads((ROOT / api.BENCHMARK_PATH).read_text(encoding="utf-8"))
+    assert b["benchmark"] == want
+
+
+def test_benchmark_json_missing_file_is_json_failure(monkeypatch):
+    monkeypatch.setattr(api, "BENCHMARK_PATH", "data/does_not_exist.json")
+    b = _strict(api.benchmark_json(None))
+    assert b["ok"] is False and b["error_type"] == "FileNotFoundError"
 
 
 def test_ghz_scaling_json():
