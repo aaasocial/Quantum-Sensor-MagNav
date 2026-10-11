@@ -1,5 +1,7 @@
 """qjob: the only backend.run (one job per process, latch set before the call, never retried)."""
 
+from types import SimpleNamespace
+
 import pytest
 from qiskit import QuantumCircuit
 from qiskit.providers.basic_provider import BasicSimulator
@@ -85,6 +87,28 @@ def test_bits_label():
     assert qjob.is_ionq(IonQNamedSim()) is True
     assert qjob.bits_label(BasicSimulator()) == "simulator-sampled"
     assert qjob.is_ionq(BasicSimulator()) is False
+
+
+class _OptionsBackend:
+    """Minimal backend exposing qiskit-ionq's `options.noise_model` (default "ideal" everywhere)."""
+
+    def __init__(self, name, noise_model="ideal"):
+        self.name = name
+        self.options = SimpleNamespace(noise_model=noise_model)
+
+
+class IonQQPUBackend(_OptionsBackend):
+    """Class-name detection path of qjob.is_qpu."""
+
+
+def test_noise_model_none_on_qpu():
+    # simulators report the option (Qollab's injected IonQ simulator carries forte-1)
+    assert qjob._noise_model(_OptionsBackend("ionq_simulator", "forte-1")) == "forte-1"
+    assert qjob._noise_model(_OptionsBackend("ionq_simulator")) == "ideal"
+    assert qjob._noise_model(BasicSimulator()) is None  # no such option at all
+    # hardware: the option is meaningless, so the record and backend_info say None
+    assert qjob._noise_model(_OptionsBackend("ionq_qpu.forte-1")) is None
+    assert qjob._noise_model(IonQQPUBackend("forte-1")) is None
 
 
 def test_shots_allowlist():

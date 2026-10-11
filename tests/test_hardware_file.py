@@ -42,6 +42,11 @@ def test_schema_and_label(rec):
     assert (rec["label"] == "QPU-measured") == str(rec["backend"]).startswith("ionq_qpu")
     assert isinstance(rec["job_id"], str) and rec["job_id"]
     datetime.fromisoformat(rec["timestamp_utc"])
+    # WR-01: the simulator noise-model option means nothing on hardware; a QPU record must not
+    # carry "ideal" (or any model) next to the QPU-measured label.
+    assert "noise_model" in rec
+    if rec["label"] == "QPU-measured":
+        assert rec["noise_model"] is None
 
 
 def test_counts(rec):

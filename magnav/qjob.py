@@ -58,6 +58,10 @@ def bits_label(backend):
 
 
 def _noise_model(backend):
+    """The IonQ simulator noise model, or None on a QPU (qiskit-ionq defines the option on every
+    backend with default "ideal", so reading it on hardware would mislabel a QPU record)."""
+    if is_qpu(backend):
+        return None
     opts = getattr(backend, "options", None)
     val = getattr(opts, "noise_model", None) if opts is not None else None
     return None if val is None else str(val)

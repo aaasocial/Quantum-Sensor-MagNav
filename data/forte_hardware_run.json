@@ -268,7 +268,7 @@
  },
  "job_id": "01a12aee-d8a8-7e14-b9aa-b11329aca850",
  "label": "QPU-measured",
- "noise_model": "ideal",
+ "noise_model": null,
  "schema_version": 1,
  "seed_hex": "c1dfff10e69fae05",
  "shots": 500,
