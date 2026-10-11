@@ -62,6 +62,13 @@ def test_run_uav_bits_path(tile, model):
     assert set(r["line"]["results"]) == set(ESTIMATORS)
 
 
+def test_run_uav_rejects_tile_scenario_mismatch(synth_tile, model):
+    """A supplied tile must be the scenario's map file, or the artifact would attest the sha256 of a
+    map that was never flown (review WR-02); raised before any world is built."""
+    with pytest.raises(ValueError, match="does not match scenario"):
+        run_uav(model=model, tile=synth_tile, scenario="eastern_400m")
+
+
 SCENARIO_KEYS = {"id", "map_file", "alt_m", "synthetic", "label", "map_label", "map_caption", "model_file", "notes"}
 
 

@@ -471,7 +471,10 @@ def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scena
     model = model or load_model()
     shots = int(shots or model["S_default"])
     sc = SCENARIOS[scenario]
-    tile = load_map(sc["map_file"]) if tile is None else tile
+    if tile is None:
+        tile = load_map(sc["map_file"])
+    elif tile.name != Path(sc["map_file"]).stem:  # the map flown must be the map the artifact attests
+        raise ValueError(f"tile {tile.name!r} does not match scenario {scenario!r} map {sc['map_file']}")
     root = int(model["seeds"]["root"])
     map_error = {k: v for k, v in model["map_error"].items() if k != "seed"}
     flight = dict(model["flight"], alt_m=sc["alt_m"])  # copy; the frozen model is never mutated
