@@ -1,6 +1,6 @@
 /* Quantum MagNav UAV page: dark theme. All colour, spacing and type tokens live on :root;
    web/src/theme.js mirrors the series colours for canvas/SVG drawing. Primary design width is
-   the ~520 px Qollab frame (single column, map first); two columns from 900 px. */
+   the ~520 px Qollab frame (single column, map first); two columns (3fr map / 2fr panels) from 900 px. */
 :root {
   --space-1: 4px;
   --space-2: 8px;
@@ -388,8 +388,15 @@ footer {
   .panel { padding: var(--space-3); }
 }
 
+/* Two columns from 900 px (Eason's second 2026-10-11 request): the map takes the wider 3fr left
+   column on its own; Navigation accuracy, the Run controls and the collapsed sections sit in the
+   2fr right column, Navigation accuracy top-aligned with the map. The page may grow to 1440 px
+   here so wide screens give both columns more room (the benchmark table still scrolls in its
+   keyboard-focusable region when the column is narrower than the table). */
 @media (min-width: 900px) {
-  .layout:has(> .col-right) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
+  .page { max-width: 1440px; }
+  .layout:has(> .col-right) { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-4); }
+  .col-right > .results:first-child { margin-top: 0; }
 }
 
 @media (max-width: 599px) {

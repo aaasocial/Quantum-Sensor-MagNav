@@ -1,8 +1,14 @@
 // Map panel (UI-06): the selected scenario's map label line, a canvas heatmap drawn once per
 // (scenario, size, DPR) and an SVG overlay whose tracks and markers follow the playback index:
-// true path, dead reckoning, baseline_ls and the selected quantum track. The canvas is never
-// redrawn per frame. The box height is fixed across scenarios (A-13), so switching never shifts
-// the layout; each map is letterboxed at its own aspect.
+// true path, dead reckoning and the selected quantum track. The canvas is never redrawn per frame.
+// The box height is fixed across scenarios (A-13), so switching never shifts the layout; each map
+// is letterboxed at its own aspect.
+//
+// The classical baseline (baseline_ls) is not drawn (Eason, 2026-10-11): after the jam it runs
+// within a few tens of metres of the quantum track (mean 5 m on the synthetic map, 37 m on
+// Eastern_395) at roughly 60-75 m per pixel, so the quantum line and marker covered it entirely
+// and its legend entry named a track nobody could see. Its error is still in the position-error
+// box, the benchmark table, the sensor charts and the map track data table.
 import { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { buildCividisLut, colorbarTicks } from '../lib/colormap.js';
 import { mapGeometry } from '../lib/geo.js';
@@ -12,11 +18,14 @@ import {
   CASING, DR, INVALID_BASE, INVALID_STRIPE, JAM_COLOR, SERIES, TEXT_COLOR, TRUTH,
 } from '../theme.js';
 
-const BASELINE_KEY = 'baseline_ls';
 const BOX_ASPECT = 1.096; // tallest scenario preview (Eastern_395, 117 x 107 cells), H / W
 const CAP_COMPACT = 300; // map-first at the ~520 px Qollab frame: controls stay near the fold
 const CAP_WIDE = 520;
 const WIDE_FROM = 700; // stage width in px
+// Two-column layout (>= 900 px viewport): the map has the 3fr column to itself and nothing sits
+// under it, so it can be taller than in the stacked layout.
+const CAP_TWO_COL = 640;
+const TWO_COL_QUERY = '(min-width: 900px)';
 const BAR_W = 160;
 const BAR_H = 12;
 const SW_W = 28;
@@ -145,6 +154,19 @@ function drawHatchSwatch(canvas, dpr) {
   ctx.fillRect(0, 0, SW_W, SW_H);
 }
 
+// True while the media query matches (two-column layout); a change triggers a canvas redraw.
+function useMediaQuery(query) {
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return match;
+}
+
 // Width of the stage and the device pixel ratio; both trigger a canvas redraw.
 function useStageSize(ref) {
   const [size, setSize] = useState({ width: 0, dpr: 1 });
@@ -197,8 +219,8 @@ function Track({ points, color, dash, width = 2, round = false }) {
   );
 }
 
-// 12 px point marker, 1.5 px black outline: square (DR), triangle (baseline), diamond
-// (single-qubit), circle (GHZ-4).
+// 12 px point marker, 1.5 px black outline: square (DR), triangle (no map track uses it
+// since the baseline is not drawn), diamond (single-qubit), circle (GHZ-4).
 export function Marker({ shape, x, y, color, size = MARKER }) {
   const h = size / 2;
   const common = { fill: color, stroke: CASING, strokeWidth: 1.5 };
@@ -269,19 +291,15 @@ const Overlay = memo(function Overlay({ W, H, px, jamIdx, quantum }) {
   const sliceStr = (s, from) => s.slice(from, i + 1).join(' ');
   const [tx, ty] = px.truth.xy[i];
   const dr = px.dr.xy[i];
-  const base = px.base.xy[i];
   const q = px.q.xy[i];
   const jam = px.truth.xy[jamIdx];
-  const B = SERIES[BASELINE_KEY];
   return (
     <svg className="map-overlay" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true" focusable="false">
       <Track points={sliceStr(px.truth.str, 0)} color={TRUTH.color} dash="" />
       {after && <Track points={sliceStr(px.dr.str, jamIdx)} color={DR.color} dash={DR.mapDash} width={2.5} round />}
-      {after && <Track points={sliceStr(px.base.str, jamIdx)} color={B.color} dash={B.mapDash} />}
       {after && <Track points={sliceStr(px.q.str, jamIdx)} color={quantum.color} dash={quantum.mapDash} />}
       {after && <JamMarker x={jam[0]} y={jam[1]} W={W} />}
       {after && <Marker shape={DR.marker} x={dr[0]} y={dr[1]} color={DR.color} />}
-      {after && <Marker shape={B.marker} x={base[0]} y={base[1]} color={B.color} />}
       {after && <Marker shape={quantum.marker} x={q[0]} y={q[1]} color={quantum.color} />}
       <Uav x={tx} y={ty} angle={heading(px.truth.xy, i)} />
     </svg>
@@ -347,20 +365,21 @@ function MapBody({ view, quantumKey }) {
   const barRef = useRef(null);
   const swatchRef = useRef(null);
   const { width, dpr } = useStageSize(stageRef);
+  const twoCol = useMediaQuery(TWO_COL_QUERY);
   const preview = view.preview;
   const domain = view.domain;
   const ticks = useMemo(() => colorbarTicks(domain), [domain]);
-  const boxH = width > 0 ? Math.round(Math.min(width >= WIDE_FROM ? CAP_WIDE : CAP_COMPACT, width * BOX_ASPECT)) : 0;
+  let cap = width >= WIDE_FROM ? CAP_WIDE : CAP_COMPACT;
+  if (twoCol) cap = CAP_TWO_COL;
+  const boxH = width > 0 ? Math.round(Math.min(cap, width * BOX_ASPECT)) : 0;
   const geom = useMemo(() => (width > 0 ? mapGeometry(preview, width, boxH) : null), [preview, width, boxH]);
 
   const px = useMemo(() => {
     if (!geom) return null;
     const q = view.est[quantumKey];
-    const b = view.est[BASELINE_KEY];
     return {
       truth: pixelSeries(view.truth.x, view.truth.y, geom.toPx),
       dr: pixelSeries(view.dr.x, view.dr.y, geom.toPx),
-      base: pixelSeries(b.x, b.y, geom.toPx),
       q: pixelSeries(q.x, q.y, geom.toPx),
     };
   }, [view, quantumKey, geom]);
@@ -375,7 +394,6 @@ function MapBody({ view, quantumKey }) {
   }, [dpr, view.hasInvalid]);
 
   const quantum = SERIES[quantumKey];
-  const B = SERIES[BASELINE_KEY];
   const [d0, d1] = domain;
 
   return (
@@ -398,7 +416,6 @@ function MapBody({ view, quantumKey }) {
       <ul className="map-legend">
         <li className="legend-item"><LegendSwatch series={TRUTH} dash="" /><span>{TRUTH.label}</span></li>
         <li className="legend-item"><LegendSwatch series={DR} shape={DR.marker} dash={DR.mapDash} /><span>{DR.label}</span></li>
-        <li className="legend-item"><LegendSwatch series={B} shape={B.marker} dash={B.mapDash} /><span>{B.label}</span></li>
         <li className="legend-item">
           <LegendSwatch series={quantum} shape={quantum.marker} dash={quantum.mapDash} />
           <span>{quantum.label}</span>
@@ -437,7 +454,8 @@ export function mapCaption(view, quantumKey) {
   const shape = q.marker;
   const km = (v) => v.toFixed(1);
   return `${view.mapCaption} Extent ${km(view.extentKm.w)} × ${km(view.extentKm.h)} km. True path solid white, `
-    + `dead reckoning dotted green, baseline dashed orange (triangle), ${q.label} dash-dot (${shape}).`;
+    + `dead reckoning dotted green, ${q.label} dash-dot (${shape}). The classical baseline is not drawn: `
+    + 'it lies almost on top of the quantum track; its error is under Navigation accuracy.';
 }
 
 export default function MapView({ view, quantumKey, loadingText = 'Loading recorded flights…' }) {

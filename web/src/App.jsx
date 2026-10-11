@@ -466,9 +466,22 @@ export default function App() {
 
       {danger && <p className="danger-notice">{danger}</p>}
 
+      {/* Eason's second 2026-10-11 layout request: from 900 px the map has the wider left column to
+          itself; the right column holds, in order, Navigation accuracy (beside the map), the Run
+          controls with the run status, and the collapsed job and Sensor sections. DOM order is the
+          single-column order, so the tab order is the same at every width. */}
       <div className="layout">
         <div className="col-left">
           <MapView view={view} quantumKey={activeQuantum} />
+        </div>
+
+        <div className="col-right">
+          <section className="panel results" aria-labelledby="results-heading">
+            <h2 id="results-heading">Navigation accuracy</h2>
+            <ErrorReadout view={view} quantumKey={activeQuantum} />
+            <BenchmarkTable benchmark={benchmark} />
+            <TextAlternatives view={view} ghz={ghz.payload} />
+          </section>
 
           <section className="panel controls" aria-label="Run controls">
             {artifact && (
@@ -538,15 +551,6 @@ export default function App() {
               />
             ) : null}
           </StatusStrip>
-        </div>
-
-        <div className="col-right">
-          <section className="panel results" aria-labelledby="results-heading">
-            <h2 id="results-heading">Navigation accuracy</h2>
-            <ErrorReadout view={view} quantumKey={activeQuantum} />
-            <BenchmarkTable benchmark={benchmark} />
-            <TextAlternatives view={view} ghz={ghz.payload} />
-          </section>
 
           <details
             className="panel job-section"
