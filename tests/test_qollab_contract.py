@@ -158,7 +158,7 @@ def test_no_unsafe_html_in_web_src():
             assert bad not in text, f"{bad} in {path.relative_to(ROOT)}"
 
 
-# CLAUDE.md honesty constraint: the D-G framing sentence, verbatim, on the page.
+# Honesty constraint: the D-G framing sentence, verbatim, on the page.
 DG_SENTENCE = (
     "The quantum sensor's filter function is a physical fact about how such sensors work; the field it "
     "filters here is injected as gate angles rather than felt; the downstream benefit equals that of a "

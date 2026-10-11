@@ -2,7 +2,7 @@
 
 Status: FILLED, 2026-10-11, from Eason's in-browser check (plan 02-08, Task 2). Template prepared 05:20 PDT by the plan 02-08 executor (Task 1); results recorded by the Task 3 executor. Values below are copied verbatim from Eason's reply; anything he did not report is written "not reported".
 
-Scope: upload only, into an unpublished Qollab project. Publish is not pressed and the "IonQ Forte 1 (36q) Credits apply" hardware backend is not selected (CLAUDE.md submission approval gate). The executor does not operate Qollab.
+Scope: upload only, into an unpublished Qollab project. Publish is not pressed and the "IonQ Forte 1 (36q) Credits apply" hardware backend is not selected (submission approval rule). The executor does not operate Qollab.
 
 Date/time: 2026-10-11, about 13:25-13:40 UTC (06:25-06:40 PDT); job timestamps 13:28:04, 13:31:18 and 13:35:09 UTC  Browser/version: Chrome, version not reported  Qollab project URL: not reported (unpublished project editor)  Checked by: Eason
 

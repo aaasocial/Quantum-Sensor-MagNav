@@ -54,7 +54,7 @@ const failureText = (failure, label) => (failure.timeout
   ? `Live run took longer than 90 s. Showing the recorded replay of ${label} with its stored motor. Press Stop, then Run on Qollab, to try again.`
   : `Live run failed: ${failure.name}: ${failure.message}. Showing the recorded replay of ${label} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`);
 const PROGRESS_EVERY_MS = 10 * 1000; // announced replay progress: at most once per 10 s wall time
-// CLAUDE.md honesty constraint: printed verbatim in "What is quantum here".
+// Honesty constraint: printed verbatim in "What is quantum here".
 const DG_SENTENCE = 'The quantum sensor\'s filter function is a physical fact about how such sensors work; the field it '
   + 'filters here is injected as gate angles rather than felt; the downstream benefit equals that of a classical notch '
   + 'filter, achieved earlier and without consuming dynamic range.';

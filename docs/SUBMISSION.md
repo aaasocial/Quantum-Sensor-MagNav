@@ -2,7 +2,7 @@
 
 Status: DRAFT. Nothing in this file has been published or submitted. Publishing the Qollab
 project and submitting the hackathon form are separate steps that need Eason's explicit
-approval in the session where they happen (CLAUDE.md, submission approval gate). The
+approval in the session where they happen (submission approval rule). The
 per-criterion paragraphs are synced with the final README (plan 03-07); the placeholders are
 filled once the GitHub repo, the Qollab URL and the video exist.
 

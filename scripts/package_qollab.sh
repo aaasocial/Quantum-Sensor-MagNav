@@ -3,7 +3,7 @@
 #   dist/qollab-upload.zip  JS project (React page + Python package), no main.py
 # The Forte 1 capture zip (a Python project) is built by scripts/package_capture.sh.
 # Building and uploading this zip without publishing is allowed; pressing Publish on Qollab
-# needs Eason's explicit in-session approval (CLAUDE.md submission approval gate).
+# needs Eason's explicit in-session approval (submission approval rule).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

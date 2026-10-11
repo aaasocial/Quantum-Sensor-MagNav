@@ -3,7 +3,7 @@
 #   main.py (from capture/main.py), magnav/{__init__,quantum,qjob}.py, data/circuit_freeze.json,
 #   requirements.txt, LICENSE, README.md. Never index.html/main.js: it must run as a Python project.
 # Uploading this zip to an unpublished Qollab project is allowed; running it on the IonQ hardware
-# backend needs Eason's explicit in-session approval (CLAUDE.md submission approval gate).
+# backend needs Eason's explicit in-session approval (submission approval rule).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
