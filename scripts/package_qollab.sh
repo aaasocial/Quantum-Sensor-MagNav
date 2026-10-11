@@ -47,7 +47,10 @@ for f in "${DATA_FILES[@]}"; do
   [ -f "$f" ] || fail "data entry is not a regular file: $f"
 done
 
-COMMON=(LICENSE README.md requirements.txt "${PY_FILES[@]}" "${DATA_FILES[@]}")
+# Images the README links to, so they render if Qollab shows the README (each < 2 MB).
+README_IMAGES=(docs/hero.png results/fig_ladder.png results/fig_ghz_scaling.png results/fig_filter_function.png results/fig_amp_sweep.png)
+
+COMMON=(LICENSE README.md requirements.txt "${PY_FILES[@]}" "${DATA_FILES[@]}" "${README_IMAGES[@]}")
 # main.py stays out of the JS upload: if Qollab ran it, it could take the run's one IonQ job.
 UPLOAD=(index.html main.js main.css THIRD_PARTY_WEB_LICENSES.md THIRD_PARTY_LICENSES.md "${COMMON[@]}")
 
@@ -95,7 +98,7 @@ zip -X -q dist/qollab-upload.zip "${UPLOAD[@]}"
 
 check_zip dist/qollab-upload.zip
 
-for f in index.html main.js main.css THIRD_PARTY_WEB_LICENSES.md THIRD_PARTY_LICENSES.md data/circuit_freeze.json; do
+for f in index.html main.js main.css THIRD_PARTY_WEB_LICENSES.md THIRD_PARTY_LICENSES.md data/circuit_freeze.json "${README_IMAGES[@]}"; do
   has_entry dist/qollab-upload.zip "$f" || fail "dist/qollab-upload.zip is missing $f"
 done
 if has_entry dist/qollab-upload.zip main.py; then

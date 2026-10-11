@@ -1,6 +1,6 @@
 # Quantum MagNav: GPS-denied UAV navigation with an emulated quantum magnetometer
 
-Quantum MagNav keeps a fixed-wing drone located after its GPS is jammed by matching the magnetic field it measures against a survey map of eastern Ontario. The drone's motor drowns that field in tones, so the magnetometer is modelled as a quantum sensor (Ramsey interferometry, run as one circuit on IonQ through Qollab) that sets its own measurement window from the motor RPM and cancels the tones before any data exists. It is compared, at an equal shot budget, with an ordinary magnetometer plus a classical notch filter, and the write-up says plainly where the quantum sensor wins, ties and loses. Built for the Qollab x IonQ Hackathon (theme: Quantum Impact).
+Quantum MagNav keeps a fixed-wing drone located after its GPS is jammed by matching the magnetic field it measures against a survey map of eastern Ontario. The drone's motor drowns that field in tones, so the magnetometer is modelled as a quantum sensor (Ramsey interferometry, run as one circuit on IonQ through Qollab) that sets its own measurement window from the motor RPM and cancels the tones before any data exists. It is compared, with the same number of measurements per sample (an equal shot budget), with an ordinary magnetometer plus a classical notch filter, and the write-up says plainly where the quantum sensor wins, ties and loses. Built for the Qollab x IonQ Hackathon (theme: Quantum Impact).
 
 ![The Quantum MagNav page: an anomaly map with the true path, dead reckoning, the classical baseline and the quantum-sensor track after the GPS jam, the position-error readout under the map, and the Run controls below it](docs/hero.png)
 
@@ -115,7 +115,7 @@ This README, [docs/PHYSICS.md](docs/PHYSICS.md), [docs/BENCHMARK.md](docs/BENCHM
 
 ## Run locally
 
-Requires [uv](https://docs.astral.sh/uv/) (it installs Python 3.13) and Node.js 24. Tested on macOS.
+Requires [uv](https://docs.astral.sh/uv/) (it installs the pinned Python 3.13; drop the `~/.local/bin/` prefix if `uv` is on your PATH) and Node.js 24. Tested on macOS; the page itself runs in any browser Qollab supports.
 
 ```bash
 ~/.local/bin/uv sync                          # Python environment from uv.lock
