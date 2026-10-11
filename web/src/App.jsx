@@ -480,11 +480,11 @@ export default function App() {
           <section className="panel results" aria-labelledby="results-heading">
             <h2 id="results-heading">Navigation accuracy</h2>
             <ErrorReadout view={view} quantumKey={activeQuantum} />
-            <BenchmarkTable benchmark={benchmark} />
-            <TextAlternatives view={view} ghz={ghz.payload} />
-          </section>
 
-          <section className="panel controls" aria-label="Run controls">
+          {/* Eason, 2026-10-11 (fourth request): one card holds Navigation accuracy (heading and
+              position-error box) and, directly under it, the Run controls; the benchmark is a
+              separate card below. */}
+          <div className="controls" role="group" aria-label="Run controls">
             {artifact && (
               <ScenarioPicker
                 scenarios={artifact.scenarios}
@@ -544,10 +544,16 @@ export default function App() {
                     </p>
                   </>
                 )}
+                <QuantumTrackToggle value={activeQuantum} onChange={onQuantumChange} disabled={!ready} />
               </details>
             </div>
-            <QuantumTrackToggle value={activeQuantum} onChange={onQuantumChange} disabled={!ready} />
             <ControlBar view={view} speed={speed} onSpeedChange={setSpeed} disabled={!ready || running} />
+          </div>
+          </section>
+
+          <section className="panel benchmark-card" aria-label="Benchmark">
+            <BenchmarkTable benchmark={benchmark} />
+            <TextAlternatives view={view} ghz={ghz.payload} />
           </section>
 
           <StatusStrip

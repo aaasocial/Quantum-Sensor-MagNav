@@ -349,8 +349,8 @@ figure:focus-visible, section:focus-visible { outline: 3px solid var(--color-acc
 }
 
 /* Results (position-error box, benchmark) and text alternatives. */
-.results, .quantum-here { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
-.results h3 { font-size: var(--text-md); font-weight: 600; margin: 0; }
+.results, .benchmark-card, .quantum-here { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+.results h3, .benchmark-card h3 { font-size: var(--text-md); font-weight: 600; margin: 0; }
 .table-scroll { width: 100%; overflow-x: auto; }
 .data-table { border-collapse: collapse; font-size: var(--text-sm); font-variant-numeric: tabular-nums; min-width: 100%; }
 .data-table caption { caption-side: top; text-align: left; padding-bottom: var(--space-2); color: var(--color-text-muted); }

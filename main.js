@@ -28492,92 +28492,96 @@ function Xz() {
 									view: L,
 									quantumKey: Ce
 								}),
-								/* @__PURE__ */ (0, M.jsx)(jR, { benchmark: ve }),
-								/* @__PURE__ */ (0, M.jsx)(zR, {
-									view: L,
-									ghz: be.payload
+								/* @__PURE__ */ (0, M.jsxs)("div", {
+									className: "controls",
+									role: "group",
+									"aria-label": "Run controls",
+									children: [
+										t && /* @__PURE__ */ (0, M.jsx)(Xn, {
+											scenarios: t.scenarios,
+											value: Se,
+											onChange: Me,
+											disabled: !ze || Be,
+											lockHelp: Be && He ? zz(He) : null,
+											focusRef: h
+										}),
+										/* @__PURE__ */ (0, M.jsx)(Qn, {
+											value: o,
+											onChange: Ne,
+											disabled: !ze
+										}),
+										/* @__PURE__ */ (0, M.jsxs)("div", {
+											className: "run-row",
+											children: [
+												we && /* @__PURE__ */ (0, M.jsx)("button", {
+													type: "button",
+													className: "btn-primary run-button",
+													ref: g,
+													onClick: Fe,
+													disabled: !ze || !v || Ve,
+													"aria-describedby": "run-help",
+													children: "Run one IonQ job"
+												}),
+												/* @__PURE__ */ (0, M.jsx)("p", {
+													id: "run-help",
+													className: "help run-help",
+													children: Ge
+												}),
+												/* @__PURE__ */ (0, M.jsxs)("details", {
+													className: "demo-options",
+													children: [
+														/* @__PURE__ */ (0, M.jsx)("summary", { children: "Demo options" }),
+														/* @__PURE__ */ (0, M.jsxs)("fieldset", {
+															className: "map-mode",
+															children: [/* @__PURE__ */ (0, M.jsx)("legend", { children: "Map view" }), dn.map((e) => /* @__PURE__ */ (0, M.jsxs)("label", {
+																className: "check-row",
+																children: [/* @__PURE__ */ (0, M.jsx)("input", {
+																	type: "radio",
+																	name: "map-mode",
+																	value: e.key,
+																	checked: f === e.key,
+																	onChange: () => p(e.key)
+																}), e.label]
+															}, e.key))]
+														}),
+														we && /* @__PURE__ */ (0, M.jsxs)(M.Fragment, { children: [/* @__PURE__ */ (0, M.jsxs)("label", {
+															className: "check-row",
+															children: [/* @__PURE__ */ (0, M.jsx)("input", {
+																type: "checkbox",
+																checked: oe,
+																onChange: (e) => P(e.target.checked),
+																disabled: Ve
+															}), "Simulate a failure"]
+														}), /* @__PURE__ */ (0, M.jsx)("p", {
+															className: "help",
+															children: "Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback."
+														})] }),
+														/* @__PURE__ */ (0, M.jsx)(er, {
+															value: Ce,
+															onChange: Pe,
+															disabled: !ze
+														})
+													]
+												})
+											]
+										}),
+										/* @__PURE__ */ (0, M.jsx)(ae, {
+											view: L,
+											speed: u,
+											onSpeedChange: d,
+											disabled: !ze || Be
+										})
+									]
 								})
 							]
 						}),
 						/* @__PURE__ */ (0, M.jsxs)("section", {
-							className: "panel controls",
-							"aria-label": "Run controls",
-							children: [
-								t && /* @__PURE__ */ (0, M.jsx)(Xn, {
-									scenarios: t.scenarios,
-									value: Se,
-									onChange: Me,
-									disabled: !ze || Be,
-									lockHelp: Be && He ? zz(He) : null,
-									focusRef: h
-								}),
-								/* @__PURE__ */ (0, M.jsx)(Qn, {
-									value: o,
-									onChange: Ne,
-									disabled: !ze
-								}),
-								/* @__PURE__ */ (0, M.jsxs)("div", {
-									className: "run-row",
-									children: [
-										we && /* @__PURE__ */ (0, M.jsx)("button", {
-											type: "button",
-											className: "btn-primary run-button",
-											ref: g,
-											onClick: Fe,
-											disabled: !ze || !v || Ve,
-											"aria-describedby": "run-help",
-											children: "Run one IonQ job"
-										}),
-										/* @__PURE__ */ (0, M.jsx)("p", {
-											id: "run-help",
-											className: "help run-help",
-											children: Ge
-										}),
-										/* @__PURE__ */ (0, M.jsxs)("details", {
-											className: "demo-options",
-											children: [
-												/* @__PURE__ */ (0, M.jsx)("summary", { children: "Demo options" }),
-												/* @__PURE__ */ (0, M.jsxs)("fieldset", {
-													className: "map-mode",
-													children: [/* @__PURE__ */ (0, M.jsx)("legend", { children: "Map view" }), dn.map((e) => /* @__PURE__ */ (0, M.jsxs)("label", {
-														className: "check-row",
-														children: [/* @__PURE__ */ (0, M.jsx)("input", {
-															type: "radio",
-															name: "map-mode",
-															value: e.key,
-															checked: f === e.key,
-															onChange: () => p(e.key)
-														}), e.label]
-													}, e.key))]
-												}),
-												we && /* @__PURE__ */ (0, M.jsxs)(M.Fragment, { children: [/* @__PURE__ */ (0, M.jsxs)("label", {
-													className: "check-row",
-													children: [/* @__PURE__ */ (0, M.jsx)("input", {
-														type: "checkbox",
-														checked: oe,
-														onChange: (e) => P(e.target.checked),
-														disabled: Ve
-													}), "Simulate a failure"]
-												}), /* @__PURE__ */ (0, M.jsx)("p", {
-													className: "help",
-													children: "Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback."
-												})] })
-											]
-										})
-									]
-								}),
-								/* @__PURE__ */ (0, M.jsx)(er, {
-									value: Ce,
-									onChange: Pe,
-									disabled: !ze
-								}),
-								/* @__PURE__ */ (0, M.jsx)(ae, {
-									view: L,
-									speed: u,
-									onSpeedChange: d,
-									disabled: !ze || Be
-								})
-							]
+							className: "panel benchmark-card",
+							"aria-label": "Benchmark",
+							children: [/* @__PURE__ */ (0, M.jsx)(jR, { benchmark: ve }), /* @__PURE__ */ (0, M.jsx)(zR, {
+								view: L,
+								ghz: be.payload
+							})]
 						}),
 						/* @__PURE__ */ (0, M.jsx)(he, {
 							mode: Ye,
