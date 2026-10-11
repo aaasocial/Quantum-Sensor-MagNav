@@ -2,7 +2,7 @@
 
 Quantum MagNav keeps a UAV located after GPS is jammed by matching the magnetic field it measures against an anomaly map. "UAV" covers both fixed-wing aircraft and multirotor drones; the headline scenario is a drone at 100 m altitude, the second a UAV at 400 m over a real survey map of eastern Ontario. The motor drowns the field in tones, so the magnetometer is modelled as a quantum sensor (Ramsey interferometry, run as one circuit on IonQ through Qollab) that sets its measurement window from the motor RPM and cancels the tones before any data exists. We found that the quantum sensor, with its passive noise filtering, beats an ordinary magnetometer plus classical notch filter at the same number of measurements per sample: at 256 shots its signal error is about 200 times smaller (0.195 nT vs 42.7 nT RMSE) and its position error is lower (CEP50 150.2 m vs 154.8 m; 150.2 m vs 210.9 m at 64 shots). At high shot budgets the two tie ([Where it ties or loses](#where-it-ties-or-loses)). Built for the Qollab x IonQ Hackathon (theme: Quantum Impact).
 
-![The Quantum MagNav page: a large anomaly map with the true path, the inertial-only track and the quantum-sensor track after the GPS jam, and beside it the Navigation accuracy panel opening with the position-error box, with the Run controls below that panel](docs/hero.png)
+![The Quantum MagNav page: a large anomaly map zoomed in to follow the UAV, showing the true path, the baseline magnetometer track and the quantum-sensor track after the GPS jam; beside it one card with the position-error box and the Run controls, and below it the benchmark card](docs/hero.png)
 
 ## In plain terms
 
