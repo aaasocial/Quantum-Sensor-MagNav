@@ -45,22 +45,25 @@ export const hardware_json = py(async () => JSON.stringify({
 }));
 
 // A fixed, plausible payload with the 02-02 contract keys (dev only; numbers are not results).
+// With contrasts (c1, c2, c4 from this Run's job) it adds the measured GHZ series, as the real
+// ghz_scaling_json does.
 export const ghz_scaling_json = py(async (_backend, c1 = null, c2 = null, c4 = null) => {
-  const measured = c2 !== null && c4 !== null;
+  const measured = c1 !== null || c2 !== null || c4 !== null;
+  const cIdeal = { 1: 0.98, 2: 0.9604, 4: 0.92236816 };
   return JSON.stringify({
     ok: true,
     S: 256,
-    tau0_s: 0.001,
+    tau0_s: 0.01,
     gamma_hz_per_nT: 3.4986,
     trials: 4000,
     n: [1, 2, 4],
-    sql_nT: [2.84, 2.01, 1.42],
-    hl_nT: [2.84, 1.42, 0.71],
-    unentangled_nT: [2.86, 2.02, 1.43],
-    ghz_ideal_nT: [2.86, 1.44, 0.73],
-    ghz_measured_nT: measured ? [2.86, 1.52, 0.81] : null,
-    c_ideal: { 1: 1.0, 2: 1.0, 4: 1.0 },
-    c_measured: measured ? { 1: c1 ?? 1.0, 2: c2, 4: c4 } : null,
+    sql_nT: [0.2901, 0.2051, 0.1451],
+    hl_nT: [0.2901, 0.1480, 0.0771],
+    unentangled_nT: [0.2906, 0.2080, 0.1427],
+    ghz_ideal_nT: [0.2883, 0.1485, 0.0775],
+    ghz_measured_nT: measured ? [0.2882, 0.1495, 0.0789] : null,
+    c_ideal: cIdeal,
+    c_measured: measured ? { 1: c1 ?? cIdeal[1], 2: c2 ?? cIdeal[2], 4: c4 ?? cIdeal[4] } : null,
   });
 });
 
