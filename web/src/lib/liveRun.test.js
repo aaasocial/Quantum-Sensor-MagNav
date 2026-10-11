@@ -207,7 +207,7 @@ test('ok:false at uav_quantum rejects with its error_type and makes no live_step
   const d = deps(sim);
   const e = await rejectsNamed(runLive(d.args), 'IonQAPIError');
   assert.equal(e.message, 'HTTP 500');
-  assert.equal(e.stage, 2);
+  assert.equal(e.stage, 1, 'step 2 (decoding) starts only once the counts have returned');
   assert.ok(!sim.names().includes('live_step'));
   assert.equal(sim.names().at(-1), 'live_cancel');
   assert.equal(d.quantum.length, 0);

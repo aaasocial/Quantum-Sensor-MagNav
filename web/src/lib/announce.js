@@ -47,7 +47,22 @@ export const modeText = (badge) => `Mode: ${noEllipsis(badge)}.`;
 
 export const stageText = (n, text) => `Step ${int(n)} of 4: ${noEllipsis(text)}.`;
 
-export const finishedText = (quantumLabel, err, baseErr) => {
+// ---- live run (UI-SPEC aria-live phrasing) ----
+
+export const shortJobId = (id) => String(id ?? '').slice(0, 8);
+
+export const jobText = (jobId, backend) => `IonQ job ${shortJobId(jobId)} submitted, ${backend}.`;
+
+export const decodedText = (rpmMin, rpmMax, c4, bitsLabel) =>
+  `Motor drawn: ${int(rpmMin)} to ${int(rpmMax)} RPM. GHZ-4 contrast ${Number(c4).toFixed(3)}. Bits ${bitsLabel}.`;
+
+export const progressText = (i, n) => `${int(i)} of ${int(n)} samples.`;
+
+export const liveResultText = (label) => `Live run finished on ${label}. Mode: computed in-page.`;
+
+export const fallbackText = (label) => `Live run failed. Mode: fallback, precomputed replay of ${label}.`;
+
+export const finishedText =(quantumLabel, err, baseErr) => {
   const ok = (v) => v !== null && v !== undefined && Number.isFinite(Number(v));
   if (!ok(err) || !ok(baseErr)) return 'Replay finished.';
   return `Replay finished. ${quantumLabel}: ${int(err)} metres. Baseline: ${int(baseErr)} metres.`;
