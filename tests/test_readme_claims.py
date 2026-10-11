@@ -277,3 +277,131 @@ def test_amplitude_calibration_numbers():
     a1 = _metrics()["amp_sweep"]["frozen_A1_nT"]
     assert f"A1 = {round(a1)} nT" in text
     assert "S_ref = 256" in text
+
+
+# ---- recorded-flight tables (README-only since the 03-07 ad-hoc change) -------------------
+# The page no longer renders the per-track CEP table or the two-scenario comparison; the README
+# carries them, rebuilt here row by row from data/precomputed_uav.json with the formatting the
+# page used (per-track: one decimal with thousands separator; comparison: the JSON value as
+# JavaScript's String() prints it).
+
+TRACK_LABELS = {
+    "dead_reckoning": "Dead reckoning (INS only)",
+    "baseline_ls": "Baseline: magnetometer + notch",
+    "baseline_mean": "Baseline variant: block mean",
+    "quantum_q1": "Quantum: single-qubit Ramsey",
+    "quantum_ghz4": "Quantum: GHZ-4 entangled",
+}
+
+
+def _uav():
+    return json.loads(
+        (ROOT / "data/precomputed_uav.json").read_text(encoding="utf-8")
+    )
+
+
+def _num1(v):
+    return "n/a" if v is None else f"{float(v):,.1f}"
+
+
+def _js(v):
+    if v is None:
+        return "n/a"
+    return str(int(v)) if float(v).is_integer() else str(v)
+
+
+def _section(text, start, stop):
+    i = text.index(start)
+    return text[i : text.index(stop, i)]
+
+
+def test_recorded_track_table():
+    text = _readme()
+    a = _uav()
+    (sc,) = [s for s in a["scenarios"] if s["id"] == a["default_scenario"]]
+    line = sc["line"]
+    thr = a["thresholds_m"][0]
+    t0 = line["metric_start_index"] * line["jam"]["t"] / line["jam"]["index"]
+    assert t0 == round(t0)
+    caption = (
+        f"Position error after GPS loss (from t = {round(t0)} s): {sc['label']}, recorded flight"
+    )
+    assert caption in text
+    header = f"| Track | CEP50 (m) | CEP95 (m) | Under {thr} m (%) | Signal RMSE (nT) | Windows accepted |"
+    assert header in text
+    rows = []
+    for key, label in TRACK_LABELS.items():
+        m = line["metrics"][key]
+        dr = key == "dead_reckoning"
+        rmse = "n/a" if dr else _num1(m["signal_rmse_nT"])
+        win = "n/a" if dr else f"{m['accepted']} of {m['windows']}"
+        rows.append(
+            f"| {label} | {_num1(m['cep50_m'])} | {_num1(m['cep95_m'])} | "
+            f"{_num1(m[f'pct_under_{thr}'])} | {rmse} | {win} |"
+        )
+    block = "\n".join([header, "|---|---|---|---|---|---|", *rows])
+    assert block in text, block
+
+
+def test_both_scenarios_block():
+    text = _readme()
+    a = _uav()
+    c = a["comparison"]
+    thr = a["thresholds_m"][0]
+    assert re.search(r"^#+ Both scenarios, as found\s*$", text, re.MULTILINE)
+    assert (
+        f"Recorded flights with the stored motor draw, S = {a['S']} shots, scored once under "
+        "a rule fixed before the run. A live run does not change this table."
+    ) in text
+    assert f"> {c['statement']}" in text
+    assert f"`verdict: {c['verdict']}`" in text
+    assert "Navigation and signal results for both maps, as found" in text
+    assert f"Comparison rule: {c['rule']}." in text
+    cols = a["scenarios"]
+    lines = [
+        "| Measure | "
+        + " | ".join(f"{s['label']}<br>{s['map_label']}" for s in cols)
+        + " |",
+        "|---" * (len(cols) + 1) + "|",
+    ]
+    measures = [
+        ("signal_rmse_nT", "Signal RMSE (nT)"),
+        ("cep50_m", "CEP50 (m)"),
+        ("cep95_m", "CEP95 (m)"),
+        ("pct_under_556", f"Under {thr} m (%)"),
+        ("matches_lost", "TERCOM matches lost"),
+    ]
+    dr_measures = {"cep50_m", "cep95_m", "pct_under_556"}
+    for est, label in TRACK_LABELS.items():
+        lines.append(f"| **{label}** |" + " |" * len(cols))
+        for key, mlabel in measures:
+            if est == "dead_reckoning" and key not in dr_measures:
+                continue
+            cells = []
+            for s in cols:
+                (r,) = [
+                    x
+                    for x in c["rows"]
+                    if x["scenario"] == s["id"] and x["estimator"] == est
+                ]
+                v = r[key]
+                if key == "matches_lost" and v is not None and r["windows"] is not None:
+                    cells.append(f"{v} of {r['windows']}")
+                else:
+                    cells.append(_js(v))
+            lines.append(f"| {mlabel} | " + " | ".join(cells) + " |")
+    block = "\n".join(lines)
+    assert block in text, block
+
+
+def test_recorded_tables_placement_and_no_duplicates():
+    text = _readme()
+    c = _uav()["comparison"]
+    results = _section(text, "## Results", "### Where it ties or loses")
+    assert "### Recorded flights after GPS loss" in results
+    assert "#### Both scenarios, as found" in results
+    # merged, not repeated: each artifact string appears exactly once in the README
+    assert text.count(c["statement"]) == 1
+    assert text.count("Position error after GPS loss") == 1
+    assert text.count("Navigation and signal results for both maps") == 1
+    assert "](#both-scenarios-as-found)" in text

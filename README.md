@@ -44,6 +44,63 @@ Entangled probes add a second, genuinely quantum effect. A GHZ-n probe reads n t
 
 At S = 256 the GHZ-4 projection noise is 0.078 nT at the model contrast and 0.071 nT at the contrast measured on IonQ Forte 1 hardware, against 0.145 nT at the standard quantum limit for 4 unentangled qubits. Physics and the full table: [docs/PHYSICS.md](docs/PHYSICS.md#6-ghz-entangled-probes-the-two-stage-sensor).
 
+### Recorded flights after GPS loss
+
+The page's replay is one recorded flight per map, seeded with the motor drawn on IonQ hardware, so these are single flights rather than the 8-draw mean above.
+
+Position error after GPS loss (from t = 285 s): UAV at 100 m over a synthetic crustal map, recorded flight
+
+| Track | CEP50 (m) | CEP95 (m) | Under 556 m (%) | Signal RMSE (nT) | Windows accepted |
+|---|---|---|---|---|---|
+| Dead reckoning (INS only) | 974.5 | 2,035.9 | 27.2 | n/a | n/a |
+| Baseline: magnetometer + notch | 149.3 | 262.9 | 100.0 | 39.1 | 61 of 62 |
+| Baseline variant: block mean | 149.3 | 262.9 | 100.0 | 42.8 | 61 of 62 |
+| Quantum: single-qubit Ramsey | 150.2 | 251.4 | 100.0 | 0.3 | 62 of 62 |
+| Quantum: GHZ-4 entangled | 150.2 | 251.4 | 100.0 | 0.2 | 62 of 62 |
+
+#### Both scenarios, as found
+
+Recorded flights with the stored motor draw, S = 256 shots, scored once under a rule fixed before the run. A live run does not change this table.
+
+> At 100 m on the synthetic map the quantum navigation advantage shrinks compared with the 400 m Eastern_395 flight: GHZ-4 vs LS baseline CEP50 advantage -0.9 m at 100 m vs +27.5 m at 400 m; TERCOM matches lost (LS baseline / GHZ-4) 1/62 vs 0/62 at 100 m and 10/62 vs 0/62 at 400 m. The signal-level advantage (39.1 nT vs 0.2 nT at 100 m) does not depend on the map.
+
+`verdict: shrinks`
+
+Navigation and signal results for both maps, as found
+
+| Measure | UAV at 100 m over a synthetic crustal map<br>synthetic map (sensitivity study), not survey data | UAV at 400 m over the Eastern_395 survey map<br>Eastern_395 survey map (SGL 2020, MagNav.jl) |
+|---|---|---|
+| **Dead reckoning (INS only)** | | |
+| CEP50 (m) | 974.5 | 974.5 |
+| CEP95 (m) | 2035.9 | 2035.9 |
+| Under 556 m (%) | 27.2 | 27.2 |
+| **Baseline: magnetometer + notch** | | |
+| Signal RMSE (nT) | 39.1 | 39.1 |
+| CEP50 (m) | 149.3 | 182.2 |
+| CEP95 (m) | 262.9 | 420.2 |
+| Under 556 m (%) | 100 | 95.1 |
+| TERCOM matches lost | 1 of 62 | 10 of 62 |
+| **Baseline variant: block mean** | | |
+| Signal RMSE (nT) | 42.8 | 42.8 |
+| CEP50 (m) | 149.3 | 208.5 |
+| CEP95 (m) | 262.9 | 442.3 |
+| Under 556 m (%) | 100 | 100 |
+| TERCOM matches lost | 1 of 62 | 17 of 62 |
+| **Quantum: single-qubit Ramsey** | | |
+| Signal RMSE (nT) | 0.3 | 0.3 |
+| CEP50 (m) | 150.2 | 154.7 |
+| CEP95 (m) | 251.4 | 420.2 |
+| Under 556 m (%) | 100 | 95.1 |
+| TERCOM matches lost | 0 of 62 | 0 of 62 |
+| **Quantum: GHZ-4 entangled** | | |
+| Signal RMSE (nT) | 0.2 | 0.2 |
+| CEP50 (m) | 150.2 | 154.7 |
+| CEP95 (m) | 251.4 | 420.2 |
+| Under 556 m (%) | 100 | 95.1 |
+| TERCOM matches lost | 0 of 62 | 0 of 62 |
+
+Comparison rule: advantage = baseline_ls - quantum_ghz4 (CEP50 m, TERCOM matches lost); d = 100 m - 400 m; CEP50 tie band 10 m; grows / shrinks / stays about the same / is mixed.
+
 ### Where it ties or loses
 
 - **High shot budgets tie, and the baseline wins on signal error.** At S = 1024 and 4096 every estimator sits on the same 150.2 m CEP50 floor set by map matching. At S = 4096 the baseline's signal RMSE (0.085 nT) beats GHZ-4 (0.172 nT) and the single qubit (0.104 nT). GHZ-4's signal error levels off near 0.17 nT from 1024 shots on; the amplitude sweep points to residual tone leak, but the mechanism is not isolated. The position advantage exists only at S = 256 or below.
@@ -52,7 +109,7 @@ At S = 256 the GHZ-4 projection noise is 0.078 nT at the model contrast and 0.07
 - **Between harmonics the classical filter rejects more.** Both sensors reach the -120 dB floor on every motor harmonic, but the short Ramsey window has higher sidelobes than the baseline's 0.5 s block ([filter-function figure](results/fig_filter_function.png)).
 - **How the motor was made loud.** The tone amplitude (A1 = 3600 nT) was calibrated on the baseline alone at S_ref = 256, before any quantum estimator ran. The recorded alternative S_ref = 64 gives A1 = 350 nT, at which the S = 256 comparison would be close to a tie. The [amplitude sweep](results/fig_amp_sweep.png) covers both.
 - **The remote simulator shows no entanglement penalty.** The IonQ Forte 1 remote simulator returned GHZ-2 and GHZ-4 contrast 1.000 on every Run. The contrast loss in the figure comes from the model default (0.98^n) and from one hardware job. That QPU job (500 shots requested, 504 counted) measured c2 = 0.996 and c4 = 1.000, so it showed almost no loss either.
-- **The navigation gain shrinks at 100 m.** The replay is seeded with the motor drawn on IonQ hardware. On it, the baseline reaches 149.3 m CEP50 at 100 m and 182.2 m at 400 m over the real Eastern_395 map, against 150.2 m and 154.7 m for GHZ-4. As generated by the regen run: "At 100 m on the synthetic map the quantum navigation advantage shrinks compared with the 400 m Eastern_395 flight: GHZ-4 vs LS baseline CEP50 advantage -0.9 m at 100 m vs +27.5 m at 400 m; TERCOM matches lost (LS baseline / GHZ-4) 1/62 vs 0/62 at 100 m and 10/62 vs 0/62 at 400 m. The signal-level advantage (39.1 nT vs 0.2 nT at 100 m) does not depend on the map."
+- **The navigation gain shrinks at 100 m.** The replay is seeded with the motor drawn on IonQ hardware. On it, the baseline reaches 149.3 m CEP50 at 100 m and 182.2 m at 400 m over the real Eastern_395 map, against 150.2 m and 154.7 m for GHZ-4. The scored verdict and both maps side by side are in [Both scenarios, as found](#both-scenarios-as-found).
 
 ## How it works
 
