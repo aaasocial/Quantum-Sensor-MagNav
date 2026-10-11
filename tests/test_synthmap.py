@@ -82,3 +82,101 @@ def test_fit_source_is_eastern():
     sha = hashlib.sha256((ROOT / MAP_EASTERN).read_bytes()).hexdigest()
     assert _prov_entry()["fit_source_sha256"] == sha
     assert load_map(MAP_EASTERN).name == "map_eastern_395"
+
+
+# ---- Scientific validation (SCN-01). The "400 m" in ROADMAP SC1 is the real flight altitude;
+# calibration and the RMS test use 395 m, the Eastern tile's stored altitude (npz key alt),
+# because that is the height the real tile's spectrum and std actually describe.
+
+
+@pytest.fixture(scope="module")
+def real_spectrum(tile):
+    return synthmap.radial_spectrum(tile.M, tile.dx)
+
+
+def _syn_395_calib(fields):
+    return fields["scale"] * fields["fields"][fields["h_fit_m"]][synthmap.calib_slice()]
+
+
+def test_beta_fit_real_tile(real_spectrum):
+    beta, resid = synthmap.fit_beta(*real_spectrum, 395.0, (600, 10000))
+    print(f"\n[synthmap] beta fitted on Eastern_395 {beta:.4f} (residual RMS {resid:.3f} ln units)")
+    assert abs(beta - _prov_entry()["beta"]) < 1e-6
+    assert 1.80 <= beta <= 1.90
+
+
+def test_beta_recovered_on_synthetic(fields):
+    Z = _syn_395_calib(fields)
+    assert Z.shape == (840, 768)
+    k, P = synthmap.radial_spectrum(Z, synthmap.PARAMS["cell_m"])
+    beta_hat, _ = synthmap.fit_beta(k, P, 395.0, (600, 10000))
+    print(f"\n[synthmap] beta_hat {beta_hat:.3f} vs {fields['beta']:.3f}")
+    assert abs(beta_hat - fields["beta"]) <= 0.2
+
+
+def _band_power(Z, d, edges):
+    """Per-bin mean power density (P * cell area) on shared radial bin edges (research d_cal.py)."""
+    ny, nx = Z.shape
+    Z = Z - Z.mean()
+    W = np.outer(np.hanning(ny), np.hanning(nx))
+    P = np.abs(np.fft.fft2(Z * W)) ** 2 / (W**2).sum() * d * d
+    K = np.hypot(*np.meshgrid(2 * np.pi * np.fft.fftfreq(nx, d), 2 * np.pi * np.fft.fftfreq(ny, d)))
+    idx = np.digitize(K.ravel(), edges)
+    return np.array([P.ravel()[idx == b].mean() for b in range(1, len(edges))])
+
+
+def test_rms_400m_matches_real(tile, fields):
+    """Named for the ROADMAP's 400 m flight; it calibrates and tests at 395 m, the tile's stored alt.
+
+    Independent cross-check (the estimator of 01.1-RESEARCH (b), scratch d_cal.py): power density
+    P * d^2 on 12 shared log-spaced radial bins spanning 600-10,000 m for the real tile and for the
+    RMS-calibrated synthetic 395 m field over the calibration region; the amplitude ratio is
+    sqrt(exp(mean ln(P_syn / P_real))) and must lie in [0.85, 1.15]. Measured 0.993 for the derived
+    seed. The ln-domain mean is used because the slope fit itself is in ln P; an arithmetic mean
+    over the same bins gives 1.137 (dominated by the noisiest long-wavelength bins)."""
+    Z = _syn_395_calib(fields)
+    std_syn, std_real = float(np.std(Z)), float(np.std(tile.M))
+    print(f"\n[synthmap] std 395 m calib {std_syn:.2f} vs real {std_real:.2f} nT")
+    assert abs(std_real - 318.64) < 0.01
+    assert abs(std_syn / std_real - 1.0) < 0.01
+    edges = np.sort(2 * np.pi / np.geomspace(10000.0, 600.0, 13))
+    Pr = _band_power(tile.M, tile.dx, edges)
+    Ps = _band_power(Z, synthmap.PARAMS["cell_m"], edges)
+    assert np.all(np.isfinite(Pr)) and np.all(np.isfinite(Ps))
+    ratio = float(np.sqrt(np.exp(np.mean(np.log(Ps) - np.log(Pr)))))
+    arith = float(np.sqrt(Ps.mean() / Pr.mean()))
+    print(f"[synthmap] band-power ratio {ratio:.3f} (ln-mean, 12 bins; arithmetic {arith:.3f})")
+    assert 0.85 <= ratio <= 1.15
+
+
+def test_fine_scale_power(fields):
+    N, d = synthmap.PARAMS["N"], synthmap.PARAMS["cell_m"]
+    F = fields["fields"]
+    S395, S100 = np.fft.rfft2(F[395.0]), np.fft.rfft2(F[100.0])
+    K = np.hypot(2 * np.pi * np.fft.fftfreq(N, d)[:, None], 2 * np.pi * np.fft.rfftfreq(N, d)[None, :])
+    fine = K > 2 * np.pi / 1000.0
+    ratio = float((np.abs(S100[fine]) ** 2).sum() / (np.abs(S395[fine]) ** 2).sum())
+    print(f"\n[synthmap] fine-scale (< 1 km) power ratio 100 m / 395 m {ratio:.1f}")
+    assert ratio >= 50.0
+    mode = abs(S395[3, 5] / S100[3, 5])  # continuation 100 m -> 395 m attenuates by exp(-K * 295)
+    print(f"[synthmap] mode (3, 5) |F395 / F100| {mode:.12f} vs exp(-K 295) {np.exp(-K[3, 5] * 295.0):.12f}")
+    assert abs(mode / np.exp(-K[3, 5] * 295.0) - 1.0) < 1e-9
+
+
+def test_seed_derived_not_in_spawn_keys():
+    seed = int(np.random.SeedSequence(0, spawn_key=(10,)).generate_state(1, dtype=np.uint64)[0] >> np.uint64(1))
+    e = _prov_entry()
+    assert synthmap.map_seed() == seed == e["seed"] == 525034912271016516
+    assert e["seed_str"] == str(seed)
+    assert "synthmap" not in seeds.SPAWN_KEYS
+    assert (10,) not in seeds.SPAWN_KEYS.values()
+
+
+def test_generation_fast(fields):
+    import time
+
+    t0 = time.perf_counter()
+    synthmap.generate_fields(synthmap.map_seed(), 1024, 50.0, fields["beta"], (395.0, 100.0))
+    dt = time.perf_counter() - t0
+    print(f"\n[synthmap] generation {dt * 1000:.0f} ms (budget 700 ms CPython)")
+    assert dt < 0.7

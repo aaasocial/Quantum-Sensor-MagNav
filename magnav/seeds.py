@@ -8,6 +8,8 @@ draw (01-RESEARCH Pattern 4).
 Extra key parts: S for "servo", "q1" and "baseline"; (n, S) for "ghz"; the draw index
 (optionally followed by S) for "amp_cal". "motor" is replaced in Phase 2 by the SHA-256 of the
 IonQ RNG-block histogram; "test_noise" is for tests only.
+
+Spawn key (10,) is reserved for magnav.synthmap, which derives its map seed directly with SeedSequence(ROOT_SEED, spawn_key=(10,)); it is deliberately not in SPAWN_KEYS so the frozen model's spawn_keys stay equal.
 """
 
 import numpy as np
