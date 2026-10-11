@@ -299,7 +299,7 @@ def comparison_summary(scenarios: list) -> dict:
 
     a100, la100 = adv("synthetic_100m")
     a400, la400 = adv("eastern_400m")
-    d_cep = a100 - a400
+    d_cep = round(a100 - a400, 1)  # the same 0.1 m quantity reported as d_cep_m (cep50_m is 0.1 m rounded)
     d_lost = la100 - la400
     sign_cep = 1 if d_cep > CEP_TIE_M else (-1 if d_cep < -CEP_TIE_M else 0)
     sign_lost = _sign(d_lost)
@@ -331,7 +331,7 @@ def comparison_summary(scenarios: list) -> dict:
             s100: {"cep50_adv_m": round(a100, 1), "lost_adv": la100},
             s400: {"cep50_adv_m": round(a400, 1), "lost_adv": la400},
         },
-        "d_cep_m": round(d_cep, 1),
+        "d_cep_m": d_cep,
         "d_lost": d_lost,
         "sign_cep": sign_cep,
         "sign_lost": sign_lost,

@@ -166,6 +166,9 @@ def _hand(c100_ls, c100_g, lost100_ls, lost100_g, c400_ls=150.0, c400_g=150.0, l
         ((70.0, 100.0, 2, 0), "is mixed"),  # CEP shrinks, matches lost grows
         ((130.0, 100.0, 1, 0), "grows"),
         ((70.0, 100.0, 0, 1), "shrinks"),
+        # 20.1 - 10.1 == 10.000000000000002 in binary; the rule compares the reported 0.1 m value
+        # (10.0), which is inside the tie band (review WR-01)
+        ((20.1, 10.1, 0, 0), "stays about the same"),
     ],
 )
 def test_comparison_rule_hand_made(args, verdict):
@@ -173,6 +176,15 @@ def test_comparison_rule_hand_made(args, verdict):
     assert c["verdict"] == verdict, c
     assert c["statement"].startswith(f"At 100 m on the synthetic map the quantum navigation advantage {verdict} ")
     assert "62" in c["statement"] and "0.2 nT at 100 m" in c["statement"]
+
+
+def test_comparison_tie_band_uses_reported_d_cep():
+    """The verdict must be reproducible from the printed d_cep_m: a nominal +10.0 m difference that
+    lands at 10.000000000000002 in binary is reported as 10.0 and classified as a tie (WR-01)."""
+    c = comparison_summary(_hand(20.1, 10.1, 0, 0, c400_ls=10.0, c400_g=10.0))
+    assert c["d_cep_m"] == 10.0
+    assert c["sign_cep"] == 0
+    assert c["verdict"] == "stays about the same", c
 
 
 def test_deterministic_rebuild(scenario_runs):
