@@ -1,0 +1,204 @@
+{
+ "S_default": 256,
+ "S_default_note": "the amplitude anchor S_ref equals S_default; Phase 2 must read S_default from this file for the live budget",
+ "baseline": {
+  "K": 4,
+  "causality": "block-local, no zero-phase two-pass filtering, 0.25 s look-ahead disclosed",
+  "guard_alias_hz": 3.0,
+  "primary": "ls_guarded",
+  "simulation": "S readouts simulated per navigation sample in 200-block chunks; refines QS-02's closed-form tone response because with the exact RPM channel the kept-harmonic response is identically zero and only sample-level simulation measures guard drops and dropped-harmonic leakage; research cost 0.03/0.12/0.47/2.13 s at S = 64/256/1024/4096 for 1500 blocks (CPython)",
+  "variant": "block_mean",
+  "window": "centred 0.5 s block: readouts in [t_k - 0.25 s, t_k + 0.25 s)"
+ },
+ "crust_within_sample": "frozen at crust(t_k) for all windows and readouts of sample k (disclosed approximation)",
+ "equal_budget": {
+  "S_meaning": "S is an ensemble size, not sequential shots",
+  "ghz": "GHZ-n at S shots compared with n unentangled qubits at S shots each (equal qubit-shots) and with the baseline magnetometer",
+  "ghz_track_accounting": "the GHZ navigation track spends S coarse + S fine shots (disclosed)",
+  "readouts_per_sample": "S readouts (baseline) vs S Ramsey shots (quantum) per navigation sample",
+  "rpm_channel": "the same exact commanded RPM channel for both sensors",
+  "servo": "servo windows are not counted in S; their noise cancels in the output",
+  "single_readout_noise_qs02": "1/(2*pi*gamma*tau0), the literal QS-02 / SC5 definition; it holds for the motor-off parity test, where tau_k = tau0 (both sensors also share the 1/c1 contrast factor)",
+  "single_readout_noise_refined": "sigma1_k = 1/(2*pi*gamma*tau_k*c1) per navigation sample, tau_k = m*60/R_k from the shared RPM channel, tau0 = 10 ms without RPM; refines QS-02 because a baseline pinned at tau0 while the quantum tau_k follows the RPM differs by up to ~13% (RMS-equivalent tau 8.73 ms over the prior) and fails the 10% parity test, while the matched definition gives parity within 2.5% at every S (01-RESEARCH Check 5)"
+ },
+ "flight": {
+  "alt_m": 400.0,
+  "centre_m": [
+   0.0,
+   0.0
+  ],
+  "fs_hz": 2.0,
+  "heading_deg": 30.0,
+  "jam_fraction": 0.25,
+  "leg_m": 18000.0,
+  "n": 1800,
+  "path": "racetrack",
+  "sep_m": 3000.0,
+  "v_mps": 60.0
+ },
+ "fs_hz": 2.0,
+ "gamma_hz_per_nT": 3.4986,
+ "ghz": {
+  "c_n_default": {
+   "1": 0.98,
+   "2": 0.9603999999999999,
+   "4": 0.9223681599999999
+  },
+  "contrast_model": "c_n = c1**n",
+  "fallback": "single-qubit coarse estimate, counted per sample",
+  "n_set": [
+   1,
+   2,
+   4
+  ],
+  "switch_rule": {
+   "per_sample": "coarse sample not fringe-risk (|phi_hat| <= pi/4 and 0 < n1 < S)",
+   "static": "pi*c1*sqrt(S)/(2n) >= z_star",
+   "z_star": 4.5
+  }
+ },
+ "igrf_plane": {
+  "c0_nT": 53615.07,
+  "cx_nT_per_m": -0.001765,
+  "cy_nT_per_m": 0.00386,
+  "source": "lstsq of the SGL 1003.02 igrf channel vs local (x, y) in the Eastern_395 frame, computed once from the sister repo (line file not lifted); RMS 0.22 nT; hard-coded here"
+ },
+ "ins": {
+  "bias_mps": 1.5,
+  "rw_sigma": 0.1
+ },
+ "map_error": {
+  "lmax_m": 6000.0,
+  "lmin_m": 1000.0,
+  "n_modes": 48,
+  "seed": 8226343694796210948,
+  "sigma_nT": 3.0
+ },
+ "motor_prior": {
+  "K": 4,
+  "harmonic_weights": [
+   1.0,
+   0.5,
+   0.3,
+   0.2
+  ],
+  "knot_spacing_s": 60.0,
+  "phase": "U(0, 2pi)",
+  "rpm_channel": "exact",
+  "rpm_max": 9000.0,
+  "rpm_min": 4500.0
+ },
+ "noise": {
+  "c1": 0.98,
+  "sigma1_rule": "sigma1_k = 1/(2*pi*gamma*tau_k*c1); tau_k = tau0 without RPM, so the motor-off single-readout noise is 1/(2*pi*gamma*tau0*c1)"
+ },
+ "notes": [
+  "S_ref = 64 alternative (physically smaller tones; the live S = 256 demo would then be a tie): A1 = 350.0 nT (per draw [524.2795602150032, 1623.9921498231838, 302.79292028224654, 312.6788853335631, 354.5544502465406])",
+  "RPM-withheld (wrong-tau) path not built in Phase 1 (PD-1, cut order item 2); tau_rule.no_rpm kept",
+  "no shots-ladder outputs in Phase 1 (PD-2)",
+  "assumptions: tone amplitudes are a declared scenario assumption; c1 = 0.98 placeholder replaced by measured contrast in Phase 2; UAV INS 1.5 m/s bias / 0.1 rw; RPM channel exact; crust frozen within a navigation sample"
+ ],
+ "schema_version": 1,
+ "seeds": {
+  "dr_seed": 6619194650426729951,
+  "extra_key_parts": {
+   "amp_cal": "d[, S]",
+   "baseline": "S",
+   "ghz": "n, S",
+   "q1": "S",
+   "servo": "S"
+  },
+  "root": 0,
+  "shipped_motor_seed": 2440950710608614359,
+  "spawn_keys": {
+   "amp_cal": [
+    8
+   ],
+   "baseline": [
+    7
+   ],
+   "dr": [
+    3
+   ],
+   "ghz": [
+    6
+   ],
+   "map_err": [
+    2
+   ],
+   "motor": [
+    1
+   ],
+   "q1": [
+    5
+   ],
+   "servo": [
+    4
+   ],
+   "test_noise": [
+    9
+   ]
+  }
+ },
+ "servo": {
+  "cycle_s": 0.02,
+  "linear_range_rad": 0.7853981633974483,
+  "note": "servo windows set the reference only; their noise cancels in the output and is not counted in S",
+  "predictor": "2*Bhat(t-h) - Bhat(t-2h)",
+  "seed": "IGRF plane + map value at the GPS fix",
+  "slip_rad": 1.5707963267948966
+ },
+ "shots_ladder": [
+  64,
+  256,
+  1024,
+  4096
+ ],
+ "tau0_s": 0.01,
+ "tau_rule": {
+  "formula": "tau_k = m*60/R(t_k), R at window start",
+  "m": 1,
+  "no_rpm": "tau0"
+ },
+ "tercom": {
+  "gate": 0.85,
+  "half_width_m": 1500.0,
+  "median": 3,
+  "step_m": 60.0,
+  "stride": 20,
+  "window": 120
+ },
+ "tone_amplitude_rule": {
+  "A1_nT": 3600.0,
+  "L1_per_unit": [
+   0.008843605860696742,
+   0.0,
+   0.012332631260529263,
+   0.011846576098682835,
+   0.011699784824317414
+  ],
+  "S_ref": 256,
+  "draw_seeds": "seeds.int_seed(root, 'amp_cal', d), d = 0..draws-1; noise stream ('amp_cal', d, S_ref)",
+  "draws": 5,
+  "estimator": "baseline only (ls_guarded); no quantum estimator runs during the freeze",
+  "exact_cancellation": "a draw with L1 <= 1e-09 per unit A1 (no dropped harmonic) has no finite solution; it is recorded as null and skipped in the median",
+  "floor_nT": [
+   0.32307347746396675,
+   0.29084637711771993,
+   0.37445267342590194,
+   0.32099697725418713,
+   0.33678605842118225
+  ],
+  "per_draw_A1_nT": [
+   4793.70021466452,
+   null,
+   3437.479944827807,
+   3578.553898902209,
+   3623.441732526607
+  ],
+  "ratio": 0.6,
+  "rule": "A1 such that the guarded-LS baseline leftover RMS after the jam = ratio x median 120-sample window std of the true anomaly (stride 20 from the jam); sqrt((A1*L1)^2 + floor^2) = target per draw; median over draws; 2 significant figures",
+  "sigma_s_median_nT": 70.65804389255248,
+  "target_nT": 42.39482633553149
+ }
+}
