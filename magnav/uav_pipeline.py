@@ -9,12 +9,14 @@ baseline only; no quantum estimator runs during the freeze (AST-tested).
 
 This module orchestrates, so it may touch the World (like the sister pipeline.py).
 
-CLI: `python -m magnav.uav_pipeline freeze` (once; refuses to overwrite).
+CLI: `python -m magnav.uav_pipeline freeze` (once; refuses to overwrite) and
+`python -m magnav.uav_pipeline build` (motor-on run -> data/precomputed_uav.json).
 """
 
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import sys
@@ -24,7 +26,9 @@ import numpy as np
 
 from magnav import baseline, motor, ramsey, seeds, uav
 from magnav.data import MAP_EASTERN, load_map
+from magnav.metrics import position_metrics, signal_metrics
 from magnav.motor import motor_to_dict, rev_at, rpm_at, tone_field, tone_window_integral
+from magnav.nav import anomaly_signal, tercom
 from magnav.seeds import ROOT_SEED, int_seed, stream
 
 QSENSOR_MODEL = "data/qsensor_model.json"
@@ -367,6 +371,94 @@ def load_model(path=QSENSOR_MODEL) -> dict:
 def model_sha256(path=QSENSOR_MODEL) -> str:
     with open(path, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
+
+
+def score_result(ctx: dict, name: str, cleaned, sig, nav) -> dict:
+    """Results entry for one estimator: GPS-aided lead-in + nav track, metrics row (uses Truth)."""
+    tx, ty, jam_idx, start = ctx["tx"], ctx["ty"], ctx["jam_idx"], ctx["start"]
+    ex = np.concatenate([tx[:jam_idx], nav.x])  # GPS-aided lead-in, then nav
+    ey = np.concatenate([ty[:jam_idx], nav.y])
+    row = {"line": ctx["line"], "sensor": "uav", "denoiser": name}
+    row.update(signal_metrics(cleaned, ctx["truth"].mag_1_c, start))
+    row.update(position_metrics(ex, ey, tx, ty, start))
+    row["accepted"] = int(nav.accepted.sum())
+    row["windows"] = len(nav.window_end)
+    return {
+        "cleaned": cleaned,
+        "signal": sig,
+        "x": ex,
+        "y": ey,
+        "window_end": nav.window_end,
+        "ncc": nav.ncc,
+        "accepted": nav.accepted,
+        "metrics": row,
+    }
+
+
+def line_out(ctx: dict, results: dict) -> dict:
+    """Per-line output (the input of artifact.line_entry)."""
+    sens, truth, tile = ctx["sens"], ctx["truth"], ctx["tile"]
+    return {
+        "line": ctx["line"],
+        "map_file": ctx["map_file"],
+        "tile": tile,
+        "frame": dataclasses.asdict(tile.frame),
+        "n": ctx["n"],
+        "jam_idx": ctx["jam_idx"],
+        "jam_t": float(sens.t[ctx["jam_idx"]]),
+        "metric_start": ctx["start"],
+        "t": sens.t,
+        "truth_x": ctx["tx"],
+        "truth_y": ctx["ty"],
+        "truth_anomaly": truth.mag_1_c - sens.igrf - sens.diurnal,
+        "dr_x": ctx["dr_x"],
+        "dr_y": ctx["dr_y"],
+        "dr_metrics": ctx["dr_row"],
+        "results": results,
+    }
+
+
+def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None) -> dict:
+    """Motor-on UAV flight with the frozen rules: four estimators through the unchanged TERCOM.
+
+    The motor comes from `bits` (Phase 2: IonQ RNG block) if given, else from `motor_seed`
+    (default: the model's shipped motor seed), always at the frozen A1. Estimators see only
+    the sensed arrays and `Sensors`; Truth is used in score_result / line_out for scoring.
+    """
+    model = model or load_model()
+    shots = int(shots or model["S_default"])
+    tile = load_map(MAP_EASTERN) if tile is None else tile
+    root = int(model["seeds"]["root"])
+    map_error = {k: v for k, v in model["map_error"].items() if k != "seed"}
+    world = uav.build_world(tile, model["flight"], map_error, root)
+    if world.map_err_seed != model["map_error"]["seed"]:
+        raise ValueError("map-error seed differs from the frozen model")
+    duration = len(world.t) / float(model["fs_hz"])
+    A1 = float(model["tone_amplitude_rule"]["A1_nT"])
+    if bits:
+        p = motor.motor_from_bits(bits, duration, A1)
+    else:
+        seed = model["seeds"]["shipped_motor_seed"] if motor_seed is None else int(motor_seed)
+        p = motor.draw_motor(seed, duration, A1)
+    sense = sense_all(world, model, shots, p, root)
+    ctx = uav.prepare_uav(world, mag=sense["bhat"], cur={"rpm": rpm_at(p, world.t)}, ins=model["ins"],
+                          root_seed=root, window=model["tercom"]["window"])  # fmt: skip
+    if ctx["dr"].seed != model["seeds"]["dr_seed"]:
+        raise ValueError("DR seed differs from the frozen model")
+    results = {}
+    for name in ESTIMATORS:
+        cleaned = sense["bhat"][name]
+        sig = anomaly_signal(cleaned, ctx["sens"])
+        nav = tercom(sig, ctx["dr"], ctx["jam_idx"], ctx["fix_xy"], ctx["tile"], **model["tercom"])
+        results[name] = score_result(ctx, name, cleaned, sig, nav)
+    return {
+        "line": line_out(ctx, results),
+        "prov": sense["prov"],
+        "motor": motor_to_dict(p),
+        "S": shots,
+        "model": model,
+        "model_sha256": model_sha256(),
+    }
 
 
 def main(argv=None) -> int:
