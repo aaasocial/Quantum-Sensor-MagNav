@@ -14,7 +14,7 @@ import StatusStrip, {
   BUILTIN_NOTICE, LiveProgress, STEP_TEXT, idleHint, stepLine,
 } from './components/StatusStrip.jsx';
 import JobPanel, { bitsLabelOf } from './components/JobPanel.jsx';
-import MapView from './components/MapView.jsx';
+import MapView, { DEFAULT_MAP_MODE, MAP_MODES } from './components/MapView.jsx';
 import ScenarioPicker from './components/ScenarioPicker.jsx';
 import RunModePicker from './components/RunModePicker.jsx';
 import QuantumTrackToggle from './components/QuantumTrackToggle.jsx';
@@ -100,6 +100,7 @@ export default function App() {
   const [mode, setMode] = useState('live');
   const [quantumKey, setQuantumKey] = useState(null);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
+  const [mapMode, setMapMode] = useState(DEFAULT_MAP_MODE); // follow the UAV (zoomed) | full
   const statusFocusRef = useRef(null);
   const scenarioFocusRef = useRef(null);
   const runButtonRef = useRef(null);
@@ -472,18 +473,18 @@ export default function App() {
           single-column order, so the tab order is the same at every width. */}
       <div className="layout">
         <div className="col-left">
-          <MapView view={view} quantumKey={activeQuantum} />
+          <MapView view={view} quantumKey={activeQuantum} mapMode={mapMode} />
         </div>
 
         <div className="col-right">
           <section className="panel results" aria-labelledby="results-heading">
             <h2 id="results-heading">Navigation accuracy</h2>
             <ErrorReadout view={view} quantumKey={activeQuantum} />
-            <BenchmarkTable benchmark={benchmark} />
-            <TextAlternatives view={view} ghz={ghz.payload} />
-          </section>
 
-          <section className="panel controls" aria-label="Run controls">
+          {/* Eason, 2026-10-11 (fourth request): one card holds Navigation accuracy (heading and
+              position-error box) and, directly under it, the Run controls; the benchmark is a
+              separate card below. */}
+          <div className="controls" role="group" aria-label="Run controls">
             {artifact && (
               <ScenarioPicker
                 scenarios={artifact.scenarios}
@@ -509,26 +510,50 @@ export default function App() {
                 </button>
               )}
               <p id="run-help" className="help run-help">{helpLine}</p>
-              {live && (
-                <details className="demo-options">
-                  <summary>Demo options</summary>
-                  <label className="check-row">
-                    <input
-                      type="checkbox"
-                      checked={simulateFailure}
-                      onChange={(e) => setSimulateFailure(e.target.checked)}
-                      disabled={latched}
-                    />
-                    Simulate a failure
-                  </label>
-                  <p className="help">
-                    Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback.
-                  </p>
-                </details>
-              )}
+              <details className="demo-options">
+                <summary>Demo options</summary>
+                {/* Map view (Eason, 2026-10-11): follow the UAV zoomed in (default) or the full trajectory. */}
+                <fieldset className="map-mode">
+                  <legend>Map view</legend>
+                  {MAP_MODES.map((m) => (
+                    <label key={m.key} className="check-row">
+                      <input
+                        type="radio"
+                        name="map-mode"
+                        value={m.key}
+                        checked={mapMode === m.key}
+                        onChange={() => setMapMode(m.key)}
+                      />
+                      {m.label}
+                    </label>
+                  ))}
+                </fieldset>
+                {live && (
+                  <>
+                    <label className="check-row">
+                      <input
+                        type="checkbox"
+                        checked={simulateFailure}
+                        onChange={(e) => setSimulateFailure(e.target.checked)}
+                        disabled={latched}
+                      />
+                      Simulate a failure
+                    </label>
+                    <p className="help">
+                      Starts the live run with a forced error before any IonQ job, to show the recorded-replay fallback.
+                    </p>
+                  </>
+                )}
+                <QuantumTrackToggle value={activeQuantum} onChange={onQuantumChange} disabled={!ready} />
+              </details>
             </div>
-            <QuantumTrackToggle value={activeQuantum} onChange={onQuantumChange} disabled={!ready} />
             <ControlBar view={view} speed={speed} onSpeedChange={setSpeed} disabled={!ready || running} />
+          </div>
+          </section>
+
+          <section className="panel benchmark-card" aria-label="Benchmark">
+            <BenchmarkTable benchmark={benchmark} />
+            <TextAlternatives view={view} ghz={ghz.payload} />
           </section>
 
           <StatusStrip

@@ -11,7 +11,11 @@
 // Since the second ad-hoc change: the left column holds only the map; the right column runs
 // Navigation accuracy, Run controls, Run status, job, Sensor (DOM order = single-column order); at
 // the wide viewport the error box sits beside the map (to its right, within its height) and the
-// map column is the wider one; the map legend and overlay carry no classical-baseline track.
+// map column is the wider one. Since the fourth ad-hoc change: the map follows the UAV zoomed in
+// by default (Map view radio group in Demo options, keyboard operable), and the legend and overlay
+// carry the classical-baseline track again. Same request: the right column's first card holds
+// Navigation accuracy (heading, error box) and directly under it the Run controls group (with the
+// quantum-track toggle inside Demo options); the benchmark is a separate card below it.
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
@@ -70,7 +74,10 @@ const layoutCheck = (page) => page.evaluate(() => {
   const heading = results?.querySelector(':scope > h2');
   const first = heading?.nextElementSibling ?? null;
   const box = results?.querySelector(':scope > .error-readout') ?? null;
-  const bench = results?.querySelector(':scope > .benchmark') ?? null;
+  const bench = document.querySelector('section.benchmark-card > .benchmark');
+  const controlsInCard = Boolean(results?.querySelector(':scope > .controls[aria-label="Run controls"]'));
+  const toggleInDemo = Boolean(document.querySelector('details.demo-options .quantum-toggle, details.demo-options fieldset input[name="quantum-track"], details.demo-options [data-quantum-toggle]'))
+    || [...document.querySelectorAll('details.demo-options legend')].some((l) => /quantum/i.test(l.textContent));
   const captions = [...document.querySelectorAll('caption')].map((c) => c.textContent);
   const headings = [...document.querySelectorAll('h2, h3')].map((h) => h.textContent.trim());
   return {
@@ -78,6 +85,9 @@ const layoutCheck = (page) => page.evaluate(() => {
     error_box_above_benchmark: Boolean(box && bench)
       && Boolean(box.compareDocumentPosition(bench) & Node.DOCUMENT_POSITION_FOLLOWING),
     error_boxes_on_page: document.querySelectorAll('.error-readout').length,
+    run_controls_in_accuracy_card: controlsInCard,
+    benchmark_separate_card: Boolean(bench) && !results?.contains(bench),
+    quantum_toggle_in_demo_options: toggleInDemo,
     error_box_under_map: Boolean(document.querySelector('.readout-row .error-readout')),
     readout_row_children: [...document.querySelector('.readout-row').children].map((c) => c.className),
     error_box_text: box ? box.textContent.replace(/\s+/g, ' ').trim() : null,
@@ -95,8 +105,8 @@ const layoutCheck = (page) => page.evaluate(() => {
     const tag = (el) => {
       const c = el.classList;
       if (c.contains('map-figure')) return 'map';
-      if (c.contains('results')) return 'navigation_accuracy';
-      if (c.contains('controls')) return 'run_controls';
+      if (c.contains('results')) return 'navigation_accuracy_and_run_controls';
+      if (c.contains('benchmark-card')) return 'benchmark';
       if (c.contains('status-strip')) return 'run_status';
       if (c.contains('job-section')) return 'job';
       if (c.contains('sensor-section')) return 'sensor';
@@ -122,16 +132,20 @@ const layoutCheck = (page) => page.evaluate(() => {
         const st = r(document.querySelector('.map-stage'));
         return st ? [Math.round(st.width), Math.round(st.height)] : null;
       })(),
-      legend_lists_baseline: /baseline/i.test(legend),
+      legend_lists_baseline: /Baseline: magnetometer \+ notch/.test(legend),
       map_draws_baseline: strokes.includes('#D55E00'),
+      map_mode: document.querySelector('input[name="map-mode"]:checked')?.value ?? null,
     };
   }
 });
-const RIGHT_ORDER = '["navigation_accuracy","run_controls","run_status","job","sensor"]';
+const RIGHT_ORDER = '["navigation_accuracy_and_run_controls","benchmark","run_status","job","sensor"]';
 const layoutProblems = (name, L) => {
   const out = [];
   if (!L.error_box_first_in_results) out.push(`${name}: error box is not the first item of Navigation accuracy`);
   if (!L.error_box_above_benchmark) out.push(`${name}: error box is not above the benchmark`);
+  if (!L.run_controls_in_accuracy_card) out.push(`${name}: Run controls are not in the Navigation accuracy card`);
+  if (!L.benchmark_separate_card) out.push(`${name}: benchmark is not a separate card`);
+  if (!L.quantum_toggle_in_demo_options) out.push(`${name}: quantum-track toggle is not in Demo options`);
   if (L.error_boxes_on_page !== 1) out.push(`${name}: ${L.error_boxes_on_page} error boxes on the page`);
   if (L.error_box_under_map) out.push(`${name}: error box still under the map`);
   if (JSON.stringify(L.readout_row_children) !== '["jam-slot"]') out.push(`${name}: row under the map holds ${L.readout_row_children}`);
@@ -144,8 +158,9 @@ const layoutProblems = (name, L) => {
     if (!L.map_column_wider) out.push(`${name}: map column is not the wider one`);
     if (!L.error_box_beside_map) out.push(`${name}: error box is not beside the map`);
   } else if (L.two_columns) out.push(`${name}: two columns at the narrow viewport`);
-  if (L.legend_lists_baseline) out.push(`${name}: map legend still lists the baseline`);
-  if (L.map_draws_baseline) out.push(`${name}: map overlay still draws the baseline`);
+  if (!L.legend_lists_baseline) out.push(`${name}: map legend does not list the baseline`);
+  if (!L.map_draws_baseline) out.push(`${name}: map overlay does not draw the baseline`);
+  if (L.map_mode !== 'follow') out.push(`${name}: map view is ${L.map_mode}, expected follow`);
   return out;
 };
 
@@ -263,6 +278,35 @@ try {
       const afterSpace = (await detailsOpen(page2)).charts;
       const toggles = { sensor_enter_opens: afterEnter === true, sensor_space_closes: afterSpace === false };
 
+      // Map view radio group: open Demo options with Enter, Tab into the group (Follow checked),
+      // ArrowDown selects Full trajectory (caption follows), ArrowUp returns to Follow.
+      const caption = () => page2.locator('figure.map-figure figcaption').evaluate((el) => el.textContent);
+      await page2.locator('details.demo-options > summary').focus();
+      await page2.keyboard.press('Enter');
+      await page2.waitForTimeout(200);
+      await page2.keyboard.press('Tab');
+      const mvFirst = await focused(page2);
+      await page2.keyboard.press('ArrowDown');
+      await page2.waitForTimeout(200);
+      const mvFull = await caption();
+      const mvFullVal = await page2.evaluate(() => document.querySelector('input[name="map-mode"]:checked')?.value);
+      await page2.keyboard.press('ArrowUp');
+      await page2.waitForTimeout(200);
+      const mvFollowVal = await page2.evaluate(() => document.querySelector('input[name="map-mode"]:checked')?.value);
+      await page2.locator('details.demo-options > summary').focus();
+      await page2.keyboard.press('Enter'); // close again
+      await page2.waitForTimeout(200);
+      const mapView = {
+        first_stop: mvFirst,
+        arrow_down_selects_full: mvFullVal === 'full' && /full trajectory/i.test(mvFull),
+        arrow_up_returns_to_follow: mvFollowVal === 'follow',
+      };
+      if (!(mvFirst && mvFirst.role === 'radio' && mvFirst.group === 'Map view' && /Follow the UAV/.test(mvFirst.name))) {
+        problems.push(`map view radio not the first stop in Demo options: ${JSON.stringify(mvFirst)}`);
+      }
+      if (!mapView.arrow_down_selects_full) problems.push('map view: ArrowDown did not select Full trajectory');
+      if (!mapView.arrow_up_returns_to_follow) problems.push('map view: ArrowUp did not return to Follow');
+
       const idle = await readoutHeight(page2);
       const boxIdle = await errorBoxHeight(page2);
       const { running, boxRunning } = await keyboardRun(page2);
@@ -276,6 +320,7 @@ try {
       keyOut.focus_order = order;
       keyOut.reached = { ...reached, real_flight_link: realFlight };
       keyOut.summary_keyboard_toggle = toggles;
+      keyOut.map_view_keyboard = mapView;
       keyOut.details_open_after_run = openAfter;
       keyOut.readout_row_height = { idle, running, after_run: afterRun, jam_banner_after_run: jamShown };
       keyOut.error_box_height = { idle: boxIdle, running: boxRunning, after_run: boxAfter };

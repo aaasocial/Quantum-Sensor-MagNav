@@ -2,8 +2,9 @@
 // "Navigation accuracy" (above the benchmark), the row under the map holds only the jam banner,
 // and the per-track CEP table and two-scenario comparison are README-only. Second request: the
 // map has the (wider) left column to itself; the right column holds Navigation accuracy, then the
-// Run controls and status, then the collapsed job and Sensor sections; the map legend no longer
-// lists the baseline, whose track is not drawn. Static checks on the component sources
+// Run controls and status, then the collapsed job and Sensor sections. Fourth request: the map
+// follows the UAV zoomed in by default, so the baseline track is drawn and listed again (Map view
+// radio group in Demo options). Static checks on the component sources
 // (node --test has no DOM); web/scripts/audit.mjs checks the rendered page.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,15 +14,15 @@ const src = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8')
 const app = src('App.jsx');
 const mapView = src('components/MapView.jsx');
 
-test('the error box opens the Navigation accuracy section, above the benchmark', () => {
+test('the error box opens the Navigation accuracy card, above the benchmark card', () => {
   const start = app.indexOf('<h2 id="results-heading">Navigation accuracy</h2>');
   const end = app.indexOf('</section>', start);
   assert.ok(start > 0 && end > start);
   const section = app.slice(start, end);
   const readout = section.indexOf('<ErrorReadout view={view} quantumKey={activeQuantum} />');
-  const bench = section.indexOf('<BenchmarkTable');
   assert.ok(readout > 0, 'ErrorReadout not in the results section');
-  assert.ok(bench > readout, 'ErrorReadout must precede BenchmarkTable');
+  assert.ok(!section.includes('<BenchmarkTable'), 'the benchmark is a separate card');
+  assert.ok(app.indexOf('<BenchmarkTable') > end, 'ErrorReadout must precede BenchmarkTable');
   // first child after the heading: nothing but whitespace between them
   assert.equal(section.slice(section.indexOf('</h2>') + 5, readout).trim(), '');
   assert.equal(app.split('<ErrorReadout').length - 1, 1, 'exactly one error box on the page');
@@ -49,7 +50,7 @@ test('the error box is not a live region (the single Announcer speaks the readou
 
 test('the left column holds only the map; the right column runs results, controls, status, job, Sensor', () => {
   const left = app.slice(app.indexOf('<div className="col-left">'), app.indexOf('<div className="col-right">'));
-  assert.match(left, /^<div className="col-left">\s*<MapView view=\{view\} quantumKey=\{activeQuantum\} \/>\s*<\/div>\s*$/);
+  assert.match(left, /^<div className="col-left">\s*<MapView view=\{view\} quantumKey=\{activeQuantum\} mapMode=\{mapMode\} \/>\s*<\/div>\s*$/);
   const right = app.slice(app.indexOf('<div className="col-right">'), app.indexOf('className="panel quantum-here"'));
   const at = (needle) => {
     const k = right.indexOf(needle);
@@ -58,13 +59,15 @@ test('the left column holds only the map; the right column runs results, control
   };
   const order = [
     '<h2 id="results-heading">Navigation accuracy</h2>',
-    '<section className="panel controls" aria-label="Run controls">',
+    '<div className="controls" role="group" aria-label="Run controls">',
     '<ScenarioPicker',
     '<RunModePicker',
     'Run one IonQ job',
     '<summary>Demo options</summary>',
     '<QuantumTrackToggle',
     '<ControlBar',
+    '<section className="panel benchmark-card" aria-label="Benchmark">',
+    '<BenchmarkTable',
     '<StatusStrip',
     'className="panel job-section"',
     'className="panel sensor-section"',
@@ -78,12 +81,38 @@ test('two columns from 900 px give the map the wider column', () => {
   assert.match(wide.slice(0, wide.indexOf('\n}')), /\.layout:has\(> \.col-right\) \{ grid-template-columns: minmax\(0, 3fr\) minmax\(0, 2fr\);/);
 });
 
-test('the map neither draws nor lists the classical baseline track', () => {
-  assert.ok(!mapView.includes("'baseline_ls'"), 'MapView must not read the baseline estimate');
-  assert.ok(!mapView.includes('px.base'), 'MapView must not draw a baseline polyline or marker');
+test('the map draws and lists the classical baseline track again (follow view separates it)', () => {
+  assert.ok(mapView.includes("const BASELINE_KEY = 'baseline_ls';"), 'MapView must read the baseline estimate');
+  assert.ok(mapView.includes('sliceStr(px.base.str, jamIdx)'), 'baseline polyline missing');
+  assert.ok(mapView.includes('<Marker shape={B.marker} x={base[0]} y={base[1]}'), 'baseline marker missing');
   const legend = mapView.slice(mapView.indexOf('<ul className="map-legend">'), mapView.indexOf('</ul>'));
-  assert.ok(!/series=\{B\}|BASELINE|baseline/i.test(legend), 'legend still lists the baseline');
-  // the figcaption (the map's text description) says why, instead of describing an orange line
-  assert.ok(!mapView.includes('dashed orange'));
-  assert.ok(mapView.includes('The classical baseline is not drawn'));
+  assert.ok(legend.includes('<LegendSwatch series={B} shape={B.marker} dash="" width={6} />'), 'legend lacks the baseline');
+  assert.ok(legend.indexOf('series={B}') < legend.indexOf('series={quantum}'), 'baseline listed before the quantum track');
+  assert.ok(mapView.includes('baseline wide orange band (triangle)'));
+  assert.ok(!mapView.includes('The classical baseline is not drawn'));
+});
+
+test('the map view control sits in Demo options, defaults to following the UAV, outside the live-only block', () => {
+  assert.ok(mapView.includes("export const DEFAULT_MAP_MODE = 'follow';"));
+  assert.match(mapView, /\{ key: 'follow', label: 'Follow the UAV \(zoomed\)' \},\s*\{ key: 'full', label: 'Full trajectory' \}/);
+  const demo = app.slice(app.indexOf('<details className="demo-options">'), app.indexOf('</details>', app.indexOf('<details className="demo-options">')));
+  assert.ok(demo.includes('<legend>Map view</legend>'));
+  assert.ok(demo.includes('type="radio"'));
+  assert.ok(demo.indexOf('<legend>Map view</legend>') < demo.indexOf('{live && ('), 'map view must not depend on live mode');
+  assert.ok(app.includes('<MapView view={view} quantumKey={activeQuantum} mapMode={mapMode} />'));
+  assert.ok(app.includes('useState(DEFAULT_MAP_MODE)'));
+});
+
+test('one card holds Navigation accuracy and the Run controls; the benchmark is its own card', () => {
+  const start = app.indexOf('<section className="panel results" aria-labelledby="results-heading">');
+  const end = app.indexOf('</section>', start);
+  const card = app.slice(start, end);
+  for (const needle of ['<ErrorReadout', 'aria-label="Run controls"', '<ScenarioPicker', '<RunModePicker',
+    'Run one IonQ job', '<summary>Demo options</summary>', '<legend>Map view</legend>', '<QuantumTrackToggle', '<ControlBar']) {
+    assert.ok(card.includes(needle), `${needle} not in the Navigation accuracy card`);
+  }
+  const demo = card.slice(card.indexOf('<details className="demo-options">'), card.indexOf('</details>'));
+  assert.ok(demo.includes('<QuantumTrackToggle'), 'quantum-track toggle sits in Demo options');
+  const bench = app.slice(app.indexOf('className="panel benchmark-card"'));
+  assert.ok(bench.slice(0, bench.indexOf('</section>')).includes('<BenchmarkTable'));
 });
