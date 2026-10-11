@@ -12,13 +12,15 @@ and mean/Q1 = 0.974 (S = 64), 0.996 (256), 0.997 (1024), 1.006 (4096). No low-al
 """
 
 import hashlib
+import json
 import subprocess
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from magnav import ramsey, uav
+from magnav import ramsey, synthmap, uav
+from magnav.artifact import UAV_ARTIFACT_PATH, dumps_artifact
 from magnav.motor import rpm_at, tone_window_integral
 from magnav.seeds import stream
 from magnav.uav_pipeline import QSENSOR_MODEL, load_model, sense_all, shipped_motor
@@ -162,3 +164,63 @@ def test_motor_off_parity_100m(model, worlds_100m, S):
     print(f"\n[parity motor-off 100m] S={S}: LS/Q1 {ls:.3f}, mean/Q1 {mean:.3f}")
     assert abs(ls - 1.0) < 0.10
     assert abs(mean - 1.0) < 0.10
+
+
+# --- Plan 01.1-02 Task 4: scenario guarantees (after the as-found 100 m comparison) ---------------
+
+LABEL = "synthetic map (sensitivity study), not survey data"
+UI_SPEC = ".planning/phases/02-one-circuit-live-path-ui-and-hardware-capture/02-UI-SPEC.md"
+PHASE1_ARTIFACT_COMMIT = "01de412"
+
+
+@pytest.fixture(scope="module")
+def art():
+    return json.loads((ROOT / UAV_ARTIFACT_PATH).read_text(encoding="utf-8"))
+
+
+def test_synthetic_label_everywhere(art):
+    assert synthmap.SYNTH_LABEL == LABEL
+    prov = json.loads((ROOT / "data/provenance.json").read_text(encoding="utf-8"))
+    assert prov["files"]["data/map_synth_100m.npz"]["label"] == LABEL
+    syn = art["scenarios"][0]
+    assert syn["id"] == "synthetic_100m" and syn["synthetic"] is True
+    assert syn["map_label"] == LABEL
+    assert LABEL in syn["map_caption"]
+    assert LABEL in syn["map"]["label"]
+    spec = ROOT / UI_SPEC
+    if not spec.exists():
+        pytest.skip("planning docs absent (e.g. Qollab upload)")
+    assert LABEL in spec.read_text(encoding="utf-8")
+
+
+def test_eastern_identical_to_phase1(art):
+    if not (ROOT / ".git").exists():
+        pytest.skip("no git metadata (e.g. Qollab upload)")
+    old = json.loads(_git("show", f"{PHASE1_ARTIFACT_COMMIT}:data/precomputed_uav.json"))
+    east = {s["id"]: s for s in art["scenarios"]}["eastern_400m"]
+    assert dumps_artifact(east["line"]) == dumps_artifact(old["line"])
+    assert east["provenance"] == old["provenance"]
+    assert art["motor"] == old["motor"]
+    assert art["S"] == old["S"]
+    assert art["model_sha256"] == old["model_sha256"]
+
+
+def test_flight_100m_comparison_recorded(art):
+    sc = {s["id"]: s for s in art["scenarios"]}
+    syn, east = sc["synthetic_100m"]["line"], sc["eastern_400m"]["line"]
+    assert syn["map_file"] == "data/map_synth_100m.npz"
+    for name in ("baseline_ls", "baseline_mean", "quantum_q1", "quantum_ghz4"):
+        assert name in syn["metrics"], name
+        assert syn["metrics"][name]["windows"] == east["metrics"][name]["windows"], name
+    print("\n[comparison] " + art["comparison"]["statement"])
+    assert art["comparison"]["statement"].startswith("At 100 m on the synthetic map")
+
+
+def test_no_cessna():
+    data = ROOT / "data"
+    assert not list(data.glob("flt*.npz")) and not list(data.glob("*.h5"))
+    texts = [(ROOT / UAV_ARTIFACT_PATH), data / "provenance.json", *sorted((ROOT / "magnav").glob("*.py"))]
+    for path in texts:
+        low = path.read_text(encoding="utf-8").lower()
+        for bad in ("cessna", "flt100"):
+            assert bad not in low, f"{bad!r} in {path.relative_to(ROOT)}"
