@@ -13,7 +13,7 @@ filled once the GitHub repo, the Qollab URL and the video exist.
 | Project title | Quantum MagNav: a Ramsey quantum magnetometer that cancels motor noise before the data exists |
 | Theme | Quantum Impact |
 | Licence | MIT |
-| Repository | <GITHUB_URL> |
+| Repository | https://github.com/aaasocial/quantum-sensor-magnav |
 | Qollab project | <QOLLAB_URL> |
 | Demo video (2-3 min) | <VIDEO_URL> |
 | Builder | Eason (solo) |
@@ -107,7 +107,7 @@ computer could.
 
 ## Before submitting (checklist for plan 03-07 / 03-08)
 
-- [ ] Replace <GITHUB_URL>, <QOLLAB_URL> and <VIDEO_URL>.
+- [ ] Replace https://github.com/aaasocial/quantum-sensor-magnav, <QOLLAB_URL> and <VIDEO_URL>.
 - [x] Bring the four per-criterion paragraphs in line with the final README wording and numbers.
 - [ ] Eason approves the Qollab Publish action in-session (checkpoint:human-action).
 - [ ] Eason approves the hackathon form submission in-session (checkpoint:human-action).
