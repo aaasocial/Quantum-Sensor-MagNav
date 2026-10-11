@@ -76,7 +76,7 @@ function TraceChart({ rows, keys, height, ariaLabel, view, withTruth, xMin = 0 }
               label={endLabel('Truth', TRUTH.color, last, -8)}
             />
           )}
-          {keys.map((k, i) => seriesLine(k, SERIES[k], last, i === 0 ? 14 : -8))}
+          {keys.map((k, i) => seriesLine(k, SERIES[k], last, i === 0 ? 14 : -22))}
           <Playhead />
         </LineChart>
       </ResponsiveContainer>

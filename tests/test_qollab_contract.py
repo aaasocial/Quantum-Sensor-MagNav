@@ -138,9 +138,11 @@ def test_recharts_animation_and_debounce_stay_off():
 # page code schedules no timers. A change here means a dependency or first-party code started
 # scheduling on Qollab's injected timers: check that the new call site works with a
 # promise-returning setTimeout, then update.
-# Re-pinned in 02-03 Task 4 (sister pin was {setTimeout: 32, clearTimeout: 13, setInterval: 3};
-# recharts is not bundled yet, plan 02-07 adds it and re-pins).
-BUNDLE_TIMER_REFS = {"setTimeout": 17, "clearTimeout": 6, "setInterval": 2}
+# Re-pinned in 02-03 Task 4 to {17, 6, 2} without recharts, and in 02-07 Task 3 once the sensor
+# panel bundled recharts 3.10.1: +15 setTimeout / +7 clearTimeout, all inside recharts (the same
+# counts the sister bundle shipped with; its third setInterval was a first-party keep-alive).
+# Every recharts animation is off and no ResponsiveContainer debounce is set (test above).
+BUNDLE_TIMER_REFS = {"setTimeout": 32, "clearTimeout": 13, "setInterval": 2}
 
 
 def test_bundle_timer_call_sites_are_known():
@@ -213,7 +215,7 @@ def test_ui_copy_in_bundle(copy):
 
 def test_third_party_licenses_present():
     text = LICENSES.read_text(encoding="utf-8")
-    for name in ("react", "d3-scale-chromatic"):
+    for name in ("react", "d3-scale-chromatic", "recharts"):
         assert f"## {name} - " in text, name
 
 
