@@ -3,7 +3,10 @@
 // keep-alive. Per-frame state lives in the playback store, never in App state. The live run
 // (plan 02-06) flies the scenario selected when Run is pressed and renders its result through
 // the same uavView path as the replay; any failure shows that scenario's recorded replay from
-// memory (no Python call). The sensor panel and results (plan 02-07) plug into the slots below.
+// memory (no Python call). The sensor panel (right column from 900 px), the results section and
+// "What is quantum here" (plan 02-07) follow the selected scenario; the comparison block always
+// shows the recorded artifact. GHZ scaling comes from ghz_scaling_json: once at mount (model
+// contrast) and again with this Run's measured contrasts after a live result.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ControlBar, { DEFAULT_SPEED } from './components/ControlBar.jsx';
 import StatusStrip, {
@@ -14,6 +17,10 @@ import MapView from './components/MapView.jsx';
 import ScenarioPicker from './components/ScenarioPicker.jsx';
 import RunModePicker from './components/RunModePicker.jsx';
 import QuantumTrackToggle from './components/QuantumTrackToggle.jsx';
+import SensorPanel from './components/SensorPanel.jsx';
+import MetricsTable from './components/MetricsTable.jsx';
+import ComparisonBlock from './components/ComparisonBlock.jsx';
+import TextAlternatives from './components/TextAlternatives.jsx';
 import Announcer, { announce } from './components/Announcer.jsx';
 import { useArtifact } from './hooks/useArtifact.js';
 import { useLiveRun } from './hooks/useLiveRun.js';
@@ -45,6 +52,21 @@ const failureText = (failure, label) => (failure.timeout
   ? `Live run took longer than 90 s. Showing the recorded replay of ${label} with its stored motor. Press Stop, then Run on Qollab, to try again.`
   : `Live run failed: ${failure.name}: ${failure.message}. Showing the recorded replay of ${label} with its stored motor. Press Stop, then Run on Qollab, to try a new job.`);
 const PROGRESS_EVERY_MS = 10 * 1000; // announced replay progress: at most once per 10 s wall time
+// CLAUDE.md honesty constraint: printed verbatim in "What is quantum here".
+const DG_SENTENCE = 'The quantum sensor\'s filter function is a physical fact about how such sensors work; the field it '
+  + 'filters here is injected as gate angles rather than felt; the downstream benefit equals that of a classical notch '
+  + 'filter, achieved earlier and without consuming dynamic range.';
+
+// GHZ scaling payload from magnav.api; contrasts are this Run's (c1, c2, c4) or none (model).
+async function loadGhz(c) {
+  try {
+    const res = c ? await callPy('ghz_scaling_json', c.c1 ?? null, c.c2 ?? null, c.c4 ?? null) : await callPy('ghz_scaling_json');
+    if (res?.ok === true) return { status: 'ok', payload: res };
+    return { status: 'error', payload: null, error: `${res?.error_type ?? 'Error'}: ${res?.error ?? 'ghz_scaling_json'}` };
+  } catch (e) {
+    return { status: 'error', payload: null, error: e?.message ?? String(e) };
+  }
+}
 
 // One JSON call at mount for the static panels; a failure leaves that panel's empty state.
 async function loadJson(name, key) {
@@ -94,6 +116,7 @@ export default function App() {
   const [backendInfo, setBackendInfo] = useState(null);
   const [circuitInfo, setCircuitInfo] = useState(null);
   const [hardware, setHardware] = useState({ status: 'loading', record: null });
+  const [ghz, setGhz] = useState({ status: 'loading', payload: null });
 
   const activeSid = sid ?? artifact?.default_scenario ?? null;
   const activeQuantum = quantumKey
@@ -196,6 +219,10 @@ export default function App() {
       if (!cancelled && c.status === 'ok') setCircuitInfo(c.record);
       const h = await loadJson('hardware_json', 'hardware');
       if (!cancelled) setHardware(h);
+      const g = await loadGhz(null);
+      if (g.status !== 'ok') console.error('[ghz] scaling failed', g.error);
+      // A live result may already have replaced the model payload: never overwrite it.
+      if (!cancelled) setGhz((prev) => (prev.status === 'ok' ? prev : g));
     })();
     return () => { cancelled = true; };
   }, []);
@@ -349,6 +376,13 @@ export default function App() {
         playback.play();
       }
       announce(liveResultText(label));
+      // GHZ figure with this Run's measured contrasts; a failure keeps the previous payload.
+      const c = res.quantum?.c_hat;
+      if (c && [c.c1, c.c2, c.c4].some((x) => Number.isFinite(x))) {
+        const g = await loadGhz(c);
+        if (g.status === 'ok') setGhz(g);
+        else console.error('[ghz] measured scaling failed', g.error);
+      }
     } catch (e) {
       console.error('[live] failed', e);
       if (e?.quantum) setQuantum(e.quantum);
@@ -496,7 +530,45 @@ export default function App() {
             modelSha={liveResults[liveScenario]?.model_sha256 ?? artifact?.model_sha256 ?? null}
           />
         </div>
+
+        <div className="col-right">
+          <SensorPanel
+            view={view}
+            quantumKey={activeQuantum}
+            ghz={ghz.payload}
+            ghzStatus={ghz.status}
+            measuredSource={quantum?.c_n_source ?? null}
+          />
+        </div>
       </div>
+
+      <section className="panel results" aria-labelledby="results-heading">
+        <h2 id="results-heading">Navigation accuracy</h2>
+        <MetricsTable
+          view={view}
+          quantumKey={activeQuantum}
+          thresholds={artifact?.thresholds_m ?? null}
+          isLive={showingLive}
+        />
+        {artifact && <ComparisonBlock artifact={artifact} />}
+        <TextAlternatives view={view} ghz={ghz.payload} />
+      </section>
+
+      <section className="panel quantum-here" aria-labelledby="quantum-here-heading">
+        <h2 id="quantum-here-heading">What is quantum here</h2>
+        <ul>
+          <li>
+            One IonQ job per Run holds one circuit: single-qubit Ramsey probes, GHZ-2 and GHZ-4 blocks, and
+            random-number qubits.
+          </li>
+          <li>
+            Its random bits draw this Run&apos;s motor, and its measured GHZ contrast sets the entangled probe&apos;s
+            contrast in the emulator. On a simulator the bits are simulator-sampled; only a QPU run is physically random.
+          </li>
+          <li>The navigation flight itself is emulated in your browser, over the map you pick.</li>
+        </ul>
+        <p className="dg-sentence">{DG_SENTENCE}</p>
+      </section>
 
       <Announcer />
 

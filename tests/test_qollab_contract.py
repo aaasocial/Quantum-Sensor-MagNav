@@ -111,7 +111,7 @@ def _web_sources(*suffixes):
 def test_charts_disable_accessibility_layer():
     for path in _web_sources(".jsx"):
         text = path.read_text(encoding="utf-8")
-        charts = text.count("<LineChart")
+        charts = len(re.findall(r"<(LineChart|ComposedChart|ScatterChart|AreaChart|BarChart)\b", text))
         assert charts == text.count("accessibilityLayer={false}"), path.name
 
 
@@ -138,9 +138,11 @@ def test_recharts_animation_and_debounce_stay_off():
 # page code schedules no timers. A change here means a dependency or first-party code started
 # scheduling on Qollab's injected timers: check that the new call site works with a
 # promise-returning setTimeout, then update.
-# Re-pinned in 02-03 Task 4 (sister pin was {setTimeout: 32, clearTimeout: 13, setInterval: 3};
-# recharts is not bundled yet, plan 02-07 adds it and re-pins).
-BUNDLE_TIMER_REFS = {"setTimeout": 17, "clearTimeout": 6, "setInterval": 2}
+# Re-pinned in 02-03 Task 4 to {17, 6, 2} without recharts, and in 02-07 Task 3 once the sensor
+# panel bundled recharts 3.10.1: +15 setTimeout / +7 clearTimeout, all inside recharts (the same
+# counts the sister bundle shipped with; its third setInterval was a first-party keep-alive).
+# Every recharts animation is off and no ResponsiveContainer debounce is set (test above).
+BUNDLE_TIMER_REFS = {"setTimeout": 32, "clearTimeout": 13, "setInterval": 2}
 
 
 def test_bundle_timer_call_sites_are_known():
@@ -154,6 +156,14 @@ def test_no_unsafe_html_in_web_src():
         text = path.read_text(encoding="utf-8")
         for bad in ("dangerouslySetInnerHTML", "innerHTML", "eval("):
             assert bad not in text, f"{bad} in {path.relative_to(ROOT)}"
+
+
+# CLAUDE.md honesty constraint: the D-G framing sentence, verbatim, on the page.
+DG_SENTENCE = (
+    "The quantum sensor's filter function is a physical fact about how such sensors work; the field it "
+    "filters here is injected as gate angles rather than felt; the downstream benefit equals that of a "
+    "classical notch filter, achieved earlier and without consuming dynamic range."
+)
 
 
 @pytest.mark.parametrize(
@@ -185,6 +195,18 @@ def test_no_unsafe_html_in_web_src():
         "default model, not measured",
         "built-in simulator",
         "waiting for IonQ",
+        # Sensor panel, results and honesty section (02-07)
+        "Sensor",
+        "emulated sensor",
+        "Ramsey filter function",
+        "GHZ scaling",
+        "Navigation accuracy",
+        "Both scenarios, as found",
+        "Comparison rule",
+        "What is quantum here",
+        "Map track data",
+        "GHZ scaling data",
+        DG_SENTENCE,
     ],
 )
 def test_ui_copy_in_bundle(copy):
@@ -193,7 +215,7 @@ def test_ui_copy_in_bundle(copy):
 
 def test_third_party_licenses_present():
     text = LICENSES.read_text(encoding="utf-8")
-    for name in ("react", "d3-scale-chromatic"):
+    for name in ("react", "d3-scale-chromatic", "recharts"):
         assert f"## {name} - " in text, name
 
 
