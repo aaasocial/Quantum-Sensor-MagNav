@@ -5,6 +5,7 @@ import { memo, useId, useMemo } from 'react';
 import Badge from './Badge.jsx';
 import { comparisonView } from '../lib/artifactV2.js';
 import { SERIES } from '../theme.js';
+import TableScroll from './TableScroll.jsx';
 
 const cellText = (key, cell) => {
   if (cell.value === null || cell.value === undefined) return 'n/a';
@@ -31,7 +32,7 @@ function ComparisonBlock({ artifact }) {
           <div className="badge-row">
             <Badge>{`verdict: ${cv.verdict}`}</Badge>
           </div>
-          <div className="table-scroll">
+          <TableScroll label="Comparison table">
             <table className="data-table comparison-table">
               <caption>Navigation and signal results for both maps, as found</caption>
               <thead>
@@ -60,7 +61,7 @@ function ComparisonBlock({ artifact }) {
                 </tbody>
               ))}
             </table>
-          </div>
+          </TableScroll>
           <details className="comparison-rule">
             <summary>Comparison rule</summary>
             <p>{cv.rule}</p>

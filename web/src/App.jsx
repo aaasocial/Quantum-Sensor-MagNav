@@ -90,7 +90,8 @@ export const runDone = new Promise((resolve) => { resolveRunDone = resolve; });
 // Set by the live run (plan 02-06); the idle check never ends the run while it is true.
 export const liveRunFlag = { inFlight: false };
 
-const SKIP_TARGETS = 'input, select, textarea, button, summary, [contenteditable]';
+// A focused scrollable table region (TableScroll) keeps its native scroll keys too.
+const SKIP_TARGETS = 'input, select, textarea, button, summary, [contenteditable], .table-scroll';
 
 export default function App() {
   const { status, artifact, error } = useArtifact();

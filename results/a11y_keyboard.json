@@ -1,0 +1,111 @@
+{
+ "focus_order": [
+  {
+   "role": "group",
+   "name": "Mapsynthetic map (sensitivity study), not survey dataGPS jam"
+  },
+  {
+   "role": "radio",
+   "name": "UAV at 100 m over a synthetic crustal mapsynthetic map (sens",
+   "group": "Map scenario"
+  },
+  {
+   "role": "summary",
+   "name": "Scenario notes",
+   "group": "Map scenario"
+  },
+  {
+   "role": "radio",
+   "name": "UAV (live, IonQ-drawn motor)",
+   "group": "Run mode"
+  },
+  {
+   "role": "button",
+   "name": "Run one IonQ job"
+  },
+  {
+   "role": "summary",
+   "name": "Demo options"
+  },
+  {
+   "role": "radio",
+   "name": "GHZ-4 entangled",
+   "group": "Quantum track on map and charts"
+  },
+  {
+   "role": "button",
+   "name": "Play"
+  },
+  {
+   "role": "slider",
+   "name": "Flight time"
+  },
+  {
+   "role": "combobox",
+   "name": "Speed"
+  },
+  {
+   "role": "region",
+   "name": "Position error table"
+  },
+  {
+   "role": "region",
+   "name": "Comparison table"
+  },
+  {
+   "role": "summary",
+   "name": "Comparison rule"
+  },
+  {
+   "role": "region",
+   "name": "Benchmark summary table"
+  },
+  {
+   "role": "region",
+   "name": "Recorded IonQ seeds table"
+  },
+  {
+   "role": "summary",
+   "name": "Map track data, UAV at 100 m over a synthetic crustal map (e"
+  },
+  {
+   "role": "summary",
+   "name": "Sensor data, UAV at 100 m over a synthetic crustal map (ever"
+  },
+  {
+   "role": "summary",
+   "name": "GHZ scaling data"
+  },
+  {
+   "role": "summary",
+   "name": "This Run's IonQ job"
+  },
+  {
+   "role": "summary",
+   "name": "Sensor"
+  }
+ ],
+ "reached": {
+  "scenario_picker": true,
+  "run_button": true,
+  "play_pause": true,
+  "scrubber": true,
+  "job_summary": true,
+  "sensor_summary": true,
+  "real_flight_link": "not_on_page (UI-SPEC A-8 / SCN-03: README-only link)"
+ },
+ "summary_keyboard_toggle": {
+  "sensor_enter_opens": true,
+  "sensor_space_closes": true
+ },
+ "details_open_after_run": {
+  "job": true,
+  "charts": true
+ },
+ "readout_row_height": {
+  "idle": 72,
+  "running": 72,
+  "after_run": 72,
+  "jam_banner_after_run": true
+ }
+}

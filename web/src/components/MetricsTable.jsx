@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { fmtInt } from '../lib/format.js';
 import { SERIES, TABLE_ORDER } from '../theme.js';
+import TableScroll from './TableScroll.jsx';
 
 const num1 = (v) => (typeof v === 'number' && Number.isFinite(v)
   ? v.toLocaleString('en-US', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
@@ -18,7 +19,7 @@ function MetricsTable({ view, quantumKey, thresholds, isLive }) {
   const pctKey = thr === null ? null : `pct_under_${thr}`;
   const source = isLive ? 'this Run' : 'recorded flight';
   return (
-    <div className="table-scroll">
+    <TableScroll label="Position error table">
       <table className="data-table">
         <caption>{`Position error after GPS loss (from t = ${fmtInt(view.metricStartT)} s): ${view.label}, ${source}`}</caption>
         <thead>
@@ -50,7 +51,7 @@ function MetricsTable({ view, quantumKey, thresholds, isLive }) {
           })}
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   );
 }
 

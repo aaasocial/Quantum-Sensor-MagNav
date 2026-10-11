@@ -3,6 +3,7 @@
 // recorded IonQ seeds are a separate table because they are not part of the mean (D-06).
 import { memo, useId, useMemo } from 'react';
 import { benchmarkView } from '../lib/benchmark.js';
+import TableScroll from './TableScroll.jsx';
 
 function BenchmarkTable({ benchmark }) {
   const headingId = useId();
@@ -22,7 +23,7 @@ function BenchmarkTable({ benchmark }) {
   return (
     <section className="benchmark" aria-labelledby={headingId}>
       <h3 id={headingId}>{bv.heading}</h3>
-      <div className="table-scroll">
+      <TableScroll label="Benchmark summary table">
         <table className="data-table benchmark-table">
           <caption>{bv.caption}</caption>
           <thead>
@@ -44,9 +45,9 @@ function BenchmarkTable({ benchmark }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
       {bv.recorded.length > 0 && (
-        <div className="table-scroll">
+        <TableScroll label="Recorded IonQ seeds table">
           <table className="data-table benchmark-recorded">
             <caption>Recorded IonQ seeds (not in the mean)</caption>
             <thead>
@@ -72,7 +73,7 @@ function BenchmarkTable({ benchmark }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </section>
   );
