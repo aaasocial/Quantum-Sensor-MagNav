@@ -2,9 +2,9 @@
 
 Status: DRAFT. Nothing in this file has been published or submitted. Publishing the Qollab
 project and submitting the hackathon form are separate steps that need Eason's explicit
-approval in the session where they happen (CLAUDE.md, submission approval gate). Before
-either step, plan 03-07 replaces the placeholders and brings the per-criterion paragraphs in
-line with the final README wording.
+approval in the session where they happen (CLAUDE.md, submission approval gate). The
+per-criterion paragraphs are synced with the final README (plan 03-07); the placeholders are
+filled once the GitHub repo, the Qollab URL and the video exist.
 
 ## Fields
 
@@ -36,52 +36,61 @@ GHZ-4 fine stage lowers projection noise below what the same number of unentangl
 reaches, using contrasts measured on the IonQ Forte 1 QPU. The write-up states exactly what
 the quantum hardware did and did not do.
 
-## Per-criterion paragraphs (draft; 03-07 syncs these with the final README)
+## Per-criterion paragraphs (synced with the final README, plan 03-07)
 
 **Novelty.** Most quantum-sensing demos stop at the sensor. This one puts an emulated Ramsey
 magnetometer inside a working GPS-denied navigation pipeline and follows its physics through
-to position error. The quantum subroutine is the sensor's filter function: choosing
-tau = 60/RPM nulls every motor harmonic by timing, so the interference never builds up as
-phase. The sensor has two stages. A single-qubit coarse stage keeps the phase in range, and a
-GHZ-4 fine stage cuts projection noise toward the Heisenberg limit. The motor for each Run
-comes from random bits measured in the same single IonQ circuit, so the sensor has to deal
-with interference it was not tuned on.
+to position error. The quantum subroutine is the sensor itself: interrogation timing cancels
+interference inside the measurement. Choosing tau = 60/RPM puts every motor harmonic on a null
+of the sensor's filter function, so the interference never builds up as phase. The sensor has
+two stages. A single-qubit coarse stage keeps the phase in range, and a GHZ-4 fine stage lowers
+projection noise per shot by up to n at equal shot budget, until gate error and dephasing erode
+it. On every Run, quantum random bits measured in the same single IonQ circuit pick a motor the
+sensor has never seen. The limits are listed in the README section "Where it ties or loses".
 
-**Technical execution.** Each Run sends exactly one circuit of 16 qubits or fewer to IonQ. It
-is transpiled at `optimization_level=0` so the segmented RZ integral survives in the submitted
-job, uses QIS gates only, and is decoded from `get_counts()`. The live path ran on the IonQ
-Forte 1 simulator, and a precomputed replay with identical visuals serves as the fallback. One
-500-shot job ran on the Forte 1 QPU (`01a12aee-d8a8-7e14-b9aa-b11329aca850`), and its bits
-seed the replay. The equal-budget definition (same S readouts per sample, the baseline's
-single-readout noise matched to one Ramsey shot, the same RPM channel) and the tone amplitude
-(calibrated on the baseline alone at S_ref = 256) were frozen before any result. One command,
-`python -m magnav.regen`, regenerates every number and figure byte-identically. The analytic
-emulator is checked against qiskit `Statevector` to 1e-12, and the test suite has about 300
-pytest tests.
+**Technical execution.** One frozen 16-qubit circuit per Run, using only `h`, `rz`, `cx` and
+`measure`, transpiled at `optimization_level=0` so the segmented RZ integral survives in the
+submitted job, and decoded from `get_counts()`. It holds three Ramsey fringe probes, a
+calibration probe, a GHZ-2 and a GHZ-4 block whose contrast feeds the emulator, and six
+random-number qubits whose histogram seeds the Run's motor. The live path ran on the IonQ
+Forte 1 remote simulator, and a precomputed replay with identical visuals serves as the
+fallback. One QPU job ran on IonQ Forte 1 (`01a12aee-d8a8-7e14-b9aa-b11329aca850`, 500 shots
+requested, 504 counted), and its bits seed the replay. The closed-form Ramsey emulator is
+cross-checked against Qiskit's `Statevector`. The equal-budget baseline (same S readouts per
+sample, the baseline's single-readout noise matched to one Ramsey shot, the same RPM channel)
+and the tone amplitude (A1 = 3600 nT, calibrated on the baseline alone at S_ref = 256) were
+frozen before any comparison. One deterministic command, `python -m magnav.regen`, regenerates
+every number and figure, and two full runs give byte-identical outputs. The project has about
+300 automated tests. Negative results are reported alongside the positive ones.
 
-**Impact.** GPS jamming is a real operational problem, and magnetic-anomaly navigation is one
-of the few passive fallbacks. On the real Eastern_395 map at 400 m, with the QPU-measured
-motor, the quantum sensor holds a CEP50 of 154.7 m. The notch baseline holds 182.2 m and loses
-10 of 62 map matches, where the quantum sensor loses none. At the live budget (S = 256,
-8 seeded motors on the synthetic 100 m map) the signal error is 0.195 nT against 42.7 nT, and
-CEP50 is 150.2 m against 154.8 +/- 5.1 m. The results also mark where the advantage ends. The
-position gain appears only at S of 256 or below. At S = 1024 and 4096 every estimator sits on
-the same 150.2 m floor and the baseline's signal error is lower than GHZ-4's. With the RPM
-withheld, the quantum sensor fails outright while the baseline barely changes. The practical
-lesson is that timing-based cancellation saves dynamic range and post-processing when the
-interference frequency is known, and needs that channel to work.
+**Impact.** Small drones lose GPS to jamming, and their own motors are the main obstacle to
+magnetic navigation. The demo shows the measurement-side fix and how much of it survives. At
+S = 256 shots per sample on the synthetic 100 m map (sensitivity study, not survey data; mean
+over 8 seeded motors), the signal error is 0.195 nT for GHZ-4 and 0.339 nT for the single
+qubit, against 42.7 nT for the baseline, and CEP50 is 150.2 m against 154.8 +/- 5.1 m. With the
+motor drawn on IonQ hardware over the real Eastern_395 map at 400 m, GHZ-4 holds 154.7 m CEP50
+against 182.2 m for the baseline, and the baseline loses 10 of 62 map matches where GHZ-4 loses
+none. The results also mark where the advantage ends. At S = 1024 and 4096 every estimator sits
+on the same 150.2 m floor, and at S = 4096 the baseline's signal error (0.085 nT) beats GHZ-4
+(0.172 nT). GHZ-4 adds nothing at S = 64. At 100 m on the replay the baseline is 0.9 m better
+(149.3 m against 150.2 m). With the RPM withheld, the quantum sensor fails outright (CEP50
+7676 m) while the baseline barely changes (155.3 m). The practical lesson is that timing-based
+cancellation saves dynamic range and post-processing when the interference frequency is known,
+and needs that channel to work. No quantum advantage is claimed: a classical notch applied after
+the fact reaches the same downstream benefit.
 
 **Documentation.** The README gives a short demo-first path ("Run Project, then Run" on
-Qollab), a what-is-quantum table and the honest framing sentence. The long-form docs follow
-every number back to the regenerated `results/metrics.json`:
+Qollab), the results tables, a "Where it ties or loses" section, a what-is-quantum table and the
+honest framing sentence. Every claim is tied to a regenerated file (`results/metrics.json`):
 
 - `docs/PHYSICS.md`: filter-function derivation, frozen circuit drawing, equal-budget
   definition, and the GHZ two-stage sensor with the Huelga 1997 / Monz 2011 qualifier.
 - `docs/BENCHMARK.md`: every table, including the negative results.
 - `docs/QOLLAB_FINDINGS.md`: the in-browser verification and the hardware record.
+- `docs/A11Y.md`: the accessibility audit.
 
 The page is keyboard-operable, announces status through aria-live, uses a colour-blind-safe
-palette and respects reduced motion.
+palette and respects reduced motion. An axe audit of six page states reports zero violations.
 
 ## Honesty note
 
@@ -99,6 +108,6 @@ computer could.
 ## Before submitting (checklist for plan 03-07 / 03-08)
 
 - [ ] Replace <GITHUB_URL>, <QOLLAB_URL> and <VIDEO_URL>.
-- [ ] Bring the four per-criterion paragraphs in line with the final README wording and numbers.
+- [x] Bring the four per-criterion paragraphs in line with the final README wording and numbers.
 - [ ] Eason approves the Qollab Publish action in-session (checkpoint:human-action).
 - [ ] Eason approves the hackathon form submission in-session (checkpoint:human-action).
