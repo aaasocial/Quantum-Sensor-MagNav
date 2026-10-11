@@ -1,0 +1,7 @@
+sensor,estimator,rpm,cep50_mean_m,cep50_std_m,cep95_mean_m,pct556_mean,signal_rmse_mean_nT,slips_mean,ls_drops_mean,fails
+baseline,baseline_ls,rpm_known,154.772,5.07401,266.547,100,42.7358,,45,false
+baseline,baseline_ls,rpm_withheld,155.271,5.06506,266.139,100,46.545,,0,false
+quantum,quantum_ghz4,rpm_known,150.196,0,251.385,100,0.195317,0,,false
+quantum,quantum_ghz4,rpm_withheld,7676.16,1746.62,14172.5,7.24593,1.00741e+07,1800,,true
+quantum_single,quantum_q1,rpm_known,150.196,0,251.385,100,0.33935,0,,false
+quantum_single,quantum_q1,rpm_withheld,7676.16,1746.62,14172.5,7.24593,1.00741e+07,1800,,true

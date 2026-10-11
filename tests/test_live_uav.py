@@ -71,15 +71,20 @@ def flights():
 
 
 @pytest.mark.parametrize("sid", SCENARIO_ORDER)
-def test_live_equals_replay(flights, sid):
-    art = artifact.load_uav_artifact()
-    i = list(SCENARIO_ORDER).index(sid)
+def test_live_equals_replay(flights, sid, shipped_runs):
+    """Live without a job == the offline pipeline with the same shipped motor. The committed replay
+    carries the QPU-measured motor since plan 03-01 (D-08), so the reference is a fresh build."""
+    from magnav.data import load_provenance
+    from magnav.uav_pipeline import SCENARIOS, load_model
+
+    sc = SCENARIOS[sid]
+    ref = artifact.scenario_entry(shipped_runs[sid], sc, load_provenance()["files"][sc["map_file"]])
     res = flights[sid]["result"]
     assert res["kind"] == "uav_live"
     assert res["quantum_job"] is None
-    assert artifact.dumps_artifact(res["scenario"]) == artifact.dumps_artifact(art["scenarios"][i])
+    assert artifact.dumps_artifact(res["scenario"]) == artifact.dumps_artifact(ref)
     assert artifact.validate_live_payload(res) == []
-    assert res["motor"]["seed_str"] == art["motor"]["seed_str"]
+    assert res["motor"]["seed_str"] == str(load_model()["seeds"]["shipped_motor_seed"])
 
 
 @pytest.mark.parametrize("sid", SCENARIO_ORDER)

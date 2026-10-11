@@ -85,8 +85,9 @@ test('comparisonView pivots comparison.rows: 5 groups, 2 columns, values from da
   const rowVal = (sid) => art.comparison.rows.find((r) => r.scenario === sid && r.estimator === 'baseline_ls').cep50_m;
   assert.equal(cep.cells[0].value, rowVal('synthetic_100m'));
   assert.equal(cep.cells[1].value, rowVal('eastern_400m'));
-  assert.equal(cep.cells[0].value, 150.2);
-  assert.equal(cep.cells[1].value, 162.6);
+  // replay seeded from the QPU-measured job since plan 03-01 (D-08)
+  assert.equal(cep.cells[0].value, 149.3);
+  assert.equal(cep.cells[1].value, 182.2);
   assert.ok(cv.groups[1].rows.some((r) => r.label === `Under ${art.thresholds_m[0]} m (%)`));
   assert.equal(cv.statement, art.comparison.statement);
   assert.equal(cv.verdict, art.comparison.verdict);
