@@ -31,6 +31,8 @@ SERVO_CYCLE_S = 0.02
 LINEAR_RANGE_RAD = np.pi / 4
 SLIP_RAD = np.pi / 2
 M_DEFAULT = 1
+Z_STAR = 4.5  # fine-stage margin threshold in coarse sigmas (two-sided tail 6.8e-6)
+GHZ_N_SET = (1, 2, 4)
 
 
 def window_phase(dB_nT, tone_int_nTs, tau_s):
@@ -141,6 +143,73 @@ def coarse_track(t, B_k, B_at, tau, m, shots, c1, rng_servo, rng_q1, tone_int=No
         "slips": int(np.count_nonzero(np.abs(phi) > SLIP_RAD)),
         "n_fringe": int(np.count_nonzero(r["fringe"])),
     }
+
+
+def fine_allowed(shots, n, c1, z_star=Z_STAR):
+    """Static switch term: GHZ-n range / coarse sigma = pi c1 sqrt(S) / (2 n) >= z_star."""
+    return bool(np.pi * c1 * np.sqrt(shots) / (2 * n) >= z_star)
+
+
+def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, n_fine=4, tone_int=None,
+              tone_int_fine=None, tone_mean_at=None, h=SERVO_CYCLE_S) -> dict:  # fmt: skip
+    """Servo + single-qubit coarse stage, then a GHZ-n fine window referenced to the coarse estimate.
+
+    `rngs` holds generators "servo", "q1" and "ghz" (callers: seeds.stream(root, "servo", S),
+    stream(root, "q1", S), stream(root, "ghz", n, S)). The fine window starts at t + tau and
+    sees `tone_int_fine`; its phase is window_phase(B_k - bhat_q1, ...), and the GHZ
+    accumulation of n * phi happens inside p1(phi, n, c_n) with c_n = c1 ** n.
+
+    Switch rule (frozen): the fine estimate is used iff fine_allowed(S, n, c1) and the coarse
+    sample is not fringe-risk; otherwise the GHZ track takes the coarse estimate (fallback).
+
+    Shot accounting (disclosed): the GHZ navigation track spends S coarse + S fine shots; the
+    SQL/HL scaling figure compares the fine stage alone at equal qubit-shots (`scaling_trial`).
+    With n_fine == 1 the fine stage is a second single-qubit window (scaling checks only).
+    """
+    out = coarse_track(t, B_k, B_at, tau, m, shots, c1, rngs["servo"], rngs["q1"],
+                       tone_int=tone_int, tone_mean_at=tone_mean_at, h=h)  # fmt: skip
+    tau = out["tau_s"]
+    bhat_q1 = out["bhat_nT"]
+    n = int(n_fine)
+    c_n = contrast(n, c1)
+    ti_f = 0.0 if tone_int_fine is None else np.asarray(tone_int_fine, dtype=np.float64)
+    phi_f = window_phase(np.asarray(B_k, dtype=np.float64) - bhat_q1, ti_f, tau)
+    rf = readout(phi_f, shots, rngs["ghz"], n=n, c=c_n)
+    bhat_fine = estimate_from_counts(rf["n1"], shots, tau, bhat_q1, n=n, c=c_n)
+    fine_used = fine_allowed(shots, n, c1) & ~out["fringe"]
+    out.update(
+        {
+            "bhat_q1_nT": bhat_q1,
+            "bhat_ghz_nT": np.where(fine_used, bhat_fine, bhat_q1),
+            "phi_fine": phi_f,
+            "n1_fine": rf["n1"],
+            "fine_used": fine_used,
+            "fallback": ~fine_used,
+            "n_fallback": int(np.count_nonzero(~fine_used)),
+            "fine_slips": int(np.count_nonzero(fine_used & (np.abs(n * phi_f) > SLIP_RAD))),
+            "n_fine": n,
+            "c_n": float(c_n),
+        }
+    )
+    return out
+
+
+def scaling_trial(n, shots, c1, trials, rng, entangled, phi_halfwidth=0.05) -> float:
+    """Phase RMSE (rad) of one fine-stage measurement at equal qubit-shots.
+
+    entangled: one GHZ-n readout of S shots with contrast c1 ** n.
+    unentangled: mean of n independent single-qubit readouts of S shots each, contrast c1.
+    Residual phase ~ U(-phi_halfwidth, phi_halfwidth).
+    """
+    phi = rng.uniform(-phi_halfwidth, phi_halfwidth, int(trials))
+    if entangled:
+        c = contrast(n, c1)
+        n1 = rng.binomial(int(shots), np.clip(p1(phi, n, c), 0.0, 1.0))
+        est = phi_hat(n1, shots, n, c)
+    else:
+        n1 = rng.binomial(int(shots), np.clip(p1(phi, 1, c1), 0.0, 1.0)[:, None], size=(phi.size, int(n)))
+        est = phi_hat(n1, shots, 1, c1).mean(axis=1)
+    return float(np.sqrt(np.mean((est - phi) ** 2)))
 
 
 def filter_function(f_hz, tau_s):
