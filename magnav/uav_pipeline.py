@@ -24,6 +24,7 @@ import numpy as np
 
 from magnav import baseline, motor, ramsey, seeds, uav
 from magnav.data import MAP_EASTERN, load_map
+from magnav.motor import motor_to_dict, rev_at, rpm_at, tone_field, tone_window_integral
 from magnav.seeds import ROOT_SEED, int_seed, stream
 
 QSENSOR_MODEL = "data/qsensor_model.json"
@@ -246,6 +247,97 @@ def build_model(tile, root_seed=ROOT_SEED) -> dict:
             "replaced by measured contrast in Phase 2; UAV INS 1.5 m/s bias / 0.1 rw; RPM channel "
             "exact; crust frozen within a navigation sample"),
         ],
+    }
+
+
+ESTIMATORS = ("baseline_ls", "baseline_mean", "quantum_q1", "quantum_ghz4")
+
+
+def shipped_motor(model, root_seed=None):
+    """The offline motor: seed from the model's root, frozen A1, full-flight duration (S-independent)."""
+    root = model["seeds"]["root"] if root_seed is None else int(root_seed)
+    duration = float(model["flight"]["n"]) / float(model["fs_hz"])
+    return motor.draw_motor(int_seed(root, "motor"), duration, float(model["tone_amplitude_rule"]["A1_nT"]))
+
+
+def sense_all(world, model, shots, motor=None, root_seed=None) -> dict:
+    """Run the four estimators on one world with the frozen rules read from `model`.
+
+    motor None: motor off (tau = tau0, no tones, no RPM channel, LS reduces to the block mean).
+    Otherwise both sensors share the exact RPM channel of `motor` (a MotorParams).
+    Quantum: servo + single-qubit coarse + GHZ-n fine (n = max of the frozen n_set).
+    Baseline: S readouts per sample with sigma1_k matched to the quantum tau_k; guarded LS notch
+    and block mean. Returns {"bhat", "prov", "motor", "S"}.
+    """
+    p = motor
+    S = int(shots)
+    root = model["seeds"]["root"] if root_seed is None else int(root_seed)
+    c1 = float(model["noise"]["c1"])
+    tau0 = float(model["tau0_s"])
+    h = float(model["servo"]["cycle_s"])
+    m_rule = int(model["tau_rule"]["m"])
+    n_fine = int(max(model["ghz"]["n_set"]))
+    z_star = float(model["ghz"]["switch_rule"]["z_star"])
+    guard = float(model["baseline"]["guard_alias_hz"])
+    K = int(model["motor_prior"]["K"])
+    fs_nav = float(model["fs_hz"])
+    if z_star != ramsey.Z_STAR:
+        raise ValueError("model z_star differs from ramsey.Z_STAR (two_stage uses the code constant)")
+    t = world.t
+    B = world.b_true
+    n = len(t)
+    if p is None:
+        rpm = np.zeros(n)
+        tau = np.full(n, tau0)
+        m = np.zeros(n, dtype=int)
+        tone_int = tone_int_fine = tone_mean_at = None
+    else:
+        rpm = rpm_at(p, t)
+        tau, m = ramsey.choose_tau(rpm, m_rule, tau0)
+        tone_int = tone_window_integral(p, t, tau)
+        tone_int_fine = tone_window_integral(p, t + tau, tau)
+
+        def tone_mean_at(tq):
+            tt = ramsey.choose_tau(rpm_at(p, tq), m_rule, tau0)[0]
+            return tone_window_integral(p, tq, tt) / tt
+
+    rngs = {"servo": stream(root, "servo", S), "q1": stream(root, "q1", S),
+            "ghz": stream(root, "ghz", n_fine, S)}  # fmt: skip
+    q = ramsey.two_stage(t, B, lambda tq: uav.field_at(world, tq), tau, m, S, c1, rngs,
+                         n_fine=n_fine, tone_int=tone_int, tone_int_fine=tone_int_fine,
+                         tone_mean_at=tone_mean_at, h=h)  # fmt: skip
+    sigma1_k = ramsey.sigma1(tau, c1)
+    tone_at = None if p is None else (lambda tq: tone_field(p, tq))
+    t_read, y = baseline.sample_readouts(B, t, S, sigma1_k, stream(root, "baseline", S), tone_at=tone_at)
+    if p is None:
+        b_ls, drops = baseline.ls_notch(t_read, y, None, None, 2.0 * S, K=0)
+    else:
+        b_ls, drops = baseline.ls_notch(t_read, y, rev_at(p, t_read), rpm / 60.0, 2.0 * S, K,
+                                        fs_nav=fs_nav, guard_hz=guard)  # fmt: skip
+    b_mean = baseline.block_mean(y)
+    return {
+        "bhat": {
+            "baseline_ls": b_ls,
+            "baseline_mean": b_mean,
+            "quantum_q1": q["bhat_q1_nT"],
+            "quantum_ghz4": q["bhat_ghz_nT"],
+        },
+        "prov": {
+            "tau_s": np.asarray(q["tau_s"]),
+            "m": np.asarray(q["m"]),
+            "b_ref_nT": q["b_ref_nT"],
+            "fringe": q["fringe"],
+            "ghz_fallback": q["fallback"],
+            "rpm": rpm,
+            "ls_drops": int(drops),
+            "max_abs_phi": q["max_abs_phi"],
+            "slips": q["slips"],
+            "fine_slips": q["fine_slips"],
+            "n_fallback": q["n_fallback"],
+            "n_fringe": q["n_fringe"],
+        },
+        "motor": None if p is None else motor_to_dict(p),
+        "S": S,
     }
 
 
