@@ -2,7 +2,7 @@
 
 Quantum MagNav keeps a UAV located after GPS is jammed by matching the magnetic field it measures against an anomaly map. "UAV" covers both fixed-wing aircraft and multirotor drones; the headline scenario is a drone at 100 m altitude, the second a UAV at 400 m over a real survey map of eastern Ontario. The motor drowns the field in tones, so the magnetometer is modelled as a quantum sensor (Ramsey interferometry, run as one circuit on IonQ through Qollab) that sets its measurement window from the motor RPM and cancels the tones before any data exists. We found that the quantum sensor, with its passive noise filtering, beats an ordinary magnetometer plus classical notch filter at the same number of measurements per sample: at 256 shots its signal error is about 200 times smaller (0.195 nT vs 42.7 nT RMSE) and its position error is lower (CEP50 150.2 m vs 154.8 m; 150.2 m vs 210.9 m at 64 shots). At high shot budgets the two tie ([Where it ties or loses](#where-it-ties-or-loses)). Built for the Qollab x IonQ Hackathon (theme: Quantum Impact).
 
-![The Quantum MagNav page: a large anomaly map zoomed in to follow the UAV, showing the true path, the baseline magnetometer track and the quantum-sensor track after the GPS jam; beside it one card with the position-error box and the Run controls, and below it the benchmark card](docs/hero.png)
+![The Quantum MagNav page: a large anomaly map zoomed in to follow the UAV, showing the true path, the baseline magnetometer track and the quantum-sensor track after the GPS jam; beside it one card with the position-error box and the Run controls, and below it the benchmark card](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/docs/hero.png)
 
 ## In plain terms
 
@@ -44,21 +44,21 @@ The shots ladder shows where the gain comes from:
 | 1024 | 150.2 m | 150.2 m | 0.164 nT | 0.176 nT |
 | 4096 | 150.2 m | 150.2 m | 0.085 nT | 0.172 nT |
 
-![Signal error and position error against shots per sample for the baseline, single-qubit and GHZ-4 sensors](results/fig_ladder.png)
+![Signal error and position error against shots per sample for the baseline, single-qubit and GHZ-4 sensors](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/results/fig_ladder.png)
 
 On the page after a live Run, the Sensor section shows the same contrast directly:
 
-![Sensed field against the crustal truth on a live Run: the baseline magnetometer plus notch at 62.2 nT RMSE against the GHZ-4 sensor at 0.2 nT](docs/page_sensed_field.png)
+![Sensed field against the crustal truth on a live Run: the baseline magnetometer plus notch at 62.2 nT RMSE against the GHZ-4 sensor at 0.2 nT](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/docs/page_sensed_field.png)
 
-![Residual of sensed minus true field from the first map-matching window: the baseline shows bursts of hundreds of nT around the motor sweeps, the GHZ-4 sensor stays flat](docs/page_residual.png)
+![Residual of sensed minus true field from the first map-matching window: the baseline shows bursts of hundreds of nT around the motor sweeps, the GHZ-4 sensor stays flat](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/docs/page_residual.png)
 
 At low S the baseline samples too slowly: many motor harmonics alias next to DC, its notch must drop them (463 harmonic fits dropped per flight on average at S = 64), and the leftover tones degrade map matching. The Ramsey sensor nulls every harmonic inside its own window regardless of S.
 
 Entangled probes add a second, genuinely quantum effect: entangled probes lower projection noise per shot by up to n at equal shot budget, until gate error and dephasing erode it. At S = 256 the GHZ-4 projection noise is 0.078 nT at the model contrast and 0.071 nT at the contrast measured on IonQ Forte 1 hardware, against 0.145 nT at the standard quantum limit for 4 unentangled qubits ([docs/PHYSICS.md](docs/PHYSICS.md#6-ghz-entangled-probes-the-two-stage-sensor)).
 
-![Projection noise against probe size n: standard quantum limit, Heisenberg limit, emulated unentangled qubits, GHZ at the model contrast and GHZ at the QPU-measured contrast](results/fig_ghz_scaling.png)
+![Projection noise against probe size n: standard quantum limit, Heisenberg limit, emulated unentangled qubits, GHZ at the model contrast and GHZ at the QPU-measured contrast](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/results/fig_ghz_scaling.png)
 
-![The same scaling as drawn on the page after a live Run: signal RMSE against probe size n for the unentangled, ideal-GHZ and measured-contrast GHZ probes, with the SQL and HL lines](docs/page_ghz_scaling.png)
+![The same scaling as drawn on the page after a live Run: signal RMSE against probe size n for the unentangled, ideal-GHZ and measured-contrast GHZ probes, with the SQL and HL lines](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/docs/page_ghz_scaling.png)
 
 ### Recorded flights after GPS loss
 
@@ -122,8 +122,8 @@ Comparison rule: advantage = baseline_ls - quantum_ghz4 (CEP50 m, TERCOM matches
 - **High shot budgets tie; the baseline wins on signal error.** At S = 1024 and 4096 every estimator sits on the same 150.2 m CEP50 floor set by map matching. At S = 4096 the baseline's signal RMSE (0.085 nT) beats GHZ-4 (0.172 nT) and the single qubit (0.104 nT). GHZ-4 levels off near 0.17 nT from 1024 shots on (likely residual tone leak; mechanism not isolated).
 - **GHZ-4 adds nothing at S = 64.** The frozen switch rule keeps the fine stage off there.
 - **Without the RPM the quantum sensor fails.** If the RPM channel is withheld, the tone phase exceeds the sensor's ±π/2 range, the probe slips 1800 cycles per flight and CEP50 becomes 7676 m. The baseline falls back to a block mean and barely changes (155.3 m vs 154.8 m).
-- **Between harmonics the classical filter rejects more.** Both reach the -120 dB floor on every harmonic, but the short Ramsey window has higher sidelobes than the baseline's 0.5 s block ([filter-function figure](results/fig_filter_function.png)).
-- **How the motor was made loud.** The tone amplitude (A1 = 3600 nT) was calibrated on the baseline alone at S_ref = 256, before any quantum estimator ran. The alternative S_ref = 64 gives A1 = 350 nT, at which the S = 256 comparison would be close to a tie ([amplitude sweep](results/fig_amp_sweep.png)).
+- **Between harmonics the classical filter rejects more.** Both reach the -120 dB floor on every harmonic, but the short Ramsey window has higher sidelobes than the baseline's 0.5 s block ([filter-function figure](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/results/fig_filter_function.png)).
+- **How the motor was made loud.** The tone amplitude (A1 = 3600 nT) was calibrated on the baseline alone at S_ref = 256, before any quantum estimator ran. The alternative S_ref = 64 gives A1 = 350 nT, at which the S = 256 comparison would be close to a tie ([amplitude sweep](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/results/fig_amp_sweep.png)).
 - **No entanglement penalty was observed.** The IonQ Forte 1 remote simulator returned GHZ-2 and GHZ-4 contrast 1.000 on every Run; the loss in the figure comes from the model default (0.98^n). The QPU job (500 shots requested, 504 counted) measured c2 = 0.996 and c4 = 1.000, so almost no loss either.
 - **The navigation gain shrinks at 100 m.** On the recorded flights the baseline reaches 149.3 m CEP50 at 100 m and 182.2 m at 400 m over the real Eastern_395 map, against 150.2 m and 154.7 m for GHZ-4 ([Both scenarios, as found](#both-scenarios-as-found)).
 
@@ -131,9 +131,9 @@ Comparison rule: advantage = baseline_ls - quantum_ghz4 (CEP50 m, TERCOM matches
 
 A Ramsey magnetometer integrates the field over its interrogation time τ. A tone at frequency f contributes exactly zero when fτ is an integer, so the sensor is a low-pass filter with nulls at k/τ (its filter function). A motor at R rpm has harmonics at kR/60 Hz, so τ = 60/R puts every harmonic on a null at once, while the slow crustal field (below about 1 Hz) passes ([docs/PHYSICS.md](docs/PHYSICS.md#2-the-window-phase-integral-and-the-filter-function)).
 
-![Filter function of the Ramsey window with the motor harmonics on its nulls, and the baseline notch response](results/fig_filter_function.png)
+![Filter function of the Ramsey window with the motor harmonics on its nulls, and the baseline notch response](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/results/fig_filter_function.png)
 
-![The page's Ramsey filter function at the end of a live Run: tau = 8.50 ms set from 7061 RPM puts the nulls on the motor harmonics at 117.7, 235.4, 353.1 and 470.7 Hz](docs/page_filter_function.png)
+![The page's Ramsey filter function at the end of a live Run: tau = 8.50 ms set from 7061 RPM puts the nulls on the motor harmonics at 117.7, 235.4, 353.1 and 470.7 Hz](https://raw.githubusercontent.com/aaasocial/Quantum-Sensor-MagNav/main/docs/page_filter_function.png)
 
 Each Run packs everything into one 16-qubit circuit using only `h`, `rz`, `cx` and `measure`, transpiled at optimization level 0: three Ramsey fringe probes, a calibration probe, a GHZ-2 and a GHZ-4 block whose contrast feeds the emulator, and six random-number qubits whose histogram seeds this Run's motor. Layout and hash: [results/circuit.txt](results/circuit.txt). The thousands of navigation windows are emulated in-page with the closed-form phase integral and binomial shot noise; the one IonQ job supplies the random motor and the measured GHZ contrast. Navigation itself is classical TERCOM map matching.
 
