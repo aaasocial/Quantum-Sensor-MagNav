@@ -300,7 +300,7 @@ def shipped_motor(model, root_seed=None):
     return motor.draw_motor(int_seed(root, "motor"), duration, float(model["tone_amplitude_rule"]["A1_nT"]))
 
 
-def sense_all(world, model, shots, motor=None, root_seed=None, c_n_fine=None) -> dict:
+def sense_all(world, model, shots, motor=None, root_seed=None, c_n_fine=None, rpm_known=True) -> dict:
     """Run the four estimators on one world with the frozen rules read from `model`.
 
     motor None: motor off (tau = tau0, no tones, no RPM channel, LS reduces to the block mean).
@@ -309,6 +309,9 @@ def sense_all(world, model, shots, motor=None, root_seed=None, c_n_fine=None) ->
     Baseline: S readouts per sample with sigma1_k matched to the quantum tau_k; guarded LS notch
     and block mean. Returns {"bhat", "prov", "motor", "S"}.
     c_n_fine (Phase 2): measured GHZ-n contrast for the fine stage (None: frozen c1 ** n model).
+    rpm_known (Phase 3, D-07): False withholds the RPM channel from both sensors while the tones stay
+    physically present: quantum tau = tau0 for every window (m = 0), baseline without a notch
+    (ls_notch with K = 0, i.e. the block mean). Default True keeps the Phase 1/2 behaviour.
     """
     p = motor
     S = int(shots)
@@ -337,12 +340,19 @@ def sense_all(world, model, shots, motor=None, root_seed=None, c_n_fine=None) ->
             return np.full(np.shape(tq), tau0)
     else:
         rpm = rpm_at(p, t)
-        tau, m = ramsey.choose_tau(rpm, m_rule, tau0)
+        if rpm_known:
+            tau, m = ramsey.choose_tau(rpm, m_rule, tau0)
+
+            def tau_at(tq):
+                return ramsey.choose_tau(rpm_at(p, tq), m_rule, tau0)[0]
+        else:  # RPM withheld: fixed tau0, tones still physically present
+            tau, m = np.full(n, tau0), np.zeros(n, dtype=int)
+
+            def tau_at(tq):
+                return np.full(np.shape(tq), tau0)
+
         tone_int = tone_window_integral(p, t, tau)
         tone_int_fine = tone_window_integral(p, t + tau, tau)
-
-        def tau_at(tq):
-            return ramsey.choose_tau(rpm_at(p, tq), m_rule, tau0)[0]
 
         def servo_tone_int_at(tq, tt):
             return tone_window_integral(p, tq, tt)
@@ -356,7 +366,7 @@ def sense_all(world, model, shots, motor=None, root_seed=None, c_n_fine=None) ->
     sigma1_k = ramsey.sigma1(tau, c1)
     tone_at = None if p is None else (lambda tq: tone_field(p, tq))
     t_read, y = baseline.sample_readouts(B, t, S, sigma1_k, stream(root, "baseline", S), tone_at=tone_at)
-    if p is None:
+    if p is None or not rpm_known:  # no RPM channel: no notch, LS reduces to the block mean
         b_ls, drops = baseline.ls_notch(t_read, y, None, None, 2.0 * S, K=0)
     else:
         b_ls, drops = baseline.ls_notch(t_read, y, rev_at(p, t_read), rpm / 60.0, 2.0 * S, K,
@@ -476,7 +486,8 @@ def line_out(ctx: dict, results: dict) -> dict:
     }
 
 
-def prepare_run(model, shots, *, scenario, tile=None, bits=None, motor_seed=None, c_n_fine=None) -> dict:
+def prepare_run(model, shots, *, scenario, tile=None, bits=None, motor_seed=None, c_n_fine=None,
+                rpm_known=True) -> dict:  # fmt: skip
     """Stage 1 of a run: world, motor and frozen-rule checks for one scenario (keyword required:
     run_uav defaults to eastern_400m, live code must name its scenario).
 
@@ -513,12 +524,14 @@ def prepare_run(model, shots, *, scenario, tile=None, bits=None, motor_seed=None
         "root": root,
         "S": shots,
         "c_n_fine": None if c_n_fine is None else float(c_n_fine),
+        "rpm_known": bool(rpm_known),
     }
 
 
 def sense_run(rc: dict) -> dict:
     """Stage 2: the four estimators on the run's world (sense_all with the run's motor and c_n)."""
-    return sense_all(rc["world"], rc["model"], rc["S"], rc["p"], rc["root"], c_n_fine=rc["c_n_fine"])
+    return sense_all(rc["world"], rc["model"], rc["S"], rc["p"], rc["root"], c_n_fine=rc["c_n_fine"],
+                     rpm_known=rc.get("rpm_known", True))  # fmt: skip
 
 
 def nav_begin(rc: dict, sense: dict):
@@ -576,7 +589,7 @@ def finish_run(rc: dict, sense: dict, ctx: dict, navs: dict, sigs: dict) -> dict
 
 
 def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scenario="eastern_400m",
-            c_n_fine=None) -> dict:  # fmt: skip
+            c_n_fine=None, rpm_known=True) -> dict:  # fmt: skip
     """Motor-on UAV flight with the frozen rules: four estimators through the unchanged TERCOM.
 
     prepare_run -> sense_run -> nav_begin -> drain each estimator in ESTIMATORS order -> finish_run
@@ -584,11 +597,27 @@ def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scena
     `Sensors`; Truth is used in score_result / line_out for scoring.
     """
     rc = prepare_run(model, shots, scenario=scenario, tile=tile, bits=bits, motor_seed=motor_seed,
-                     c_n_fine=c_n_fine)  # fmt: skip
+                     c_n_fine=c_n_fine, rpm_known=rpm_known)  # fmt: skip
     sense = sense_run(rc)
     ctx, gens, sigs = nav_begin(rc, sense)
     navs = {name: drain(gens[name]) for name in ESTIMATORS}
     return finish_run(rc, sense, ctx, navs, sigs)
+
+
+def replay_bits(path="data/forte_hardware_run.json"):
+    """RNG bits of the recorded QPU job (D-08), or None if the record is absent or not QPU-measured.
+
+    The replay artifact is seeded from these bits; a simulator-sampled proxy record never seeds it.
+    """
+    if not Path(path).exists():
+        return None
+    with open(path, encoding="utf-8") as f:
+        h = json.load(f)
+    if h.get("label") != "QPU-measured":
+        return None
+    from magnav import quantum  # imported here: keeps qiskit out of this module's import
+
+    return quantum.rng_bits(quantum.decode_counts(h["counts"], quantum.load_freeze()["layout"])["rng_hist"])
 
 
 def main(argv=None) -> int:
@@ -610,7 +639,8 @@ def main(argv=None) -> int:
     elif args.cmd == "build":
         from magnav import artifact  # imported here: artifact must not import this module back
 
-        runs = [run_uav(scenario=s) for s in SCENARIO_ORDER]
+        bits = replay_bits()  # QPU-measured seed when recorded (D-08); model-default c_n (Open Question 2)
+        runs = [run_uav(scenario=s, bits=bits) for s in SCENARIO_ORDER]
         files = load_provenance()["files"]
         map_infos = [files[SCENARIOS[s]["map_file"]] for s in SCENARIO_ORDER]
         art = artifact.build_scenarios_artifact(runs, [SCENARIOS[s] for s in SCENARIO_ORDER], map_infos)
