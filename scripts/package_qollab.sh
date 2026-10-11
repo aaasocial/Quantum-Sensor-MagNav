@@ -48,7 +48,7 @@ for f in "${DATA_FILES[@]}"; do
 done
 
 # Images the README links to, so they render if Qollab shows the README (each < 2 MB).
-README_IMAGES=(docs/hero.png results/fig_ladder.png results/fig_ghz_scaling.png results/fig_filter_function.png results/fig_amp_sweep.png)
+README_IMAGES=(docs/hero.png docs/page_ghz_scaling.png docs/page_sensed_field.png docs/page_residual.png docs/page_filter_function.png results/fig_ladder.png results/fig_ghz_scaling.png results/fig_filter_function.png results/fig_amp_sweep.png)
 
 COMMON=(LICENSE README.md requirements.txt "${PY_FILES[@]}" "${DATA_FILES[@]}" "${README_IMAGES[@]}")
 # main.py stays out of the JS upload: if Qollab ran it, it could take the run's one IonQ job.

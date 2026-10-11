@@ -46,11 +46,19 @@ The shots ladder shows where the gain comes from:
 
 ![Signal error and position error against shots per sample for the baseline, single-qubit and GHZ-4 sensors](results/fig_ladder.png)
 
+On the page after a live Run, the Sensor section shows the same contrast directly:
+
+![Sensed field against the crustal truth on a live Run: the baseline magnetometer plus notch at 62.2 nT RMSE against the GHZ-4 sensor at 0.2 nT](docs/page_sensed_field.png)
+
+![Residual of sensed minus true field from the first map-matching window: the baseline shows bursts of hundreds of nT around the motor sweeps, the GHZ-4 sensor stays flat](docs/page_residual.png)
+
 At low S the baseline samples too slowly: many motor harmonics alias next to DC, its notch must drop them (463 harmonic fits dropped per flight on average at S = 64), and the leftover tones degrade map matching. The Ramsey sensor nulls every harmonic inside its own window regardless of S.
 
 Entangled probes add a second, genuinely quantum effect: entangled probes lower projection noise per shot by up to n at equal shot budget, until gate error and dephasing erode it. At S = 256 the GHZ-4 projection noise is 0.078 nT at the model contrast and 0.071 nT at the contrast measured on IonQ Forte 1 hardware, against 0.145 nT at the standard quantum limit for 4 unentangled qubits ([docs/PHYSICS.md](docs/PHYSICS.md#6-ghz-entangled-probes-the-two-stage-sensor)).
 
 ![Projection noise against probe size n: standard quantum limit, Heisenberg limit, emulated unentangled qubits, GHZ at the model contrast and GHZ at the QPU-measured contrast](results/fig_ghz_scaling.png)
+
+![The same scaling as drawn on the page after a live Run: signal RMSE against probe size n for the unentangled, ideal-GHZ and measured-contrast GHZ probes, with the SQL and HL lines](docs/page_ghz_scaling.png)
 
 ### Recorded flights after GPS loss
 
@@ -124,6 +132,8 @@ Comparison rule: advantage = baseline_ls - quantum_ghz4 (CEP50 m, TERCOM matches
 A Ramsey magnetometer integrates the field over its interrogation time τ. A tone at frequency f contributes exactly zero when fτ is an integer, so the sensor is a low-pass filter with nulls at k/τ (its filter function). A motor at R rpm has harmonics at kR/60 Hz, so τ = 60/R puts every harmonic on a null at once, while the slow crustal field (below about 1 Hz) passes ([docs/PHYSICS.md](docs/PHYSICS.md#2-the-window-phase-integral-and-the-filter-function)).
 
 ![Filter function of the Ramsey window with the motor harmonics on its nulls, and the baseline notch response](results/fig_filter_function.png)
+
+![The page's Ramsey filter function at the end of a live Run: tau = 8.50 ms set from 7061 RPM puts the nulls on the motor harmonics at 117.7, 235.4, 353.1 and 470.7 Hz](docs/page_filter_function.png)
 
 Each Run packs everything into one 16-qubit circuit using only `h`, `rz`, `cx` and `measure`, transpiled at optimization level 0: three Ramsey fringe probes, a calibration probe, a GHZ-2 and a GHZ-4 block whose contrast feeds the emulator, and six random-number qubits whose histogram seeds this Run's motor. Layout and hash: [results/circuit.txt](results/circuit.txt). The thousands of navigation windows are emulated in-page with the closed-form phase integral and binomial shot noise; the one IonQ job supplies the random motor and the measured GHZ contrast. Navigation itself is classical TERCOM map matching.
 
