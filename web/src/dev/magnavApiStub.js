@@ -38,6 +38,16 @@ export const artifact_json = py(async () => '{"ok":true,"artifact":' + (await lo
 
 export const circuit_json = py(async () => '{"ok":true,"circuit":' + (await loadCircuitText()) + '}');
 
+let benchmarkText = null;
+async function loadBenchmarkText() {
+  if (benchmarkText === null) {
+    benchmarkText = (await import('../../../data/benchmark_summary.json?raw')).default.trim();
+  }
+  return benchmarkText;
+}
+
+export const benchmark_json = py(async () => '{"ok":true,"benchmark":' + (await loadBenchmarkText()) + '}');
+
 export const hardware_json = py(async () => JSON.stringify({
   ok: false,
   error_type: 'NotCaptured',

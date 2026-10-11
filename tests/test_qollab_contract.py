@@ -203,6 +203,9 @@ DG_SENTENCE = (
         "Navigation accuracy",
         "Both scenarios, as found",
         "Comparison rule",
+        # Benchmark summary (03-04, D-05)
+        "Recorded IonQ seeds (not in the mean)",
+        "Benchmark summary unavailable",
         "What is quantum here",
         "Map track data",
         "GHZ scaling data",
@@ -240,6 +243,7 @@ V1_SCAN_DATA = (
     "data/precomputed_uav.json",
     "data/circuit_freeze.json",
     "data/forte_hardware_run.json",
+    "data/benchmark_summary.json",
 )
 # Page-facing Python from plan 02-02 (runs in parallel; scanned once present).
 V1_SCAN_OPTIONAL_PY = ("magnav/api.py", "magnav/live_uav.py")
@@ -295,6 +299,7 @@ def test_upload_zip():
         "main.css",
         "index.html",
         "data/circuit_freeze.json",
+        "data/benchmark_summary.json",
         "data/map_synth_100m.npz",
         "data/map_eastern_395.npz",
     ):

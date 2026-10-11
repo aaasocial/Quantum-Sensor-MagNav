@@ -38,7 +38,7 @@ shopt -u nullglob
 [ "${#PY_FILES[@]}" -gt 0 ] || fail "no magnav/*.py files found"
 # Explicit allowlist: Qollab preloads a data file only if its path is a literal in the
 # Python code, so every entry here must also appear verbatim in magnav/*.py.
-DATA_FILES=(data/map_synth_100m.npz data/map_eastern_395.npz data/provenance.json data/qsensor_model.json data/precomputed_uav.json data/circuit_freeze.json)
+DATA_FILES=(data/map_synth_100m.npz data/map_eastern_395.npz data/provenance.json data/qsensor_model.json data/precomputed_uav.json data/circuit_freeze.json data/benchmark_summary.json)
 # The Forte 1 hardware record ships only once it has been captured.
 if [ -f data/forte_hardware_run.json ]; then
   DATA_FILES+=(data/forte_hardware_run.json)
