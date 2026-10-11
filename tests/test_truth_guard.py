@@ -8,9 +8,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MAGNAV = ROOT / "magnav"
-# Plan 01-03 extends REQUIRED with baseline.py.
+# baseline.py added in plan 01-03.
 # uav.py (and later uav_pipeline.py) legitimately build and score Truth, so they are not guarded.
-REQUIRED = [MAGNAV / n for n in ("nav.py", "frames.py", "motor.py", "ramsey.py", "quantum.py")]
+REQUIRED = [MAGNAV / n for n in ("nav.py", "frames.py", "motor.py", "ramsey.py", "quantum.py", "baseline.py")]
 GUARDED = REQUIRED
 
 
