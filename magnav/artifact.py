@@ -204,7 +204,9 @@ def _provenance(run: dict) -> dict:
         "servo_cycle_s": model["servo"]["cycle_s"],
         "ghz": {
             "n": n_fine,
-            "c_n": model["ghz"]["c_n_default"][str(n_fine)],
+            # Phase 2: the GHZ-n contrast measured this Run when one was used (no new keys here;
+            # its source label lives in the live payload's quantum_job block)
+            "c_n": run["c_n_fine"] if run.get("c_n_fine") is not None else model["ghz"]["c_n_default"][str(n_fine)],
             "switch_rule": ghz["switch_rule"],
             "n_fallback": int(prov["n_fallback"]),
             "fine_slips": int(prov["fine_slips"]),
@@ -489,6 +491,80 @@ def validate_uav_artifact(a: dict) -> list:
     else:
         if size >= MAX_BYTES:
             errs.append(f"serialized size {size} >= {MAX_BYTES}")
+    return errs
+
+
+LIVE_KIND = "uav_live"
+BITS_LABELS = ("QPU-measured", "simulator-sampled")
+CN_SOURCES = ("measured this Run", "default model, not measured")
+QUANTUM_JOB_KEYS = ("job_id", "bits_label", "seed_hex", "c_n_source")
+
+
+def _is_hex16(s) -> bool:
+    return isinstance(s, str) and len(s) == 16 and all(c in "0123456789abcdef" for c in s)
+
+
+def validate_live_payload(p: dict) -> list:
+    """Problems with a live_result payload (kind uav_live, one scenario entry); [] means valid."""
+    if not isinstance(p, dict):
+        return ["live payload is not an object"]
+    errs = []
+    if p.get("kind") != LIVE_KIND:
+        errs.append(f"kind {p.get('kind')!r} != {LIVE_KIND!r}")
+    s = p.get("scenario")
+    if not isinstance(s, dict):
+        errs.append("scenario is not an object")
+    else:
+        sid = s.get("id")
+        if sid not in SCENARIO_ORDER:
+            errs.append(f"scenario id {sid!r} not in {list(SCENARIO_ORDER)}")
+        miss = [k for k in REQUIRED_SCENARIO if k not in s]
+        if miss:
+            errs.append(f"scenario {sid}: missing {miss}")
+        texts = (str(s.get("map_label")), str(s.get("map_caption")))
+        if s.get("synthetic") is True:
+            if s.get("map_label") != SYNTH_LABEL:
+                errs.append(f"scenario {sid}: synthetic map_label != {SYNTH_LABEL!r}")
+            if SYNTH_LABEL not in str(s.get("map_caption")):
+                errs.append(f"scenario {sid}: synthetic map_caption lacks {SYNTH_LABEL!r}")
+        elif any(SYNTH_LABEL in t for t in texts):
+            errs.append(f"scenario {sid}: non-synthetic scenario carries the synthetic label")
+        errs += _validate_line(s.get("line"), f"scenario {sid} line")
+    mot = p.get("motor")
+    if not isinstance(mot, dict):
+        errs.append("motor is not an object")
+    else:
+        errs += [f"motor missing {k}" for k in MOTOR_KEYS if k not in mot]
+        seed_str = mot.get("seed_str")
+        if not (isinstance(seed_str, str) and seed_str.isdigit()):
+            errs.append("motor.seed_str is not a string of digits")
+        if not _is_hex16(mot.get("seed_hex")):
+            errs.append("motor.seed_hex is not 16 lowercase hex characters")
+        elif isinstance(seed_str, str) and seed_str.isdigit() and int(mot["seed_hex"], 16) != int(seed_str):
+            errs.append("motor.seed_hex and motor.seed_str differ")
+    S = p.get("S")
+    if not isinstance(S, int) or isinstance(S, bool) or S <= 0:
+        errs.append("S is not a positive int")
+    if not _is_hex64(p.get("model_sha256")):
+        errs.append("model_sha256 is not 64 hex characters")
+    q = p.get("quantum_job", "missing")
+    if q == "missing":
+        errs.append("missing quantum_job (null when no job)")
+    elif q is not None:
+        if not isinstance(q, dict):
+            errs.append("quantum_job is neither null nor an object")
+        else:
+            errs += [f"quantum_job missing {k}" for k in QUANTUM_JOB_KEYS if k not in q]
+            if q.get("bits_label") not in BITS_LABELS:
+                errs.append(f"quantum_job.bits_label {q.get('bits_label')!r} not in {list(BITS_LABELS)}")
+            if q.get("c_n_source") not in CN_SOURCES:
+                errs.append(f"quantum_job.c_n_source {q.get('c_n_source')!r} not in {list(CN_SOURCES)}")
+            if isinstance(mot, dict) and q.get("seed_hex") != mot.get("seed_hex"):
+                errs.append("quantum_job.seed_hex differs from motor.seed_hex")
+    try:
+        json.dumps(p, allow_nan=False)
+    except ValueError as exc:
+        errs.append(f"not strict JSON: {exc}")
     return errs
 
 

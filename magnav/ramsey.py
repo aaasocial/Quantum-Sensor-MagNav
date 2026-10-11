@@ -212,7 +212,8 @@ def fine_allowed(shots, n, c1, z_star=Z_STAR):
 
 
 def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, seed_nT, n_fine=4, tone_int=None,
-              tone_int_fine=None, tau_at=None, servo_tone_int_at=None, h=SERVO_CYCLE_S) -> dict:  # fmt: skip
+              tone_int_fine=None, tau_at=None, servo_tone_int_at=None, h=SERVO_CYCLE_S,
+              c_n=None) -> dict:  # fmt: skip
     """Recursive servo + single-qubit coarse stage, then a GHZ-n fine window referenced to the coarse estimate.
 
     `rngs` holds generators "servo", "q1" and "ghz" (callers: seeds.stream(root, "servo", S),
@@ -220,6 +221,9 @@ def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, seed_nT, n_fine=4, tone_int
     (uav.servo_seed: IGRF plane + map value at the GPS fix). The fine window starts at t + tau and
     sees `tone_int_fine`; its phase is window_phase(B_k - bhat_q1, ...), and the GHZ
     accumulation of n * phi happens inside p1(phi, n, c_n) with c_n = c1 ** n.
+
+    c_n (Phase 2): the GHZ-n contrast measured this Run overrides the c1 ** n model in the fine
+    readout and its decoder only; the switch rule keeps the frozen c1 and the draws are unchanged.
 
     Switch rule (frozen): the fine estimate is used iff fine_allowed(S, n, c1) and the coarse
     sample is not fringe-risk; otherwise the GHZ track takes the coarse estimate (fallback).
@@ -234,7 +238,7 @@ def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, seed_nT, n_fine=4, tone_int
     tau = out["tau_s"]
     bhat_q1 = out["bhat_nT"]
     n = int(n_fine)
-    c_n = contrast(n, c1)
+    c_n = contrast(n, c1) if c_n is None else float(c_n)
     ti_f = 0.0 if tone_int_fine is None else np.asarray(tone_int_fine, dtype=np.float64)
     phi_f = window_phase(np.asarray(B_k, dtype=np.float64) - bhat_q1, ti_f, tau)
     rf = readout(phi_f, shots, rngs["ghz"], n=n, c=c_n)
@@ -257,16 +261,16 @@ def two_stage(t, B_k, B_at, tau, m, shots, c1, rngs, seed_nT, n_fine=4, tone_int
     return out
 
 
-def scaling_trial(n, shots, c1, trials, rng, entangled, phi_halfwidth=0.05) -> float:
+def scaling_trial(n, shots, c1, trials, rng, entangled, phi_halfwidth=0.05, c_n=None) -> float:
     """Phase RMSE (rad) of one fine-stage measurement at equal qubit-shots.
 
-    entangled: one GHZ-n readout of S shots with contrast c1 ** n.
+    entangled: one GHZ-n readout of S shots with contrast c1 ** n (or c_n if given).
     unentangled: mean of n independent single-qubit readouts of S shots each, contrast c1.
     Residual phase ~ U(-phi_halfwidth, phi_halfwidth).
     """
     phi = rng.uniform(-phi_halfwidth, phi_halfwidth, int(trials))
     if entangled:
-        c = contrast(n, c1)
+        c = contrast(n, c1) if c_n is None else float(c_n)
         n1 = rng.binomial(int(shots), np.clip(p1(phi, n, c), 0.0, 1.0))
         est = phi_hat(n1, shots, n, c)
     else:

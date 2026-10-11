@@ -28,7 +28,7 @@ from magnav import baseline, motor, ramsey, seeds, synthmap, uav
 from magnav.data import MAP_EASTERN, load_map, load_provenance
 from magnav.metrics import position_metrics, signal_metrics
 from magnav.motor import motor_to_dict, rev_at, rpm_at, tone_field, tone_window_integral
-from magnav.nav import anomaly_signal, tercom
+from magnav.nav import anomaly_signal, tercom_steps
 from magnav.seeds import ROOT_SEED, int_seed, stream
 
 QSENSOR_MODEL = "data/qsensor_model.json"
@@ -300,7 +300,7 @@ def shipped_motor(model, root_seed=None):
     return motor.draw_motor(int_seed(root, "motor"), duration, float(model["tone_amplitude_rule"]["A1_nT"]))
 
 
-def sense_all(world, model, shots, motor=None, root_seed=None) -> dict:
+def sense_all(world, model, shots, motor=None, root_seed=None, c_n_fine=None) -> dict:
     """Run the four estimators on one world with the frozen rules read from `model`.
 
     motor None: motor off (tau = tau0, no tones, no RPM channel, LS reduces to the block mean).
@@ -308,6 +308,7 @@ def sense_all(world, model, shots, motor=None, root_seed=None) -> dict:
     Quantum: recursive servo (seeded from IGRF + map at the first GPS fix) + single-qubit coarse + GHZ-n fine (n = max of the frozen n_set).
     Baseline: S readouts per sample with sigma1_k matched to the quantum tau_k; guarded LS notch
     and block mean. Returns {"bhat", "prov", "motor", "S"}.
+    c_n_fine (Phase 2): measured GHZ-n contrast for the fine stage (None: frozen c1 ** n model).
     """
     p = motor
     S = int(shots)
@@ -351,7 +352,7 @@ def sense_all(world, model, shots, motor=None, root_seed=None) -> dict:
     q = ramsey.two_stage(t, B, lambda tq: uav.field_at(world, tq), tau, m, S, c1, rngs,
                          uav.servo_seed(world), n_fine=n_fine, tone_int=tone_int,
                          tone_int_fine=tone_int_fine, tau_at=tau_at,
-                         servo_tone_int_at=servo_tone_int_at, h=h)  # fmt: skip
+                         servo_tone_int_at=servo_tone_int_at, h=h, c_n=c_n_fine)  # fmt: skip
     sigma1_k = ramsey.sigma1(tau, c1)
     tone_at = None if p is None else (lambda tq: tone_field(p, tq))
     t_read, y = baseline.sample_readouts(B, t, S, sigma1_k, stream(root, "baseline", S), tone_at=tone_at)
@@ -475,12 +476,12 @@ def line_out(ctx: dict, results: dict) -> dict:
     }
 
 
-def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scenario="eastern_400m") -> dict:
-    """Motor-on UAV flight with the frozen rules: four estimators through the unchanged TERCOM.
+def prepare_run(model, shots, *, scenario, tile=None, bits=None, motor_seed=None, c_n_fine=None) -> dict:
+    """Stage 1 of a run: world, motor and frozen-rule checks for one scenario (keyword required:
+    run_uav defaults to eastern_400m, live code must name its scenario).
 
     The motor comes from `bits` (Phase 2: IonQ RNG block) if given, else from `motor_seed`
-    (default: the model's shipped motor seed), always at the frozen A1. Estimators see only
-    the sensed arrays and `Sensors`; Truth is used in score_result / line_out for scoring.
+    (default: the model's shipped motor seed), always at the frozen A1.
     """
     model = model or load_model()
     shots = int(shots or model["S_default"])
@@ -502,27 +503,92 @@ def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scena
     else:
         seed = model["seeds"]["shipped_motor_seed"] if motor_seed is None else int(motor_seed)
         p = motor.draw_motor(seed, duration, A1)
-    sense = sense_all(world, model, shots, p, root)
-    ctx = uav.prepare_uav(world, mag=sense["bhat"], cur={"rpm": rpm_at(p, world.t)}, ins=model["ins"],
-                          root_seed=root, window=model["tercom"]["window"],
+    return {
+        "model": model,
+        "sc": sc,
+        "scenario": scenario,
+        "tile": tile,
+        "world": world,
+        "p": p,
+        "root": root,
+        "S": shots,
+        "c_n_fine": None if c_n_fine is None else float(c_n_fine),
+    }
+
+
+def sense_run(rc: dict) -> dict:
+    """Stage 2: the four estimators on the run's world (sense_all with the run's motor and c_n)."""
+    return sense_all(rc["world"], rc["model"], rc["S"], rc["p"], rc["root"], c_n_fine=rc["c_n_fine"])
+
+
+def nav_begin(rc: dict, sense: dict):
+    """Stage 3 setup: jam + DR context and one resumable TERCOM generator per estimator.
+
+    Returns (ctx, gens, sigs): gens and sigs are dicts in ESTIMATORS order.
+    """
+    model, world, sc = rc["model"], rc["world"], rc["sc"]
+    ctx = uav.prepare_uav(world, mag=sense["bhat"], cur={"rpm": rpm_at(rc["p"], world.t)}, ins=model["ins"],
+                          root_seed=rc["root"], window=model["tercom"]["window"],
                           map_file=sc["map_file"])  # fmt: skip
     if ctx["dr"].seed != model["seeds"]["dr_seed"]:
         raise ValueError("DR seed differs from the frozen model")
+    gens, sigs = {}, {}
+    for name in ESTIMATORS:
+        sig = anomaly_signal(sense["bhat"][name], ctx["sens"])
+        sigs[name] = sig
+        gens[name] = tercom_steps(sig, ctx["dr"], ctx["jam_idx"], ctx["fix_xy"], ctx["tile"], **model["tercom"])
+    return ctx, gens, sigs
+
+
+def windows_per_estimator(ctx: dict, model: dict) -> int:
+    """TERCOM windows each estimator runs (the count tercom_steps yields)."""
+    w, s = int(model["tercom"]["window"]), int(model["tercom"]["stride"])
+    n, first = int(ctx["n"]), int(ctx["jam_idx"]) + w
+    return (n - first) // s + 1 if first <= n else 0
+
+
+def drain(gen):
+    """Run a tercom_steps generator to the end and return its NavResult (nav.tercom pattern)."""
+    while True:
+        try:
+            next(gen)
+        except StopIteration as stop:
+            return stop.value
+
+
+def finish_run(rc: dict, sense: dict, ctx: dict, navs: dict, sigs: dict) -> dict:
+    """Stage 4: score each estimator and return the run dict (the input of artifact.scenario_entry)."""
     results = {}
     for name in ESTIMATORS:
-        cleaned = sense["bhat"][name]
-        sig = anomaly_signal(cleaned, ctx["sens"])
-        nav = tercom(sig, ctx["dr"], ctx["jam_idx"], ctx["fix_xy"], ctx["tile"], **model["tercom"])
-        results[name] = score_result(ctx, name, cleaned, sig, nav)
-    return {
-        "scenario": scenario,
+        results[name] = score_result(ctx, name, sense["bhat"][name], sigs[name], navs[name])
+    out = {
+        "scenario": rc["scenario"],
         "line": line_out(ctx, results),
         "prov": sense["prov"],
-        "motor": motor_to_dict(p),
-        "S": shots,
-        "model": model,
+        "motor": motor_to_dict(rc["p"]),
+        "S": rc["S"],
+        "model": rc["model"],
         "model_sha256": model_sha256(),
     }
+    if rc["c_n_fine"] is not None:
+        out["c_n_fine"] = rc["c_n_fine"]
+    return out
+
+
+def run_uav(model=None, shots=None, motor_seed=None, bits=None, tile=None, scenario="eastern_400m",
+            c_n_fine=None) -> dict:  # fmt: skip
+    """Motor-on UAV flight with the frozen rules: four estimators through the unchanged TERCOM.
+
+    prepare_run -> sense_run -> nav_begin -> drain each estimator in ESTIMATORS order -> finish_run
+    (magnav.live_uav runs the same stages in chunks). Estimators see only the sensed arrays and
+    `Sensors`; Truth is used in score_result / line_out for scoring.
+    """
+    rc = prepare_run(model, shots, scenario=scenario, tile=tile, bits=bits, motor_seed=motor_seed,
+                     c_n_fine=c_n_fine)  # fmt: skip
+    sense = sense_run(rc)
+    ctx, gens, sigs = nav_begin(rc, sense)
+    navs = {name: drain(gens[name]) for name in ESTIMATORS}
+    return finish_run(rc, sense, ctx, navs, sigs)
 
 
 def main(argv=None) -> int:
