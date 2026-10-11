@@ -187,6 +187,42 @@ figure:focus-visible, section:focus-visible { outline: 3px solid var(--color-acc
   color: var(--color-danger);
 }
 
+.live-counter { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* ---- Run button row ---- */
+.run-row { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+.run-row .help { margin: 0; }
+.run-button { min-width: 200px; }
+.demo-options { font-size: var(--text-sm); color: var(--color-text-muted); }
+.demo-options summary { cursor: pointer; min-height: 32px; display: list-item; color: var(--color-text); }
+.check-row { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 32px; font-weight: 400; color: var(--color-text); }
+
+/* ---- This Run's IonQ job ---- */
+.job-panel { display: flex; flex-direction: column; gap: var(--space-2); }
+.job-panel h3 { font-size: var(--text-sm); font-weight: 600; margin: 0; }
+.job-panel .help { margin: 0; }
+.flown-on { margin: 0; font-size: var(--text-sm); font-weight: 600; }
+.job-dl {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+.job-dl dt { color: var(--color-text-muted); }
+.job-dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.dd-inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.bits { display: block; }
+.selectable { user-select: text; }
+.job-details summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; min-height: 32px; display: list-item; }
+.job-details .job-dl, .job-details .help { margin-top: var(--space-2); }
+
+@media (max-width: 399px) {
+  .job-dl { grid-template-columns: minmax(0, 1fr); }
+  .job-dl dd { margin-bottom: var(--space-1); }
+}
+
 /* ---- Map ---- */
 .map-figure { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .map-figure figcaption { font-size: var(--text-sm); line-height: 1.4; color: var(--color-text-muted); }
