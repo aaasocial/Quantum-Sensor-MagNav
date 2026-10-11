@@ -75,10 +75,10 @@ def test_window_integral_vs_quad():
         ph = rng.uniform(0, 2 * np.pi, 4)
         tau = rng.uniform(0.002, 0.02)
 
-        def g(s):
+        def g(s, f1=f1, amps=amps, ph=ph):
             return sum(a * np.cos(2 * np.pi * (k + 1) * f1 * s + th) for k, (a, th) in enumerate(zip(amps, ph)))
 
-        ref, _ = quad(g, 0.0, tau, epsabs=1e-14, epsrel=1e-13, limit=200)
+        ref, _ = quad(g, 0.0, tau, epsabs=1e-12, epsrel=1e-12, limit=200)
         got = motor.tone_integral_const_rpm(amps, ph, f1, tau)
         assert abs(got - ref) < 1e-9 * A1
 
@@ -104,7 +104,7 @@ def test_gl24_vs_dense_chirp(rate):
     tau = 60.0 / motor.rpm_at(p, t0)
     got = motor.tone_window_integral(p, t0, tau)
     for a, tt, g in zip(t0, tau, got):
-        ref, _ = quad(lambda s: float(motor.tone_field(p, np.array([s]))[0]), a, a + tt,
+        ref, _ = quad(lambda s, p=p: float(motor.tone_field(p, np.array([s]))[0]), a, a + tt,
                       epsabs=1e-13, epsrel=1e-13, limit=400)  # fmt: skip
         assert abs(g - ref) < 1e-9 * A1 * tt
 
