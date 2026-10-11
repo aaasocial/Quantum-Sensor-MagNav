@@ -5,7 +5,9 @@ GHZ parity marginals and the contrast guard."""
 import hashlib
 import json
 import math
+import subprocess
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -14,7 +16,7 @@ from qiskit.providers.basic_provider import BasicSimulator
 from qiskit.quantum_info import Statevector
 from qiskit.result import marginal_distribution
 
-from magnav import quantum
+from magnav import quantum, uav_pipeline
 from magnav.motor import motor_from_bits
 from magnav.quantum import DEFAULT_FREEZE, LAYOUT, PHASES
 
@@ -149,3 +151,52 @@ def test_contrast_guard():
 def test_fringe_expected():
     exp = quantum.fringe_expected(1.0)
     assert exp == pytest.approx([(1 + np.sin(p)) / 2 for p in PHASES["fringe"]])
+
+
+# --- D-C circuit freeze (data/circuit_freeze.json, committed alone) -------------------------------
+
+ROOT = Path(__file__).resolve().parents[1]
+FREEZE_FILE = ROOT / quantum.CIRCUIT_FREEZE
+HW_FILE = "data/forte_hardware_run.json"
+MODEL_SHA256 = "a10a6f62456eb49458dd42071384b5a51cf00ca388c71702dfce16e5b27ac891"
+
+
+def _git(*args) -> str:
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True,
+                          check=True).stdout.strip()  # fmt: skip
+
+
+def _first_commit(path: str) -> str | None:
+    out = _git("log", "--format=%H", "--reverse", "--", path)
+    return out.splitlines()[0] if out else None
+
+
+def _strict_ancestor(a: str, b: str) -> bool:
+    r = subprocess.run(["git", "-C", str(ROOT), "merge-base", "--is-ancestor", a, b], check=False)
+    return r.returncode == 0 and a != b
+
+
+def test_circuit_freeze():
+    assert FREEZE_FILE.exists(), "data/circuit_freeze.json missing"
+    freeze = json.loads(FREEZE_FILE.read_text(encoding="utf-8"))
+    sha = hashlib.sha256(freeze["qasm3"].encode("utf-8")).hexdigest()
+    assert sha == freeze["circuit_sha256"] == quantum.circuit_sha256(quantum.build_packed_circuit(freeze))
+    assert freeze["model_sha256"] == uav_pipeline.model_sha256(str(ROOT / uav_pipeline.QSENSOR_MODEL)) == MODEL_SHA256
+    assert freeze["model_file"] == uav_pipeline.QSENSOR_MODEL
+    assert freeze["layout"] == LAYOUT
+    assert freeze["phases"] == PHASES
+    assert freeze["n_qubits"] == 16 and freeze["hw_shots"] >= 500
+    assert freeze["transpile_optimization_level"] == 0
+    assert freeze["c_floor"] == quantum.C_FLOOR
+
+
+def test_freeze_commit_order():
+    if not (ROOT / ".git").exists():
+        pytest.skip("no git metadata (e.g. Qollab upload)")
+    rel = quantum.CIRCUIT_FREEZE
+    F = _first_commit(rel)
+    assert F, f"{rel} has no commit"
+    assert _git("show", "--name-only", "--format=", F).split() == [rel]
+    H = _first_commit(HW_FILE)
+    if H:
+        assert _strict_ancestor(F, H), f"circuit freeze {F[:7]} not before {HW_FILE} {H[:7]}"
